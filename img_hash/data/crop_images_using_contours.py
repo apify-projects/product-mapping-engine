@@ -1,5 +1,6 @@
 import cv2
 import os
+import numpy as np
 
 inp_directory = 'image_data/'
 save_directory = 'image_data_cropped_more2/'
@@ -17,19 +18,20 @@ for filename in os.listdir(inp_directory):
         image = cv2.imread(path_inp)
         #converting to gray scale
         gray=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
         #applying canny edge detection
-        edged = cv2.Canny(gray, 10, 100)
-        
+        canny = cv2.Canny(blurred, 10, 100)
+        kernel = np.ones((5,5),np.uint8)
+        dilate = cv2.dilate(canny, kernel, iterations=1)
         #finding contours
-        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        _, cnts, hierarchies = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         maxy, maxx, maxw, maxh = 0, 0, 0, 0
         maxarea = 0
         for c in cnts:
             x,y,w,h = cv2.boundingRect(c)
             if w*h > maxarea:
-                maxy, maxx, maxw, maxh = x,y,w,h
+                maxy, maxx, maxw, maxh = y,x,w,h
                 maxarea = w*h
                 
         new_img=image[maxy:maxy+maxh,maxx:maxx+maxw]
