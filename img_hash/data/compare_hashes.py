@@ -2,9 +2,9 @@ import json, sys
 import numpy as np
 import pandas as pd
 
-input_file = 'hashes_cropped.json' 
-out_file = 'distances_cropped_bin.csv' #'distances.csv'
-out_file_all = 'all_dist_cropped_bin.csv' #all_dist.csv
+input_file = 'hashes_cropped_more.json' 
+out_file = 'distances_bin_cropped_more.csv' #'distances.csv'
+out_file_all = 'all_dist_bin_cropped_more.csv' #all_dist.csv
 metric = 'binary' #binary, mean, thresh
 
 BIT_GROUPS = 4

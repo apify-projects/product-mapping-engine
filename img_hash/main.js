@@ -1,11 +1,11 @@
 const fs = require('fs');
 const { imageHash }= require('image-hash');
 var path = require('path');
-const img_path = 'data/image_data/';
+const img_path = 'data/image_data_cropped_more/';
 const files = fs.readdirSync(img_path);
 const util = require('util');
 const promisifiedImageHash = util.promisify(imageHash);
-const writeStream = fs.createWriteStream('data/hashes.json');
+const writeStream = fs.createWriteStream('data/hashes_cropped_more.json');
 const pathName = writeStream.path;
 
 // This is the main Node.js source code file of your actor.
