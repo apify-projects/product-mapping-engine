@@ -1,11 +1,11 @@
 const fs = require('fs');
 const { imageHash }= require('image-hash');
 var path = require('path');
-const img_path = 'data/image_data_resized/';
+const img_path = 'data/image_data/';
 const files = fs.readdirSync(img_path);
 const util = require('util');
 const promisifiedImageHash = util.promisify(imageHash);
-const writeStream = fs.createWriteStream('data/hashes.txt');
+const writeStream = fs.createWriteStream('data/hashes.json');
 const pathName = writeStream.path;
 
 // This is the main Node.js source code file of your actor.
@@ -27,6 +27,6 @@ Apify.main(async () => {
 	data.push(imgs[i] + ';' + hashes[i])	
 	}
 	data = JSON.stringify(data);
-	fs.writeFileSync("./data/hashes_resized.json", data);
+	fs.writeFileSync(pathName, data);
 });
 

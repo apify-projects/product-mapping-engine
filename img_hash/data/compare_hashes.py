@@ -2,10 +2,10 @@ import json, sys
 import numpy as np
 import pandas as pd
 
-input_file = 'hashes.json' #hashes_resized
-out_file = 'distances_bin.csv' #'distances.csv'
-out_file_all = 'all_dist_bin.csv' #all_dist.csv
-metric = '' #binary, mean, thresh
+input_file = 'hashes_cropped.json' 
+out_file = 'distances_cropped_bin.csv' #'distances.csv'
+out_file_all = 'all_dist_cropped_bin.csv' #all_dist.csv
+metric = 'binary' #binary, mean, thresh
 
 BIT_GROUPS = 4
 NAME_CHAR_SUBSET = 3
@@ -161,8 +161,8 @@ def compute_distances(hashes, names, metric):
 def main():
     data = load_and_parse_data(input_file)
     hashes, names = create_hash_sets(data)
-    suma, distance_set = compute_distances(hashes, names, metric='binary')
-    #print(suma)
+    suma, distance_set = compute_distances(hashes, names, metric=metric)
+    print(suma)
     df = pd.DataFrame(distance_set, columns=['image1', 'image2', 'dist'])
     df.to_csv(out_file)
     
