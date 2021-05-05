@@ -2,14 +2,16 @@ import json, sys
 import numpy as np
 import pandas as pd
 
-input_file = 'hashes_cropped_more.json' 
-out_file = 'distances_bin_cropped_more.csv' #'distances.csv'
-out_file_all = 'all_dist_bin_cropped_more.csv' #all_dist.csv
-metric = 'binary' #binary, mean, thresh
+input_file = 'results/hashes_cropped.json' 
+output_file = 'results/distances_bin_cropped.csv' #'distances.csv'
+output_file_all = 'results/all_dist_bin_cropped.csv' #all_dist.csv
+metric = 'mean' #binary, mean, thresh
 
 BIT_GROUPS = 4
 NAME_CHAR_SUBSET = 3
 THRESHOLD = 20000
+THRESHOLD_BIN = 0.9
+FILTER_DIST = False
 all_dist = []
 
 # load file and split name and hash into dictionary
@@ -118,7 +120,7 @@ def swap_image_sets(first_hash, first_name, second_hash, second_name):
     return second_hash, second_name, first_hash, first_name
         
 # convert hashes to dec and compute distances between two set of images of one product
-def compute_distances(hashes, names, metric):
+def compute_distances(hashes, names, metric, filter_dist):
     total_dist = 0
     distance_set = []
     
@@ -140,9 +142,11 @@ def compute_distances(hashes, names, metric):
             dist, nearest_name = 0, None
             if metric == 'binary':
                 dist, nearest_name = bit_distance(num, name, second_hash, second_name)
+                if filter_dist and dist<THRESHOLD_BIN:
+                    dist, nearest_name = None, None
             else:
                 dist, nearest_name = get_nearest_image(num, name, second_hash, second_name)
-                if dist>THRESHOLD:
+                if filter_dist and dist>THRESHOLD:
                     dist, nearest_name = None, None
                 
             distance_set.append([name, nearest_name, dist])
@@ -154,20 +158,21 @@ def compute_distances(hashes, names, metric):
         # compute total distance of sets images
         mean_total_distance = mean_distance(np.array(distances))
         thresh_total_distance = thresh_distance(np.array(distances))
-            
+        print(distance_set)
     return total_dist, distance_set
 
         
 def main():
     data = load_and_parse_data(input_file)
     hashes, names = create_hash_sets(data)
-    suma, distance_set = compute_distances(hashes, names, metric=metric)
+    suma, distance_set = compute_distances(hashes, names, metric=metric, filter_dist=FILTER_DIST)
     print(suma)
+    
     df = pd.DataFrame(distance_set, columns=['image1', 'image2', 'dist'])
-    df.to_csv(out_file)
+    df.to_csv(output_file)
     
     df = pd.DataFrame(all_dist, columns=['image1', 'image2', 'dist'])
-    df.to_csv(out_file_all)
+    df.to_csv(output_file_all)
     
 if __name__ == "__main__":
     main()
