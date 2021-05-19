@@ -3,13 +3,14 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 
 
-input_file1 = 'data/names_mall.csv'
-input_file2 = 'data/names_czc.csv'
-output_file = 'data/tf_idf.csv'
+input_file1 = 'data/names/names_mall.csv'
+input_file2 = 'data/names/names_czc.csv'
+output_file = 'data/results/tf_idf.csv'
 encoding= 'utf-16'
 colors = ['šedý', 'šedá', 'grey', 'gray', 'černý', 'černá', 'black', 'bílý', 'bílá', 'white', 
           'stříbrný','stříbrná', 'silver', 'červený','červená', 'red', 'modrý', 'modrá', 'blue', 
           'zelená', 'zelený', 'green', 'zlatá', 'zlatý', 'gold', 'béžový', 'béžová']
+
 
 def remove_nonalfanum_chars(data):
     data_list = []
@@ -23,6 +24,7 @@ def remove_nonalfanum_chars(data):
             data_list.append(word)
     return data_list
 
+# compute tf.ids in files with names
 df1 = pd.read_csv(input_file1, encoding=encoding)
 df1.dropna(inplace=True)
 df2 = pd.read_csv(input_file2, encoding=encoding)
@@ -33,7 +35,6 @@ data2 = str.join(' ', [val for val in df2.values[:,1]])
 
 data1 = str.join(' ', remove_nonalfanum_chars(data1))
 data2 = str.join(' ', remove_nonalfanum_chars(data2))
-
 
 vectorizer = TfidfVectorizer()
 vectors = vectorizer.fit_transform([data1, data2])

@@ -3,12 +3,14 @@ import re
 import json
 import requests
 
-colors_file = 'data/colors.txt'
-brand_file = 'data/brands.txt'
-input_file = 'data/names_mall.csv'
-input_file2 = 'data/names_czc.csv'
-output_file = 'data/tf_idf.csv'
-encoding= 'utf-16'
+colors_file = 'data/vocabularies/colors.txt'
+brand_file = 'data/vocabularies/brands.txt'
+input_file = 'data/names/names_mall.csv'
+input_file2 = 'data/names/names_czc.csv'
+output_file = 'data/results/tf_idf.csv'
+encoding = 'utf-16'
+vocabulary_file_cz = 'data/bigger_corpus/cz_cleaned.csv'
+vocabulary_file_en = 'data/bigger_corpus/en_cleaned.csv'
 ID_LEN = 5
 
 def load_colors(colors_file):
@@ -30,9 +32,12 @@ def load_brands(brand_file):
         brands.append(line)
     return brands
 
-# check whether the word is in Czech or English vocabulary
-def is_word_in_vocabulary(word):
-    lemma = word
+def load_vocabulary(vocabulary_file):
+    with open(vocabulary_file, encoding='utf-8') as f:
+        return [line.rstrip() for line in f]
+    
+# check whether the word is in Czech or English vocabulary in LINDAT repository
+def does_this_word_exist(lemma):
     url_cz = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}&output=json&guesser=no&model=czech-morfflex-pdt-161115"
     url_en = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}&output=json&guesser=no&model=english-morphium-wsj-140407"
 
@@ -41,13 +46,17 @@ def is_word_in_vocabulary(word):
 
     if r_cz[0][0]['tag']=='X@-------------' and r_en[0][0]['tag']=='UNK':
         return False
-    
     return True
+
+# check whether a word i s in vocabulary cretaed manually from corpus
+def is_word_in_vocabulary(word):
+    if word in vocabulary_cz or word in vocabulary_en:
+        return True
+    return False
 
 
 # detect ids in names
 def id_detection(word):
-
     # check whether is capslock ad whether is not too short
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
     if not word_sub.isupper() or len(word_sub)<ID_LEN or word in brands:
@@ -73,6 +82,8 @@ def color_detection(word):
 # detect ids and colors in names
 def detect_ids_and_colors(data, detect_id, detect_color):
     data_list = []
+    CNT_VOC = 0
+    CNT_LEM = 0
     for name in data:
         word_list = []
         for word in name:
@@ -81,9 +92,17 @@ def detect_ids_and_colors(data, detect_id, detect_color):
             if detect_color:
                 word = color_detection(word)
             word_list.append(word)
+            
+            # compute number of words that are in dictionary and that were found in morphodita
+            word = re.sub(r"[\W_]+", "", word, flags=re.UNICODE).lower()
+            if is_word_in_vocabulary(word):
+                CNT_VOC+=1
+            if does_this_word_exist(word):
+                CNT_LEM+=1
+            
         data_list.append(word_list)
         #break
-    return data_list
+    return data_list, CNT_VOC, CNT_LEM
 
 
 # convert list of names to list of list of words
@@ -101,12 +120,19 @@ def compute_word_similarity(name1, name2):
 
 colors = load_colors(colors_file)
 brands = load_brands(brand_file)
+vocabulary_cz = load_vocabulary(vocabulary_file_cz)
+vocabulary_en = load_vocabulary(vocabulary_file_en)
+ 
 df= pd.read_csv(input_file, encoding=encoding)
 df.dropna(inplace=True)
 data = to_list(df.values[:,1])
 
-data = detect_ids_and_colors(data, detect_id=True, detect_color=True)
-print(data)
+data, CNT_VOC, CNT_LEM = detect_ids_and_colors(data, detect_id=True, detect_color=True)
+
+print('Number of words in names that were in manually created vocabulary: ' + CNT_VOC)
+print('Number of words in names that were recognised in Morphoditta: ' + CNT_LEM)
+
+# TODO:
 #sim = compute_word_similarity(data)
 #print(sim)
 

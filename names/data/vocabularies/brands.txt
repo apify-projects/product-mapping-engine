@@ -1,0 +1,15 @@
+lenovo
+hp
+dell
+asus
+acer
+apple
+msi
+microsoft
+umax
+omen
+eurocom
+fujitsu
+gigabyte
+huawei
+toshiba
