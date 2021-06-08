@@ -1,0 +1,74 @@
+#bnd#Lenovo IdeaPad Gaming 3 #id#15IMH05 #id#81Y400K8CK
+#bnd#Acer Nitro 5 #id#NH.Q7JEC.003
+#bnd#Apple MacBook Air 13 M1 #id#MGNE3CZ/A #col#Gold
+#bnd#Apple MacBook Air 13 M1 16 GB / 1 TB SSD #id#Z1250008H #col#Space #col#Gray
+#bnd#Apple MacBook Air 13 M1 16 GB / 512 GB SSD #id#Z12B00053 #col#Gold
+#bnd#Asus Vivobook S15 #id#S533EA-BQ017T
+#bnd#HP EliteBook x360 1030 #id#3ZH02EA
+#bnd#HP ProBook 450 G7 #id#8MH56EA
+#bnd#HP EliteBook 850 G7 #id#1J6F2EA
+#bnd#DELL Latitude 14 5410 #id#14D74
+#bnd#Apple MacBook Air 13 M1 #id#MGN63CZ/A #col#Space #col#Grey
+#bnd#MSI GE66 Raider #id#10SFS-252CZ
+#bnd#Lenovo Gaming 3 #id#15ARH05 #id#82EY00LJCK
+#bnd#Apple MacBook Pro 13" 2020 Touch Bar 512 GB (z0y6000h4) #col#Space #col#Grey
+#bnd#Apple MacBook Air 13'' #id#MVH52SL/A - SK klávesnice
+#bnd#Apple MacBook Pro 16 Touch Bar #id#MVVJ2CZ/A #col#Space #col#Grey
+#bnd#Apple MacBook Air 13 M1 #id#MGN93CZ/A #col#Silver
+#bnd#Asus Zenbook 14 #id#UX435EG-A5001T
+#bnd#Microsoft Surface Pro 7 #id#VDV-00018
+#bnd#DELL XPS 13 2v1 Touch #id#TN-7390-N2-722SW
+#bnd#DELL Inspiron 14 Touch #id#TN-5406-N2-511S
+#bnd#Lenovo IdeaPad Duet #id#3-10IGL5 #id#82AT009ECK
+#bnd#HP EliteBook x360 1040 G6 #id#7KN26EA
+#bnd#Acer Swift 1 #id#NX.HYSEC.001
+#bnd#Lenovo ThinkBook 13s-IML #id#20RR0005CK
+#bnd#DELL Vostro 15 3501 #id#MJ5J6
+#bnd#Lenovo Legion 5 #id#15IMH05H #id#81Y600HPCK
+#bnd#Acer Nitro 5 #id#NH.Q9BEC.001
+#bnd#MSI GL65 Leopard #id#10SDR-438CZ
+#bnd#Apple MacBook Pro 13 M1 16 GB / 256 GB SSD #id#Z11B0005Q #col#Space #col#Gray
+#bnd#Apple MacBook Pro 16 Touch Bar #id#MVVK2CZ/A #col#Space #col#Grey
+#bnd#Apple MacBook Pro 13 M1 #id#MYD92CZ/A
+#bnd#DELL Latitude 14 5410 #id#8PG52
+#bnd#HP EliteBook 845 G7 #id#24Z95EA
+#bnd#Lenovo IdeaPad 3 #id#15ADA05 #id#81W100LWCK
+#bnd#Apple MacBook Pro 13 M1 #id#MYD82CZ/A #col#Space #col#Grey
+#bnd#HP 14s-dq1004nc #id#1V2E5EA
+#bnd#HP EliteBook x360 1040 G6 #id#7KN24EA
+#bnd#MSI Prestige 14 #id#A10RB-035CZ kovový
+#bnd#HP EliteBook x360 830 G7 #id#1J6K8EA
+#bnd#HP Pavilion 13-bb0001nc #id#31F84EA
+#bnd#Apple MacBook Pro 13 M1 16 GB / 1 TB SSD #id#Z11C0003T #col#Space #col#Gray
+#bnd#MSI GS75 Stealth #id#10SFS-053CZ
+#bnd#Acer Predator Triton 300 #id#NH.Q7AEC.001
+#bnd#Asus ROG Strix G15 #id#G512LV-HN237T
+#bnd#Apple MacBook Air 13'' (z0yj00024)
+#bnd#Apple MacBook Air 13'' #id#MVH22CZ/A
+#bnd#Apple MacBook Air 13 M1 #id#MGN63CZ/A #col#Space #col#Grey
+#bnd#Apple MacBook Air 13 M1 #id#MGND3CZ/A #col#Gold
+#bnd#Umax VisionBook 10Wa Tab #id#UMM220V17
+#bnd#HP ProBook x360 11 G5 #id#9VY71ES
+#bnd#Asus Zenbook Flip S 13 #id#UX371EA-HL135R
+#bnd#Asus Zenbook Flip S 13 #id#UX371EA-HL210R
+#bnd#Asus Zenbook Duo #id#UX481FL-HJ159T
+#bnd#Microsoft Surface Laptop Go #id#THH-00046
+#bnd#Acer Swift 3 #id#NX.HSEEC.001
+#bnd#HP 250 G7 #id#175T3EA
+#bnd#Lenovo Legion Slim 7 #id#15IMH5 #id#82BC0059CK
+#bnd#Apple MacBook Air 13 M1 16 GB / 512 GB SSD #id#Z12B00053 #col#Gold
+#bnd#Acer Nitro 5 #id#NH.Q7JEC.002
+#bnd#HP #bnd#OMEN 15-ek0002nc #id#1X2E3EA
+#bnd#Lenovo Legion Creator 7 #id#15IMH05 #id#82EH003MCK
+#bnd#Apple MacBook Air 13'' (z0yk0008y)
+#bnd#Apple MacBook Pro 13" 2020 Touch Bar 512 GB #id#MWP72CZ/A #col#Silver
+#bnd#Lenovo IdeaPad Duet #id#3-10IGL5 #id#82AT009CCK
+#bnd#Lenovo IdeaPad Duet #id#3-10IGL5 #id#82AT009DCK
+#bnd#Acer Swift 5 #id#NX.A6SEC.001
+#bnd#Apple MacBook Pro 13 M1 #id#MYD82CZ/A #col#Space #col#Grey
+#bnd#DELL Vostro 15 3501 #id#3M72V
+#bnd#DELL Latitude 15 3510 #id#(CXDDY)
+#bnd#Lenovo Legion #id#Y540-15IRH #id#81SX00PECK - rozbaleno
+#bnd#Apple MacBook Air 13 M1 16 GB / 512 GB SSD #id#Z1250008G #col#Space #col#Gray
+#bnd#Lenovo IdeaPad 3 #id#15ADA05 #id#81W100P1CK
+#bnd#DELL Latitude 14 3410 #id#N86TN
