@@ -1,0 +1,10 @@
+#bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey
+#bnd#Lenovo ThinkPad #id#E15-IML #col#černá
+#bnd#HP Pavilion Gaming 15-ec1004nc
+Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A
+#bnd#ACER #id#A715-41G-R40P
+#bnd#Lenovo #id#V15-IIL #id#82C500KACK
+#bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá
+#bnd#ASUS ROG Zephyrus G15 #col#černá
+#bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový
+Macbook Air 13"" M1 CZ #col#Zlatý 2020
