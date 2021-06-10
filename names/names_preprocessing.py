@@ -6,13 +6,12 @@ import time
 
 colors_file = 'data/vocabularies/colors.txt'
 brand_file = 'data/vocabularies/brands.txt'
-input_file = 'data/names/names_mall.csv'
-input_file2 = 'data/names/names_czc.csv'
-output_file = 'data/results/names_detected.txt'
-encoding = 'utf-16'
+input_file = 'data/names/names_b.csv'
+output_file = 'data/results/names_b_prepro.txt'
 vocabulary_file_cz = 'data/bigger_corpus/cz_cleaned.csv'
 vocabulary_file_en = 'data/bigger_corpus/en_cleaned.csv'
 ID_LEN = 5
+
 
 def load_colors(colors_file):
     colors = []
@@ -38,7 +37,7 @@ def load_vocabulary(vocabulary_file):
         return [line.rstrip() for line in f]
  
 def write_to_file(data):
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         for d in data:
            f.write(' '.join(d))
            f.write('\n')
@@ -146,21 +145,17 @@ def detect_ids_and_colors(data, detect_id, detect_color, detect_brand, compare_w
 def to_list(data):
     data_list = []
     for d in data:
-        words = [w for w in d.split(" ")]
-        data_list.append(words)
+        words = [w for w in d.split(" ,;")]
+        if words != '':
+            data_list.append(words)
     return data_list
-
-# compute similarity of two names 
-def compute_word_similarity(name1, name2):
-    return 0
-
 
 colors = load_colors(colors_file)
 brands = load_brands(brand_file)
 vocabulary_cz = load_vocabulary(vocabulary_file_cz)
 vocabulary_en = load_vocabulary(vocabulary_file_en)
  
-df= pd.read_csv(input_file, encoding=encoding)
+df= pd.read_csv(input_file, encoding='utf-8')
 df.dropna(inplace=True)
 data = to_list(df.values[:,1])
 
