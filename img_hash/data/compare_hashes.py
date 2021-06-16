@@ -173,14 +173,15 @@ def main():
     data = load_and_parse_data(input_file)
     hashes, names = create_hash_sets(data)
     suma, distance_set = compute_distances(hashes, names, metric=metric, filter_dist=FILTER_DIST)
-    #print(suma)
+    #print(distance_set)
     
     df = pd.DataFrame(distance_set, columns=['image1', 'image2', 'dist'])
     df.to_csv(output_file)
+    save_to_txt(df, output_file_txt)
     
     df = pd.DataFrame(all_dist, columns=['image1', 'image2', 'dist'])
     df.to_csv(output_file_all)
-    save_to_txt(df, output_file_txt)
+    
 if __name__ == "__main__":
     main()
         

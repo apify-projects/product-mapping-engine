@@ -21,10 +21,14 @@ def save_to_file(output_file, name1, name2, score, are_names_same):
         f.write(f'{name1}, {name2}, {score}, {are_names_same}\n')
         
 def main():
-    names = load_file(names_file)
-    images = load_file(images_file)
+    names_data = load_file(names_file)
+    images_data = load_file(images_file)
 
-
+    names = []
+    for i, row in enumerate(names_data):
+        names.append()
+        
+        
 if __name__ == "__main__":
     main()
         
