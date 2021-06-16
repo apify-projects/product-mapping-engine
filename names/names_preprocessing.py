@@ -6,12 +6,15 @@ import time
 
 colors_file = 'data/vocabularies/colors.txt'
 brand_file = 'data/vocabularies/brands.txt'
-input_file = 'data/names/names_b.csv'
-output_file = 'data/results/names_b_prepro.txt'
+input_file = 'data/names/names_100.txt'
+output_file = 'data/results/names_100_prepro.txt'
 vocabulary_file_cz = 'data/bigger_corpus/cz_cleaned.csv'
 vocabulary_file_en = 'data/bigger_corpus/en_cleaned.csv'
 ID_LEN = 5
 
+def load_txt_file(input_file):
+    with open(input_file, encoding='utf-8') as f:
+        return [line.rstrip() for line in f]
 
 def load_colors(colors_file):
     colors = []
@@ -111,6 +114,7 @@ def detect_ids_and_colors(data, detect_id, detect_color, detect_brand, compare_w
     CNT_VOC = 0
     CNT_LEM = 0
     for name in data:
+        #print(name)
         word_list = []
         for word in name:
             if detect_color:
@@ -143,9 +147,10 @@ def detect_ids_and_colors(data, detect_id, detect_color, detect_brand, compare_w
 
 # convert list of names to list of list of words
 def to_list(data):
+    rgx = re.compile("([\w][\w'][\w-]*\w)")
     data_list = []
     for d in data:
-        words = [w for w in d.split(" ,;")]
+        words = rgx.findall(d)
         if words != '':
             data_list.append(words)
     return data_list
@@ -155,9 +160,12 @@ brands = load_brands(brand_file)
 vocabulary_cz = load_vocabulary(vocabulary_file_cz)
 vocabulary_en = load_vocabulary(vocabulary_file_en)
  
-df= pd.read_csv(input_file, encoding='utf-8')
-df.dropna(inplace=True)
-data = to_list(df.values[:,1])
+#df= pd.read_csv(input_file, encoding='utf-8')
+#df.dropna(inplace=True)
+#data = to_list(df.values[:,1])
+
+data = load_txt_file(input_file)
+data = to_list(data) 
 
 compare_words=False
 data, CNT_VOC, CNT_LEM = detect_ids_and_colors(data, detect_id=True, detect_color=True, detect_brand=True, compare_words=compare_words)
