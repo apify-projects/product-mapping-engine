@@ -5,6 +5,7 @@ import pandas as pd
 input_file = 'results/hashes_cropped.json' 
 output_file = 'results/distances_bin_cropped.csv' #'distances.csv'
 output_file_all = 'results/all_dist_bin_cropped.csv' #all_dist.csv
+output_file_txt = 'results/all_dist_bin_cropped.txt'
 metric = 'mean' #binary, mean, thresh
 
 BIT_GROUPS = 4
@@ -158,27 +159,30 @@ def compute_distances(hashes, names, metric, filter_dist):
         # compute total distance of sets images
         mean_total_distance = mean_distance(np.array(distances))
         thresh_total_distance = thresh_distance(np.array(distances))
-        print(distance_set)
+        #print(distance_set)
     return total_dist, distance_set
 
+# save dataframe to txt file
+def save_to_txt(df, output_file):
+    arr = df.to_numpy()
+    with open(output_file,'w') as f:
+        for a in arr:
+            f.write(f'{a[0]}, {a[1]}, {a[2]}\n')
         
 def main():
     data = load_and_parse_data(input_file)
     hashes, names = create_hash_sets(data)
     suma, distance_set = compute_distances(hashes, names, metric=metric, filter_dist=FILTER_DIST)
-    print(suma)
+    #print(suma)
     
     df = pd.DataFrame(distance_set, columns=['image1', 'image2', 'dist'])
     df.to_csv(output_file)
     
     df = pd.DataFrame(all_dist, columns=['image1', 'image2', 'dist'])
     df.to_csv(output_file_all)
-    
+    save_to_txt(df, output_file_txt)
 if __name__ == "__main__":
     main()
-    
-    
-# TODO: jak resit ze 2 obrazky muzou mit jeden stejny nejpodovnejsi
         
     
 

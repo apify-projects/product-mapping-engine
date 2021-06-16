@@ -23,7 +23,6 @@ COS_SIM_WEIGHT = 10
 SAMEWORD_WEIGHT = 0
 
 PRINT_STATS = False
-output_file = 'data/results/scores_100.txt'
 
 
 # remove ids, colors and brands from name
@@ -55,7 +54,7 @@ def load_file(name_file):
     return names
 
 # save names, similarities and whether they are the same to output file
-def save_to_file(name1, name2, score, are_names_same):
+def save_to_file(output_file, name1, name2, score, are_names_same):
     with open(output_file, 'a', encoding='utf-8') as f:
         f.write(f'{name1}, {name2}, {score}, {are_names_same}\n')
 
@@ -93,7 +92,7 @@ def compute_tf_idf(data):
     return df.T
 
 # compute names similarity for 2 names and their indices in dataset
-def compute_similarity_score(n1, i, n2, j):
+def compute_similarity_score(n1, i, n2, j, tf_idfs):
     similarity_score = 0
     name1 = n1.split(' ')
     name2 = n2.split(' ')
@@ -200,6 +199,11 @@ def are_idxs_same(i, j):
         return 1 if (i==j) else 0
     return 1 if (i==j or i+1==j or i+2==j or i+3==j or i+4==j) else 0
 
+# delete output file if it already exists
+def remove_output_file_is_necessary(output_file):
+    if os.path.exists(output_file):
+        os.remove(output_file)
+     
 # QUICK TEST DATA
 # Apple MacBook Air 13 M1 #id#MGNE3CZ/A Gold
 #name1 = "#bnd#Lenovo IdeaPad Gaming 3 #id#15IMH05 #id#81Y400K8CK"
@@ -207,54 +211,63 @@ def are_idxs_same(i, j):
 
 #name1 = '#bnd#Apple MacBook Air 15 M1 #id#MGNE3CZ/A'
 #name2 = '#bnd#Apple MacBook Air 13 M1 #id#MGNE3CZ/A'
-
-if os.path.exists(output_file):
-    os.remove(output_file)
-scores = [] 
-
-
-''' FOR COMPARISON OF NAMES FROM 2 FILES 
-names_list1 = load_file('data/results/names_a_prepro.txt')
-names_list2 = load_file('data/results/names_b_prepro.txt')
-
-names_list1 = lower_case(names_list1)
-names_list2 = lower_case(names_list2)
-
-names_voc1 = remove_colors(names_list1)
-names_voc2 = remove_colors(names_list2)
-
-# tf.idf for creation of vectors of words
-names_voc = names_voc1 + names_voc2
-tf_idfs = compute_tf_idf(names_voc)
-
-for i, n1 in enumerate(names_list1):
-    for j, n2 in enumerate(names_list2):
-        similarity_score = compute_similarity_score(n1, i, n2, j)
-        scores.append([n1, n2, 1 if i==j else 0, similarity_score])
-        save_to_file(n1, n2, similarity_score)
-plot_roc(scores)
- ''' 
- 
- 
-''' FOR COMPARISON OF NAMES FROM 1 FILE  ''' 
-names_list = load_file('data/results/names_100_prepro.txt')
-names_list = lower_case(names_list)
-names_list = remove_colors(names_list)
-
-tf_idfs = compute_tf_idf(names_list)
-for i, n1 in enumerate(names_list):
-    for j, n2 in enumerate(names_list[i+1::]):
-        j = i+1 + j
-        similarity_score = compute_similarity_score(n1, i, n2, j)
-        are_names_same = are_idxs_same(i ,j)
-        
-        #if are_names_same==1 and similarity_score<20:
-        #    print(f'{i}| {names_list[i]} | {j} | {names_list[j]} | {similarity_score}')
-        
-        if PRINT_STATS:
-            print(similarity_score)
+   
+     
+def main():
+    
+    scores = []
+    
+    ''' FOR COMPARISON OF NAMES FROM 2 FILES 
+    output_file = 'data/results/scores_ab.txt'
+    remove_output_file_is_necessary(output_file)
+    
+    names_list1 = load_file('data/results/names_a_prepro.txt')
+    names_list2 = load_file('data/results/names_b_prepro.txt')
+    
+    names_list1 = lower_case(names_list1)
+    names_list2 = lower_case(names_list2)
+    
+    names_voc1 = remove_colors(names_list1)
+    names_voc2 = remove_colors(names_list2)
+    
+    # tf.idf for creation of vectors of words
+    names_voc = names_voc1 + names_voc2
+    tf_idfs = compute_tf_idf(names_voc)
+    
+    for i, n1 in enumerate(names_list1):
+        for j, n2 in enumerate(names_list2):
+            similarity_score = compute_similarity_score(n1, i, n2, j, tf_idfs)
+            are_names_same = 1 if i==j else 0
+            scores.append([n1, n2, are_names_same, similarity_score])
+            save_to_file(output_file, n1, n2, similarity_score, are_names_same)
+    evaluate_dataset(scores)
+    '''
+    
+     
+    ''' FOR COMPARISON OF NAMES FROM 1 FILE   '''
+    output_file = 'data/results/scores_100.txt'
+    remove_output_file_is_necessary(output_file)
+    
+    names_list = load_file('data/results/names_100_prepro.txt')
+    names_list = lower_case(names_list)
+    names_list = remove_colors(names_list)
+    
+    tf_idfs = compute_tf_idf(names_list)
+    for i, n1 in enumerate(names_list):
+        for j, n2 in enumerate(names_list[i+1::]):
+            j = i+1 + j
+            similarity_score = compute_similarity_score(n1, i, n2, j, tf_idfs)
+            are_names_same = are_idxs_same(i ,j)
             
-        scores.append([n1, n2, are_names_same, similarity_score])
-        save_to_file(n1, n2, similarity_score, are_names_same)
-evaluate_dataset(scores)
-
+            #if are_names_same==1 and similarity_score<20:
+            #    print(f'{i}| {names_list[i]} | {j} | {names_list[j]} | {similarity_score}')
+            
+            if PRINT_STATS:
+                print(similarity_score)
+                
+            scores.append([n1, n2, are_names_same, similarity_score])
+            save_to_file(output_file, n1, n2, similarity_score, are_names_same)
+    evaluate_dataset(scores)
+     
+if __name__ == "__main__":
+    main()

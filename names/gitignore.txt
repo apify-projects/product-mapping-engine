@@ -1,4 +1,0 @@
-data/bigger_corpus/en-cs.txt
-data/small_corpus/en-cs.txt
-data/bigger_corpus/en.csv
-data/bigger_corpus/cs.csv

@@ -1,100 +1,100 @@
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 15.166592826272904
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 10.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#ACER #id#A715-41G-R40P, 0.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 10.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#ASUS ROG Zephyrus G15 #col#černá, 10.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-Notebook #bnd#Lenovo Ideapad #id#3-15ADA05 #col#šedý #id#81W100LRCK, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 10.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 110.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-#bnd#Lenovo ThinkPad #id#E15-IML, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 4.678835656197363
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#ACER #id#A715-41G-R40P, 3.8310941371499645
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 10.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-#bnd#Lenovo ThinkPad #id#E15-IML, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 3.8310941371499645
-#bnd#Lenovo ThinkPad #id#E15-IML, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#HP Pavilion Gaming 15-ec1004nc, 10.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#ACER #id#A715-41G-R40P, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-Notebook #bnd#HP Pavilion Gaming 15-ec0602nc #col#černý #id#26F40EA#BCM, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 10.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#ACER #id#A715-41G-R40P, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 3.5587754036191654
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 3.5587754036191654
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-#bnd#Apple MacBook Pro 13 (Touch Bar) M1 8GB #id#512GB 8-core GPU vesmírně #col#šedá (M1 2020), Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#ACER #id#A715-41G-R40P, 50.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 10.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-Notebook #bnd#Acer Aspire 7 #id#A715-41G-R40P #col#černý #id#NH.Q8QEC.004, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 6.7930116240856915
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 10.0
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 16.053148216500478
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#HP Pavilion Gaming 15-ec1004nc, 3.732729974294094
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#ACER #id#A715-41G-R40P, 4.126016564875962
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 60.0
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 4.126016564875962
-Notebook #bnd#Lenovo #id#V15-IIL 15 "6"" i5 8GB" SSD #id#256GB #id#82C500KACK + #id#ZDARMA Antivir Bitdefender Internet Security v hodnotě 699 Kč, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#ACER #id#A715-41G-R40P, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 10.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-#bnd#Acer Nitro 5 Obsidian #col#Black, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#ACER #id#A715-41G-R40P, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 10.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 10.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 10.0
-#bnd#Asus ROG Zephyrus G15 #id#GA502IU-HN090T Brushed #col#Black kovový, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#ACER #id#A715-41G-R40P, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#ASUS ROG Zephyrus G15 #col#černá, 10.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-#bnd#ASUS Zenbook #id#UX425EA #col#šedá, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#Lenovo IdeaPad 3 #id#15ADA05 #col#Platinum #col#Grey, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#Lenovo ThinkPad #id#E15-IML #col#černá, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#HP Pavilion Gaming 15-ec1004nc, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, Notebook #bnd#Apple MacBook Pro 13"" M1 512 GB - #col#Space #col#Grey CZ #id#MYD92CZ/A, 10.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#ACER #id#A715-41G-R40P, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#Lenovo #id#V15-IIL #id#82C500KACK, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#Acer Nitro 5 2020 #id#AN515-44-R69C #col#černá, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#ASUS ROG Zephyrus G15 #col#černá, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, #bnd#Asus Zenbook 14 #id#UX425EA-BM009T #col#Pine #col#Grey celokovový, 0.0
-Notebook #bnd#Apple MacBook Air 13"" M1 256 GB - #col#Gold CZ #id#MGND3CZ/A, Macbook Air 13"" M1 CZ #col#Zlatý 2020, 6.7930116240856915
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 60.0, 1
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 10.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, pavilion gaming 15-ec1004nc, 0.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#lenovo #id#v15-iil #id#82c500kack, 15.563958477345285, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 3.668358141068704, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+notebook #bnd#lenovo ideapad #id#15ada05 #col#šedý #id#81w100lrck, macbook air #col#zlatý 2020, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 10.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 110.0, 1
+#bnd#lenovo thinkpad #id#e15-iml, pavilion gaming 15-ec1004nc, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#lenovo #id#v15-iil #id#82c500kack, 10.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+#bnd#lenovo thinkpad #id#e15-iml, macbook air #col#zlatý 2020, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, pavilion gaming 15-ec1004nc, 5.945260819356627, 1
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+notebook pavilion gaming 15-ec0602nc #col#černý #id#26f40ea bcm, macbook air #col#zlatý 2020, 0.0, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 3.599750117038492, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, pavilion gaming 15-ec1004nc, 0.0, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 10.0, 1
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#acer #id#a715-41g-r40p, 2.7928407209067467, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 2.0585059240436774, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#asus rog zephyrus g15 #col#černá, 6.682775868135973, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 4.856331379756751, 0
+#bnd#apple macbook pro touch bar 8gb 512gb core gpu vesmírně #col#šedá 2020, macbook air #col#zlatý 2020, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, pavilion gaming 15-ec1004nc, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#acer #id#a715-41g-r40p, 60.0, 1
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 10.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#asus rog zephyrus g15 #col#černá, 5.442735411646742, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+notebook #bnd#acer aspire #id#a715-41g-r40p #col#černý #id#q8qec 004, macbook air #col#zlatý 2020, 0.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 10.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 20.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, pavilion gaming 15-ec1004nc, 0.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 4.3866074737688106, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#acer #id#a715-41g-r40p, 6.309260887810069, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#lenovo #id#v15-iil #id#82c500kack, 76.66666666666666, 1
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 0.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+notebook #bnd#lenovo #id#v15-iil 8gb ssd 256gb #id#82c500kack #id#zdarma antivir bitdefender internet security hodnotě 699, macbook air #col#zlatý 2020, 10.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+#bnd#acer nitro obsidian #col#black, pavilion gaming 15-ec1004nc, 0.0, 0
+#bnd#acer nitro obsidian #col#black, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#acer #id#a715-41g-r40p, 10.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 10.0, 1
+#bnd#acer nitro obsidian #col#black, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+#bnd#acer nitro obsidian #col#black, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+#bnd#acer nitro obsidian #col#black, macbook air #col#zlatý 2020, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, pavilion gaming 15-ec1004nc, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#lenovo #id#v15-iil #id#82c500kack, 9.999999999999998, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 6.593072460919903, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#asus rog zephyrus g15 #col#černá, 10.0, 1
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 10.0, 0
+#bnd#asus rog zephyrus g15 #id#ga502iu-hn090t brushed #col#black kovový, macbook air #col#zlatý 2020, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, pavilion gaming 15-ec1004nc, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 4.238808604833689, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#asus rog zephyrus g15 #col#černá, 10.0, 0
+#bnd#asus zenbook #id#ux425ea #col#šedá, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 20.0, 1
+#bnd#asus zenbook #id#ux425ea #col#šedá, macbook air #col#zlatý 2020, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#lenovo ideapad #id#15ada05 #col#platinum #col#grey, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#lenovo thinkpad #id#e15-iml #col#černá, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, pavilion gaming 15-ec1004nc, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, notebook #bnd#apple macbook pro 512 #col#space #col#grey #id#myd92cz, 10.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#acer #id#a715-41g-r40p, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#lenovo #id#v15-iil #id#82c500kack, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#acer nitro 2020 #id#an515-44-r69c #col#černá, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#asus rog zephyrus g15 #col#černá, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, #bnd#asus zenbook #id#ux425ea-bm009t #col#pine #col#grey celokovový, 0.0, 0
+notebook #bnd#apple macbook air 256 #col#gold #id#mgnd3cz, macbook air #col#zlatý 2020, 0.0, 1
