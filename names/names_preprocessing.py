@@ -72,6 +72,12 @@ def is_word_in_vocabulary(word):
         return True
     return False
 
+# check whether string is not parameter
+def is_param(word):
+    rgx = re.compile("^[0-9]+[A-Za-z]+$|^[A-Za-z]+[0-9]+$")
+    if re.match(rgx, word):
+        return True
+    return False
 
 # detect ids in names
 def id_detection(word):
@@ -88,7 +94,8 @@ def id_detection(word):
             return '#id#'+word  
     else:
         word = word.replace("(", "").replace(")", "")
-        return '#id#'+word
+        if not is_param(word):
+            return '#id#'+word
     return word
 
 # detect colors in names

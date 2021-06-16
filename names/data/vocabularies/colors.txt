@@ -30,6 +30,7 @@ oranžová
 orchideová
 plavá
 pleťová
+průhledná
 purpurová
 rajčatová
 růžová
@@ -50,6 +51,7 @@ světle
 tmavě
 světlá
 tmavá
+transparentní
 light
 dark
 alizarin
@@ -59,6 +61,7 @@ amethyst
 apricot
 aqua
 aquamarine
+ash
 asparagus
 auburn
 azure
@@ -170,6 +173,7 @@ tawny
 thistle
 titanium
 tomato
+transparent
 turquoise
 ultramarine
 vermilion
