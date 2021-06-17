@@ -255,7 +255,7 @@ def main():
     tf_idfs = compute_tf_idf(names_list)
     for i, n1 in enumerate(names_list):
         for j, n2 in enumerate(names_list[i+1::]):
-            j = i+1 + j
+            j += i+1
             similarity_score = compute_similarity_score(n1, i, n2, j, tf_idfs)
             are_names_same = are_idxs_same(i ,j)
             

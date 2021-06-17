@@ -3,9 +3,7 @@ import numpy as np
 import pandas as pd
 
 input_file = 'results/hashes_cropped.json' 
-output_file = 'results/distances_bin_cropped.csv' #'distances.csv'
-output_file_all = 'results/all_dist_bin_cropped.csv' #all_dist.csv
-output_file_txt = 'results/all_dist_bin_cropped.txt'
+output_file = 'results/all_dist_bin_cropped.txt'
 metric = 'mean' #binary, mean, thresh
 
 BIT_GROUPS = 4
@@ -33,7 +31,7 @@ def create_hash_sets(data):
     last_name = list(data.keys())[0][:NAME_CHAR_SUBSET]
     hash_set = []
     img_names = []
-    for name, hashval in data.items():
+    for name, hashval in data.items():        
         if name[:NAME_CHAR_SUBSET] == last_name:
             hash_set.append(hashval)
             img_names.append(name)
@@ -45,6 +43,8 @@ def create_hash_sets(data):
             hash_set.append(hashval)
             img_names.append(name)
             last_name = name[:NAME_CHAR_SUBSET]
+    names.append(img_names)
+    hashes.append(hash_set)
     return hashes, names
 
 # takes every 4ths of characters and converts them from hex to dec
@@ -121,7 +121,7 @@ def swap_image_sets(first_hash, first_name, second_hash, second_name):
     return second_hash, second_name, first_hash, first_name
         
 # convert hashes to dec and compute distances between two set of images of one product
-def compute_distances(hashes, names, metric, filter_dist):
+def compute_distances_old(hashes, names, metric, filter_dist):
     total_dist = 0
     distance_set = []
     
@@ -162,25 +162,63 @@ def compute_distances(hashes, names, metric, filter_dist):
         #print(distance_set)
     return total_dist, distance_set
 
-# save dataframe to txt file
-def save_to_txt(df, output_file):
-    arr = df.to_numpy()
+# convert hashes to dec and compute distances between every two set of images of products
+def compute_distances(hashes, names, metric, filter_dist):
+    
+    all_images_distances = []
+    for i, (first_hash, first_name) in enumerate(zip(hashes, names)):
+        image_distances = []
+        total_distances = []
+        for j, (second_hash, second_name) in enumerate(zip(hashes[i+1::], names[i+1::])):
+            j += i+1
+            distances = []
+            first_hash_tranf = []
+            second_hash_transf = []
+            if metric == 'binary':
+                first_hash_tranf = [hex_to_bin(k) for k in first_hash]
+                second_hash_transf = [hex_to_bin(k) for k in second_hash]
+            else:
+                first_hash_tranf = [hex_to_dec(k) for k in first_hash]
+                second_hash_transf = [hex_to_dec(k) for k in second_hash] 
+            
+            # for each image from the first set find the most similar in the second set and check whether is the distance below threshold
+            for num, name in zip(first_hash_tranf, first_name):
+                dist, nearest_name = 0, None
+                if metric == 'binary':
+                    dist, nearest_name = bit_distance(num, name, second_hash_transf, second_name)
+                    if filter_dist and dist>THRESHOLD:
+                        dist, nearest_name = None, None
+                else:
+                    dist, nearest_name = get_nearest_image(num, name, second_hash_transf, second_name)
+                    if filter_dist and dist>THRESHOLD:
+                        dist, nearest_name = None, None
+                
+                image_distances.append([name, nearest_name, dist])
+                distances.append(dist)
+                
+            dst = sum([float(v) for v in distances if v!=None])
+            print(dst)
+            total_distances.append([i, j, dst])
+            # compute total distance of sets images
+            #mean_total_distance = mean_distance(np.array(distances))
+            #thresh_total_distance = thresh_distance(np.array(distances)
+        all_images_distances.append(total_distances)
+    return all_images_distances
+
+# save data to txt file
+def save_to_txt(data, output_file):
     with open(output_file,'w') as f:
-        for a in arr:
-            f.write(f'{a[0]}, {a[1]}, {a[2]}\n')
+        for img_sim_set in data:
+            for one_set in img_sim_set:
+                f.write(f'{one_set[0]}, {one_set[1]}, {one_set[2]}\n')
+
         
 def main():
     data = load_and_parse_data(input_file)
     hashes, names = create_hash_sets(data)
-    suma, distance_set = compute_distances(hashes, names, metric=metric, filter_dist=FILTER_DIST)
-    #print(distance_set)
-    
-    df = pd.DataFrame(distance_set, columns=['image1', 'image2', 'dist'])
-    df.to_csv(output_file)
-    save_to_txt(df, output_file_txt)
-    
-    df = pd.DataFrame(all_dist, columns=['image1', 'image2', 'dist'])
-    df.to_csv(output_file_all)
+
+    distance_set = compute_distances(hashes, names, metric=metric, filter_dist=FILTER_DIST)
+    save_to_txt(distance_set, output_file)
     
 if __name__ == "__main__":
     main()
