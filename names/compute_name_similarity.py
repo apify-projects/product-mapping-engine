@@ -88,8 +88,8 @@ def compute_tf_idf(data):
     df = pd.DataFrame(denselist, columns=feature_names)
     if PRINT_STATS:
         print('Tf.idf matrix score is:')
-        print(df.T)
-    return df.T
+        print(df)
+    return df
 
 # compute names similarity for 2 names and their indices in dataset
 def compute_similarity_score(n1, i, n2, j, tf_idfs):
@@ -129,9 +129,9 @@ def compute_similarity_score(n1, i, n2, j, tf_idfs):
         print(f'Different words: {diff(name1, name2)}')
 
     # cosine similarity of vectors from tf.idf
-    cos_sim = cosine_similarity([tf_idfs.iloc[i].values, tf_idfs.iloc[j+10].values])[0][1]
+    cos_sim = cosine_similarity([tf_idfs.iloc[i].values, tf_idfs.iloc[j].values])[0][1]
     similarity_score += COS_SIM_WEIGHT*cos_sim
-    
+
     if PRINT_STATS:
         print(f'Similarity score is: {similarity_score}')
     return similarity_score
