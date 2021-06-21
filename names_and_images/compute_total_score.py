@@ -86,6 +86,7 @@ def main():
     total_distances = []
     THRESH_IMG = max([float(i.split(',')[2]) for i in images_data])
     #print(max_val)
+    
     for i, (name, img) in enumerate(zip(names_data, images_data)):
         imgs_dst = float(img.split(',')[2])
         name = name.split(',')

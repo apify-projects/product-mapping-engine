@@ -80,6 +80,7 @@ def remove_colors(data):
 
 # compute tf.idf score for given dataset
 def compute_tf_idf(data):
+    data = remove_markers(data)
     vectorizer = TfidfVectorizer(token_pattern='(?u)\\b\\w+\\b',lowercase=False)
     vectors = vectorizer.fit_transform(data)
     feature_names = vectorizer.get_feature_names()
@@ -118,6 +119,8 @@ def compute_similarity_score(n1, i, n2, j, tf_idfs):
             print(f'Ratio of matching brands: {match_ratio}')       
 
     # ratio of the similar words
+    name1 = remove_markers(name1)
+    name2 = remove_markers(name2)
     list1 = set(name1)
     intersection = list1.intersection(name2)
     intersection_list = list(intersection)
