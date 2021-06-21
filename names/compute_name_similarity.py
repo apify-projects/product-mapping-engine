@@ -22,7 +22,7 @@ BRAND_SIMILARITY_SCORE = 10
 COS_SIM_WEIGHT = 10
 SAMEWORD_WEIGHT = 0
 
-PRINT_STATS = False
+PRINT_STATS = True
 
 
 # remove ids, colors and brands from name
@@ -247,7 +247,7 @@ def main():
     '''
     
      
-    ''' FOR COMPARISON OF NAMES FROM 1 FILE   '''
+    ''' FOR COMPARISON OF NAMES FROM 1 FILE  ''' 
     output_file = 'data/results/scores_100.txt'
     remove_output_file_is_necessary(output_file)
     
