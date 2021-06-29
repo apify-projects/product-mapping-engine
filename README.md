@@ -10,7 +10,7 @@ Project for automatic mapping among products from different websites.
       - folder *cropped_masked*
       - folder *cropped_resized*
       - folder *hashes*
-    - scores.txt
+    - `scores.txt`
  
 
 - folder *source*
