@@ -1,11 +1,11 @@
 # Product Mapping Project
 Project for automatic mapping among products from different websites.
 
-# CODE
-## Folder *data*
+## CODE
+### Folder *data*
 Contains all necessary datasets for product mapping
 
-### Folder *preprocessed*
+#### Folder *preprocessed*
 Contains all preprocessed source datasets 
 - folder *dataset_name*
   - folder *names*
@@ -19,7 +19,7 @@ Contains all preprocessed source datasets
     - folder *hashes*
       - contains hashes generated from images
 
-### Folder *source*
+#### Folder *source*
 Contains all source datasets
 - folder *dataset_name*
   - folder *names*
@@ -31,7 +31,7 @@ Contains all source datasets
       - folder *cropped_resized*
       - folder *hashes*
     - 
-### Folder *vocabularies*
+#### Folder *vocabularies*
 Folder containing all the vocabularies and corpus and other stuff for names preprocessing
 - folder *corpus*
   - contains text corpus to parse dictionaries from it
@@ -48,10 +48,10 @@ Folder containing all the vocabularies and corpus and other stuff for names prep
 - colors.txt
   - colors in English and Czech manually extracted from https://www.color-ize.com/color-list.php and https://cs.wikipedia.org/wiki/Seznam_barev
 
-## Folder *results*
+### Folder *results*
 Contains all results after runs of scripts.
 
-### Folder *similarity_score*
+#### Folder *similarity_score*
 - contains all results after computation of names similarity score
 - folder *dataset_name*
   - folder *names*
@@ -62,10 +62,10 @@ Contains all results after runs of scripts.
     - contains similarity of names and images together
 
 
-## Folder *scripts*
+### Folder *scripts*
 This is the folder containing all the necessary scripts for product mapping
 
-### Folder *preprocessing* 
+#### Folder *preprocessing* 
 - folder *corpus_stuff*
   - contains all necessary scripts for corpus preprocessing
   - `corpus_preprocessing.py`
@@ -75,7 +75,7 @@ This is the folder containing all the necessary scripts for product mapping
   - `run_vocab_cleaner.py`
     - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITA
 
-#### Folder *images*
+##### Folder *images*
 This is the folder containing all the necessary scripts for images preprocessing
   - folder image_hash_creator
     - contains javascript code to create hashes from images
@@ -89,13 +89,13 @@ This is the folder containing all the necessary scripts for images preprocessing
     - `run_unify_image_size.py`
       - unify all images in the folder to the chosen shape
   
-#### Folder *names*
+##### Folder *names*
 This is the folder containing all the necessary scripts for names preprocessing
 - `names_preprocessing.py`
 - `run_names_preprocessing.py`
   - preprocess names of products - detects, ids, colors, brands
     
-### Folder *score_computation* 
+#### Folder *score_computation* 
 This is the folder containing all the necessary scripts for similarity score computation
 - folder *images*
   - This folder contains all the necessary scripts for comparison images of the products
@@ -107,21 +107,17 @@ This is the folder containing all the necessary scripts for similarity score com
   - This folder contains all the necessary scripts for comparison names and images of the products
   - `compute_total_score.py`
   - `run_compute_total_score.py`
-    - 
 - folder *names*
   - This folder contains all the necessary scripts for comparison names of the products
   - `compute_name_similarity.py`
   - `run_compute_name_similarity.py`
     - compute similarity between two names according to the ids, brands and cosine similarity of vectors created from all words by tf.idf
 
-## ReadMe.txt
+### ReadMe.txt
 - File that you should definitely read!
 
 
-	- contains imaga data of manually created 10 pairs of products
-	- pairs of products are separated by name 01a_* and 01_b are corresponding pairs
-
-# DATA
+## DATA
 Used and created datasets.
 ### 10_products
 - two files with the same 10 products with different names 
