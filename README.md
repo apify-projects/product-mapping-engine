@@ -72,7 +72,7 @@ This is the folder containing all the necessary scripts for product mapping
   - load corpus file, split Czech and English sentences and create dictionary of unique words for each language 
 - `vocabulary_cleaner.py`
 - `run_vocabulary_cleaner.py`
-  - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITA
+  - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITTA
 
 #### Folder *images*
 This is the folder containing all the necessary scripts for images preprocessing
