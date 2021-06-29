@@ -30,7 +30,7 @@ Contains all source datasets
       - folder *cropped_masked*
       - folder *cropped_resized*
       - folder *hashes*
-    - 
+
 #### Folder *vocabularies*
 Folder containing all the vocabularies and corpus and other stuff for names preprocessing
 - folder *corpus*
