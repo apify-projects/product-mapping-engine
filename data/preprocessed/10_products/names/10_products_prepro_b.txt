@@ -1,0 +1,10 @@
+#bnd#Lenovo IdeaPad #id#15ADA05 #col#Platinum #col#Grey
+#bnd#Lenovo ThinkPad #id#E15-IML #col#černá
+Pavilion Gaming 15-ec1004nc
+Notebook #bnd#Apple MacBook Pro 512 #col#Space #col#Grey #id#MYD92CZ
+#bnd#ACER #id#A715-41G-R40P
+#bnd#Lenovo #id#V15-IIL #id#82C500KACK
+#bnd#Acer Nitro 2020 #id#AN515-44-R69C #col#černá
+#bnd#ASUS ROG Zephyrus G15 #col#černá
+#bnd#Asus Zenbook #id#UX425EA-BM009T #col#Pine #col#Grey celokovový
+Macbook Air #col#Zlatý 2020

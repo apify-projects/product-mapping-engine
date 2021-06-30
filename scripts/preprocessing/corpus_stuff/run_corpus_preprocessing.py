@@ -4,14 +4,14 @@ from corpus_preprocessing import load_and_split_corpus, compute_unique_words_occ
 
 @click.command()
 @click.option('--corpus_file', '-i',
-              default='C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/corpus/source/en-cs.txt',
+              default='C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/source/en-cs.txt',
               required=False, help='Input corpus file to preprocess')
 @click.option('--en_vocabulary_file', '-e',
-              default='C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/corpus/preprocessed/en_dict.csv',
+              default='C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/en_dict.csv',
               required=False,
               help='Output English vocabulary file after preprocessing')
 @click.option('--cz_vocabulary_file', '-c',
-              default='C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/corpus/preprocessed/cz_dict.csv',
+              default='C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/cz_dict.csv',
               required=False,
               help='Output Czech vocabulary wile after preprocessing')
 # Load corpus and create English and Czech dictionary of unique words

@@ -16,11 +16,11 @@ from PIL import Image
               type=int,
               help='Required height for resizing image')
 @click.option('--input_file', '-i',
-              default='C:/Users/kater/PycharmProjects/ProductMapping/data/preprocessed/10_products/images/cropped',
+              default='C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/cropped',
               required=False,
               help='Folder with input images to be resized')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/ProductMapping/data/preprocessed/10_products/images/cropped_resized',
+              default='C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/cropped_resized',
               required=False, help='Folder to store resized images')
 # Load folder with images and resize them to required size
 def main(**kwargs):

@@ -6,10 +6,10 @@ import requests
 
 ID_LEN = 5
 
-COLORS_FILE = 'C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/colors.txt'
-BRANDS_FILE = 'C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/brands.txt'
-VOCABULARY_EN_FILE = 'C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv'
-VOCABULARY_CZ_FILE = 'C:/Users/kater/PycharmProjects/ProductMapping/data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv'
+COLORS_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/colors.txt'
+BRANDS_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/brands.txt'
+VOCABULARY_EN_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv'
+VOCABULARY_CZ_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv'
 
 
 def load_input_file(input_file):
