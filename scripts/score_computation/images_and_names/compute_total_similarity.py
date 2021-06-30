@@ -41,7 +41,7 @@ def evaluate_dataset(scores, threshs, print_stats):
     precs = []
     recs = []
     for t in threshs:
-        pred_labels = [[1 if row[3] > t else 0] for row in scores]
+        pred_labels = [[1 if row[2] > t else 0] for row in scores]
         pred_labels_list.append(pred_labels)
         conf_matrix = confusion_matrix(true_labels, pred_labels)
         acc = accuracy_score(true_labels, pred_labels)
