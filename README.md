@@ -106,6 +106,10 @@ This is the folder containing all the necessary scripts for similarity score com
   - This folder contains all the necessary scripts for comparison names and images of the products
   - `compute_total_similarity.py`
   - `run_compute_total_similarity.py`
+  - `evaluate_classifier.py`
+  - `run_evaluate_classifier.py`
+  - `evaluate.sh`
+    - input is a list of images and names and it makes all preprocessing and score computation at once  
 - folder *names*
   - This folder contains all the necessary scripts for comparison names of the products
   - `compute_name_similarity.py`
