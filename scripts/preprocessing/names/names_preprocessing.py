@@ -3,13 +3,15 @@ import re
 import time
 
 import requests
+import os
 
 ID_LEN = 5
 
-COLORS_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/colors.txt'
-BRANDS_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/brands.txt'
-VOCABULARY_EN_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv'
-VOCABULARY_CZ_FILE = 'C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv'
+CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
+COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
+BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.txt')
+VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
+VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
 
 
 def load_input_file(input_file):
