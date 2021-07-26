@@ -1,2 +1,4 @@
 data/vocabularies/corpus/source/en-cs.txt
 venv/*
+wdc_dataset/data_files/*
+wdc_dataset/dataset/*
