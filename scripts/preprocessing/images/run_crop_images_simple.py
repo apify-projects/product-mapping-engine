@@ -7,11 +7,11 @@ import numpy as np
 
 @click.command()
 @click.option('--input_file', '-i',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/source/10_products/images',
+              default='data/source/10_products/images',
               required=False,
               help='Folder with input images to be cropped')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/cropped',
+              default='data/preprocessed/10_products/images/cropped',
               required=False, help='Folder to store cropped images')
 # Load folder with images and crop them by detection of white surrounding
 def main(**kwargs):

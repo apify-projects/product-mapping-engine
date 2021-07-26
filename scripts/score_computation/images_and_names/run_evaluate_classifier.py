@@ -7,15 +7,15 @@ from scripts.score_computation.names.compute_names_similarity import load_file, 
 
 @click.command()
 @click.option('--names_file', '-n',
-              default='C:/Users/kater/PycharmProjects/product-mapping/results/similarity_score/10_products/names/name_similarity.txt',
+              default='results/similarity_score/10_products/names/name_similarity.txt',
               required=False,
               help='Input file with product names to compute similarity')
 @click.option('--images_file', '-i',
-              default='C:/Users/kater/PycharmProjects/product-mapping/results/similarity_score/10_products/images/hash_distances.txt',
+              default='results/similarity_score/10_products/images/hash_distances.txt',
               required=False,
               help='Input file with product images to compute similarity')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/product-mapping/results/similarity_score/10_products/names_and_images/scores.txt',
+              default='results/similarity_score/10_products/names_and_images/scores.txt',
               required=False, help='Output file with similarity scores of products')
 @click.option('--classifier', '-c', default='linear',
               type=click.Choice(['linear', 'svg']))

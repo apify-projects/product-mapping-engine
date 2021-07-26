@@ -14,11 +14,11 @@ from vocabulary_cleaner import save_vocabulary, load_and_lemmatize_dictionary
               required=False,
               help='Language of input vocabulary')
 @click.option('--input_file', '-i',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/cz_dict.csv',
+              default='data/vocabularies/corpus/preprocessed/cz_dict.csv',
               required=False,
               help='Input vocabulary dictionary file to preprocess')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/vocabularies/corpus/preprocessed/cz_dict_cleaned.txt',
+              default='data/vocabularies/corpus/preprocessed/cz_dict_cleaned.txt',
               required=False, help='Output file with valid uniques words.')
 # Load vocabulary and create vocabulary with unique valid words
 # Switch to load czech or english dictionary to process

@@ -5,11 +5,11 @@ from compute_hashes_similarity import load_and_parse_data, create_hash_sets, sav
 
 @click.command()
 @click.option('--input_file', '-i',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/hashes/hashes_cropped.json',
+              default='data/preprocessed/10_products/images/hashes/hashes_cropped.json',
               required=False,
               help='File with input hashes')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/product-mapping/results/similarity_score/10_products/images/hash_distances.txt',
+              default='results/similarity_score/10_products/images/hash_distances.txt',
               required=False, help='File to store distances of hashes')
 @click.option('--metric', '-m', default='binary', type=click.Choice(['mean', 'binary', 'thresh']),
               help='Metric of hash values distance computation')
