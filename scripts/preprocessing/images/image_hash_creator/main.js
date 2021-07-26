@@ -1,11 +1,12 @@
 const fs = require('fs');
 const { imageHash }= require('image-hash');
 var path = require('path');
-const img_path = 'C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/cropped';
+var img_path = process.argv[2] // product-mapping/data/preprocessed/10_products/images/cropped
 const files = fs.readdirSync(img_path);
 const util = require('util');
-const promisifiedImageHash = util.promisify(imageHash);
-const writeStream = fs.createWriteStream('C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/images/hashes_cropped.json');
+const promisifiedImageHash = util.promisify(imageHash); //product-mapping/data/preprocessed/10_products/images/hashes_cropped.json
+var output_file = process.argv[3]
+const writeStream = fs.createWriteStream(output_file);
 const pathName = writeStream.path;
 
 // Import Apify SDK. For more information, see https://sdk.apify.com/
@@ -15,6 +16,8 @@ Apify.main(async () => {
 	let hashes = [];
 	let imgs = []
 	let data = []
+
+
 
 	for (let i = 0; i < files.length; i++) {
 		var imgPath = path.join(img_path, files[i]);
