@@ -1,2 +1,3 @@
 data/vocabularies/corpus/source/en-cs.txt
 venv/*
+__pycache__
