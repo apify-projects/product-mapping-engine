@@ -6,11 +6,11 @@ from compute_names_similarity import remove_output_file_is_necessary, load_file,
 
 @click.command()
 @click.option('--input_file', '-i',
-              default='C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/names/names_10a_prepro.txt',
+              default='data/preprocessed/10_products/names/names_10a_prepro.txt',
               required=False,
               help='Input file with product names dictionary file to preprocess')
 @click.option('--output_file', '-o',
-              default='C:/Users/kater/PycharmProjects/product-mapping/results/similarity_score/10_products/names/name_similarity.txt',
+              default='results/similarity_score/10_products/names/name_similarity.txt',
               required=False, help='Output file with similarity scores')
 @click.option('--filter_distance', '-f', default=False, type=bool,
               help='Whether filter distance above given thresh')
@@ -29,9 +29,9 @@ def main(**kwargs):
 
     ''' FOR COMPARISON OF NAMES FROM 2 FILES '''
     names_list1 = load_file(
-        'C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/names/10_products_prepro_a.txt')
+        'data/preprocessed/10_products/names/10_products_prepro_a.txt')
     names_list2 = load_file(
-        'C:/Users/kater/PycharmProjects/product-mapping/data/preprocessed/10_products/names/10_products_prepro_b.txt')
+        'data/preprocessed/10_products/names/10_products_prepro_b.txt')
     names_list1 = lower_case(names_list1)
     names_list2 = lower_case(names_list2)
     names_voc1 = remove_colors(names_list1)
