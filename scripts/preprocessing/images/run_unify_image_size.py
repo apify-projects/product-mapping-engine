@@ -16,7 +16,7 @@ from PIL import Image
               type=int,
               help='Required height for resizing image')
 @click.option('--input_file', '-i',
-              default='/data/preprocessed/10_products/images/cropped',
+              default='data/preprocessed/10_products/images/cropped',
               required=False,
               help='Folder with input images to be resized')
 @click.option('--output_file', '-o',
