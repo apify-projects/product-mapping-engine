@@ -48,7 +48,7 @@ def main(**kwargs):
     for i, n1 in enumerate(names_list):
         for j, n2 in enumerate(names_list[i + 1::]):
             j += i + 1
-            similarity_score = compute_similarity_score(kwargs['classifier'], n1, n2, i, j, images_data[i],
+            similarity_score = compute_similarity_score(kwargs['classifier'], n1, n2, i, j, float(images_data[i].split(',')[2]),
                                                         weights, tf_idfs, thresh_img)
             are_products_same = are_idxs_same(i, j)
             scores.append([n1, n2, are_products_same, similarity_score])

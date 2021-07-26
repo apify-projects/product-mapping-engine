@@ -37,14 +37,12 @@ def compute_similarity_score(classifier, n1, n2, i, j, images_similarity, weight
     # detect and compare ids
     id1 = [word for word in name1 if ID_MARK in word]
     id2 = [word for word in name2 if ID_MARK in word]
-    if not id1 == []:
-        match_ratios['id'] = len(set(id1) & set(id2)) / len(id1)
+    match_ratios['id'] = len(set(id1) & set(id2)) / len(id1) if not id1 == [] else 0
 
     # detect and compare brands
     bnd1 = [word for word in name1 if BND_MARK in word]
     bnd2 = [word for word in name2 if BND_MARK in word]
-    if not bnd1 == [] and bnd1 == bnd2:
-        match_ratios['brand'] = len(set(bnd1) & set(bnd2)) / len(bnd1)
+    match_ratios['brand'] = len(set(bnd1) & set(bnd2)) / len(bnd1) if not bnd1 == [] and bnd1 == bnd2 else 0
 
     # ratio of the similar words
     name1 = remove_markers(name1)

@@ -1,3 +1,4 @@
 data/vocabularies/corpus/source/en-cs.txt
+scripts/preprocessing/datasets/wdc_dataset/*
 venv/*
 __pycache__

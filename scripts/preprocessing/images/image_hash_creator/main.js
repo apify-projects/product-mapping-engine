@@ -1,10 +1,10 @@
 const fs = require('fs');
 const { imageHash }= require('image-hash');
 var path = require('path');
-var img_path = process.argv[2] // product-mapping/data/preprocessed/10_products/images/cropped
+var img_path = process.argv[2]
 const files = fs.readdirSync(img_path);
 const util = require('util');
-const promisifiedImageHash = util.promisify(imageHash); //product-mapping/data/preprocessed/10_products/images/hashes_cropped.json
+const promisifiedImageHash = util.promisify(imageHash);
 var output_file = process.argv[3]
 const writeStream = fs.createWriteStream(output_file);
 const pathName = writeStream.path;
