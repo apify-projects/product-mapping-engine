@@ -17,8 +17,8 @@ from compute_total_similarity import load_file, save_to_file, evaluate_dataset, 
               required=False, help='Output file with similarity scores of products')
 @click.option('--name_weight', '-nw', type=int, default=1, help='Weight for names')
 @click.option('--image_weight', '-iw', type=int, default=1, help='Weight for images')
-@click.option('--thresh', '-t', default=[50, 70, 90, 100, 120], type=list,
-              help='Threshold to evaluate accuracy of similarities')
+@click.option('--chunks', '-c', default=5, type=int,
+              help='Number of thresholds to be created to evaluate accuracy of similarities')
 @click.option('--print_stats', '-p', default=False, type=bool,
               help='Whether print statistical values')
 # Load product names and images compute their similarity
@@ -28,7 +28,7 @@ def main(**kwargs):
     distances = compute_distance(images_data, names_data, kwargs['name_weight'],
                                  kwargs['image_weight'], kwargs['print_stats'])
     save_to_file(distances, kwargs['output_file'])
-    evaluate_dataset(distances, kwargs['thresh'], kwargs['print_stats'])
+    evaluate_dataset(distances, kwargs['chunks'], kwargs['print_stats'])
 
 
 if __name__ == "__main__":

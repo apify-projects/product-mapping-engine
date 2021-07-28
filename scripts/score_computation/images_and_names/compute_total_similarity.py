@@ -1,5 +1,6 @@
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+import numpy as np
 from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.metrics import roc_curve, roc_auc_score
 
 
@@ -27,6 +28,18 @@ def save_to_file(data, output_file):
     with open(output_file, 'a', encoding='utf-8') as f:
         for d in data:
             f.write(f'{d[0]}, {d[1]}, {d[2]}, {d[3]}\n')
+
+
+def create_thresh(scores, intervals):
+    """
+    Create dummy threshs from values by sorting them and splitting into k inretvals of the same length
+    @param scores: data to create threshs
+    @param intervals: how many thresh should be created
+    @return: threshs
+    """
+    scores = np.asarray(sorted(scores))
+    subarrays = np.array_split(scores, intervals)
+    return [round(s[-1]) for s in subarrays][:-1]
 
 
 def plot_roc(true_labels, pred_labels_list, threshs, print_stats):
@@ -64,18 +77,19 @@ def plot_roc(true_labels, pred_labels_list, threshs, print_stats):
     plt.show()
 
 
-def evaluate_dataset(scores, threshs, print_stats):
+def evaluate_dataset(scores, chunks, print_stats):
     """
     Eevaluate dataset - compute accuracy, confusion matric and plot ROC
     @param scores: dataset with names similarities
-    @param threshs: threshold to evaluate accuracy of similarities
+    @param chunks: number of threshs to be created
     @return:
     """
     true_labels = [[row[3]] for row in scores]
     pred_labels_list = []
     precs = []
     recs = []
-    for t in threshs:
+    chunks = create_thresh([i[2] for i in scores], chunks)
+    for t in chunks:
         pred_labels = [[1 if row[2] > t else 0] for row in scores]
         pred_labels_list.append(pred_labels)
         conf_matrix = confusion_matrix(true_labels, pred_labels)
@@ -89,7 +103,7 @@ def evaluate_dataset(scores, threshs, print_stats):
             print('Confusion matrix')
             print(conf_matrix)
             print('======')
-    plot_roc(true_labels, pred_labels_list, threshs, print_stats)
+    plot_roc(true_labels, pred_labels_list, chunks, print_stats)
 
 
 def compute_distance(images_data, names_data, name_weight, image_weight, print_stats):
