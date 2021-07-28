@@ -1,19 +1,22 @@
 import csv
+import gzip
+import imghdr
 import json
 import os
-import gzip
-import requests
-import imghdr
 import shutil
 
-DATASET_DIRECTORY  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset")
-IMAGE_DIRECTORY  = os.path.join(DATASET_DIRECTORY, "images")
+import requests
+
+DATASET_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset")
+IMAGE_DIRECTORY = os.path.join(DATASET_DIRECTORY, "images")
 PREPARED_DATASET_PATH = os.path.join(DATASET_DIRECTORY, "product_pairs.csv")
 DATA_FILES_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_files")
 OFFERS_FILE = "offers_english.json.gz"
 
+
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
+
 
 def download_images(pair_index, product_index, pair):
     downloaded_images = 0
@@ -28,7 +31,9 @@ def download_images(pair_index, product_index, pair):
                 if imghdr.what("", h=response.content) is None:
                     continue
 
-                image_file_path = os.path.join(IMAGE_DIRECTORY, 'pair_{}_product_{}_image_{}'.format(pair_index, product_index, downloaded_images + 1))
+                image_file_path = os.path.join(IMAGE_DIRECTORY,
+                                               'pair_{}_product_{}_image_{}'.format(pair_index, product_index,
+                                                                                    downloaded_images + 1))
                 with open(image_file_path, 'wb') as image_file:
                     image_file.write(response.content)
 
@@ -36,12 +41,13 @@ def download_images(pair_index, product_index, pair):
 
     return downloaded_images
 
+
 matchesCount = 10000
 nonMatchToMatchRatio = 1
 nonMatchesCount = matchesCount * nonMatchToMatchRatio
 
 dataFileUrls = {
-    "pairs": { 
+    "pairs": {
         "cameras_train.txt": "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/trainingSubsets/cameras_train.txt",
         "computers_train.txt": "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/trainingSubsets/computers_train.txt",
         "shoes_train.txt": "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/trainingSubsets/shoes_train.txt",
@@ -51,8 +57,8 @@ dataFileUrls = {
         "gs_cameras.txt": "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/gs_cameras.txt",
         "gs_computers.txt": "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/gs_computers.txt"
     },
-    "offers": { 
-        OFFERS_FILE: "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/offers_english.json.gz" 
+    "offers": {
+        OFFERS_FILE: "http://data.dws.informatik.uni-mannheim.de/largescaleproductcorpus/data/offers_english.json.gz"
     }
 }
 if not os.path.exists(DATA_FILES_DIRECTORY):
@@ -73,10 +79,10 @@ for fileType in dataFileUrls:
             response = requests.get(url, allow_redirects=True)
             open(filePath, 'wb').write(response.content)
 
-
 with gzip.open(os.path.join(DATA_FILES_DIRECTORY, OFFERS_FILE), 'r') as offersFile:
     with open(PREPARED_DATASET_PATH, "w") as preprocessedDatasetFile:
-        outputWriter = csv.DictWriter(preprocessedDatasetFile, delimiter=',', quotechar='"', fieldnames=[ "id1", "name1", "image1", "id2", "name2", "image2", "match" ])
+        outputWriter = csv.DictWriter(preprocessedDatasetFile, delimiter=',', quotechar='"',
+                                      fieldnames=["id1", "name1", "image1", "id2", "name2", "image2", "match"])
         outputWriter.writeheader()
 
         offers = {}
@@ -107,7 +113,7 @@ with gzip.open(os.path.join(DATA_FILES_DIRECTORY, OFFERS_FILE), 'r') as offersFi
                         if is_url(image_url):
                             newOffer["image"] = image_url
                             imagedCounter += 1
-            
+
             newOffer["url"] = offer["url"]
             newOffer["id"] = offer["nodeID"] + " " + offer["url"]
 
@@ -175,7 +181,3 @@ with gzip.open(os.path.join(DATA_FILES_DIRECTORY, OFFERS_FILE), 'r') as offersFi
 
         outputWriter.writerows(pairs)
         preprocessedDatasetFile.flush()
-        
-
-
-

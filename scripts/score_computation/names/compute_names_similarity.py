@@ -1,11 +1,11 @@
 import os
 
 import pandas as pd
-from matplotlib import pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
-from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.metrics.pairwise import cosine_similarity
+
+from scripts.evaluate_classifier import plot_roc
 
 ID_MARK = '#id#'
 BND_MARK = '#bnd#'
@@ -197,41 +197,6 @@ def evaluate_dataset(scores, threshs):
             print(conf_matrix)
             print('======')
     plot_roc(true_labels, pred_labels_list, threshs)
-
-
-def plot_roc(true_labels, pred_labels_list, threshs):
-    """
-    Plot roc curve
-    @param true_labels: true labels
-    @param pred_labels_list: predicted labels
-    @param threshs: threshold to evaluate accuracy of similarities
-    @return:
-    """
-    fprs = []
-    tprs = []
-    labels = ''
-    fprs.append(1)
-    tprs.append(1)
-    for t, pred_labels in zip(threshs, pred_labels_list):
-        # calculate auc score and roc curve
-        auc = roc_auc_score(true_labels, pred_labels)
-        fpr, tpr, _ = roc_curve(true_labels, pred_labels)
-        fprs.append(fpr[1])
-        tprs.append(tpr[1])
-        labels += f'thresh={t} AUC={round(auc, 3)}\n'
-        if PRINT_STATS:
-            print(f'ROC AUC={round(auc, 3)}')
-    fprs.append(0)
-    tprs.append(0)
-
-    plt.plot(fprs, tprs, marker='.', label=labels, color='red')
-
-    plt.plot([0, 1], [0, 1], 'b--')
-    plt.title('ROC curve')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend()
-    plt.show()
 
 
 def are_idxs_same(i, j):

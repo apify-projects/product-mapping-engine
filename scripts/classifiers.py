@@ -1,3 +1,6 @@
+from evaluate_classifier import plot_roc
+
+
 class LinearClassifier:
 
     def __init__(self, weights):
@@ -18,5 +21,5 @@ class LinearClassifier:
 
         return outputs
 
-    def render_roc(self):
-        pass
+    def render_roc(self, true_labels, pred_labels_list, threshs, print_stats):
+        plot_roc(true_labels, pred_labels_list, threshs, print_stats)
