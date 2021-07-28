@@ -1,6 +1,6 @@
 data/vocabularies/corpus/source/en-cs.txt
 scripts/preprocessing/datasets/wdc_dataset/*
 venv/*
-wdc_dataset/data_files/*
-wdc_dataset/dataset/*
-__pycache__/*
+data/wdc_dataset/data_files/*
+data/wdc_dataset/dataset/*
+__pycache__
