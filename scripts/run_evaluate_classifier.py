@@ -1,18 +1,21 @@
-import click
 import os
+
+import click
 import pandas as pd
-from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
-from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
+from sklearn.model_selection import train_test_split
+
 from evaluate_classifier import compute_name_similarities
+from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
+from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
+
 
 @click.command()
 @click.option('--dataset_folder', '-d',
-              default='dataset',
+              default='data/wdc_dataset/dataset/preprocessed',
               help='Dataset to use for the evaluation')
 @click.option('--classifier', '-c',
               default='Linear',
               type=click.Choice(['Linear']))
-
 @click.option('--classifier_parameters', '-p',
               default='')
 # Load product names and images compute their similarity
@@ -25,10 +28,11 @@ def main(**kwargs):
     classifier_parameters = kwargs["classifier_parameters"]
     unpacked_classifier_parameters = [] if classifier_parameters == "" else classifier_parameters.split(",")
     # TODO deal with this
-    #classifier = classifier_class(unpacked_classifier_parameters)
+    # classifier = classifier_class(unpacked_classifier_parameters)
     classifier = classifier_class({"words": 1, "cos": 2, "threshold": 0.5})
 
     evaluate_classifier(classifier, data)
+
 
 def preprocess_data(dataset_folder):
     name_similarities_path = os.path.join(dataset_folder, "name_similarities.csv")
@@ -57,14 +61,15 @@ def preprocess_data(dataset_folder):
 
             names = to_list(names)
             names, _, _ = detect_ids_brands_and_colors(names, compare_words=False)
-            names = [ ' '.join(name) for name in names ]
+            names = [' '.join(name) for name in names]
             names = lower_case(names)
             names = remove_colors(names)
             tf_idfs = compute_tf_idf(names)
 
             name_similarities_list = []
             for pair in product_pairs.itertuples():
-                name_similarities = compute_name_similarities(pair.name1, pair.name2, names_by_id[pair.id1], names_by_id[pair.id2], tf_idfs)
+                name_similarities = compute_name_similarities(pair.name1, pair.name2, names_by_id[pair.id1],
+                                                              names_by_id[pair.id2], tf_idfs)
                 name_similarities_list.append(name_similarities)
 
             name_similarities_dataframe = pd.DataFrame(name_similarities_list)
@@ -78,9 +83,7 @@ def preprocess_data(dataset_folder):
     image_similarities = pd.read_csv(image_similarities_path)
     return pd.concat([name_similarities, product_pairs["match"]], axis=1)
 
-def evaluate_classifier(classifier, data):
-    classifier.fit(data)
-    outputs = classifier.predict(data)
+def evaluate_outputs(data, outputs):
     data['match_prediction'] = outputs
     data_count = data.shape[0]
     mismatched = data[data['match_prediction'] != data['match']]
@@ -99,6 +102,15 @@ def evaluate_classifier(classifier, data):
     print("Precision: {}".format(true_positive_count / (true_positive_count + false_positive_count)))
 
     mismatched.to_csv("mismatches.csv")
+
+def evaluate_classifier(classifier, data):
+    train, test = train_test_split(data, test_size=0.25)
+    out_train = classifier.fit(train)
+    out_test = classifier.predict(test)
+    evaluate_outputs(test, out_test)
+
+
+
 
 if __name__ == "__main__":
     main()

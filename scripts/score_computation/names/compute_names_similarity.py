@@ -4,8 +4,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
-
-from scripts.evaluate_classifier import plot_roc
+from scripts.score_computation.images_and_names.compute_total_similarity import plot_roc
 
 ID_MARK = '#id#'
 BND_MARK = '#bnd#'

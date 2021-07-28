@@ -1,6 +1,5 @@
 from scripts.score_computation.images_and_names.compute_total_similarity import plot_roc
 
-
 class LinearClassifier:
 
     def __init__(self, weights):
