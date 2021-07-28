@@ -83,6 +83,7 @@ def preprocess_data(dataset_folder):
     image_similarities = pd.read_csv(image_similarities_path)
     return pd.concat([name_similarities, product_pairs["match"]], axis=1)
 
+
 def evaluate_outputs(data, outputs):
     data['match_prediction'] = outputs
     data_count = data.shape[0]
@@ -103,13 +104,12 @@ def evaluate_outputs(data, outputs):
 
     mismatched.to_csv("mismatches.csv")
 
+
 def evaluate_classifier(classifier, data):
     train, test = train_test_split(data, test_size=0.25)
     out_train = classifier.fit(train)
     out_test = classifier.predict(test)
     evaluate_outputs(test, out_test)
-
-
 
 
 if __name__ == "__main__":
