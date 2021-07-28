@@ -3,4 +3,4 @@ scripts/preprocessing/datasets/wdc_dataset/*
 venv/*
 data/wdc_dataset/data_files/*
 data/wdc_dataset/dataset/*
-__pycache__
+**/__pycache__
