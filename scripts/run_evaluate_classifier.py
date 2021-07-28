@@ -7,7 +7,7 @@ from evaluate_classifier import compute_name_similarities
 
 @click.command()
 @click.option('--dataset_folder', '-d',
-              default='./dataset',
+              default='dataset',
               help='Dataset to use for the evaluation')
 @click.option('--classifier', '-c',
               default='Linear',
