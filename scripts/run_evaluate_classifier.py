@@ -1,5 +1,5 @@
 import os
-
+import json
 import click
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -16,8 +16,8 @@ from score_computation.names.compute_names_similarity import lower_case, remove_
 @click.option('--classifier', '-c',
               default='Linear',
               type=click.Choice(['Linear']))
-@click.option('--classifier_parameters', '-p',
-              default='')
+@click.option('--classifier_parameters_path', '-p',
+              default='classifier_parameters/linear.json')
 # Load product names and images compute their similarity
 def main(**kwargs):
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
@@ -25,11 +25,13 @@ def main(**kwargs):
 
     classifier_class_name = kwargs['classifier'] + "Classifier"
     classifier_class = getattr(__import__('classifiers', fromlist=[classifier_class_name]), classifier_class_name)
-    classifier_parameters = kwargs["classifier_parameters"]
-    unpacked_classifier_parameters = [] if classifier_parameters == "" else classifier_parameters.split(",")
-    # TODO deal with this
-    # classifier = classifier_class(unpacked_classifier_parameters)
-    classifier = classifier_class({"words": 1, "cos": 2, "threshold": 0.5})
+    classifier_parameters_path = kwargs["classifier_parameters_path"]
+    classifier_parameters_json = '{}'
+    with open(classifier_parameters_path, 'r') as classifier_parameters_file:
+        classifier_parameters_json = classifier_parameters_file.read()
+
+    classifier_parameters = json.loads(classifier_parameters_json)
+    classifier = classifier_class(classifier_parameters)
 
     evaluate_classifier(classifier, data)
 
@@ -84,7 +86,7 @@ def preprocess_data(dataset_folder):
     return pd.concat([name_similarities, product_pairs["match"]], axis=1)
 
 
-def evaluate_outputs(data, outputs):
+def evaluate_outputs(data, outputs, data_type):
     data['match_prediction'] = outputs
     data_count = data.shape[0]
     mismatched = data[data['match_prediction'] != data['match']]
@@ -95,21 +97,24 @@ def evaluate_outputs(data, outputs):
     false_positive_count = data[(data['match_prediction'] == 1) & (data['match'] == 0)].shape[0]
     true_negative_count = data[(data['match_prediction'] == 0) & (data['match'] == 0)].shape[0]
     false_negative_count = data[(data['match_prediction'] == 0) & (data['match'] == 1)].shape[0]
-    print("Classifier result attributes")
+    print("Classifier results for {} data".format(data_type))
     print("----------------------------")
     print("Accuracy: {}".format((data_count - mismatched_count) / data_count))
     print("Recall: {}".format(true_positive_count / actual_positive_count))
     print("Specificity: {}".format(true_negative_count / actual_negative_count))
     print("Precision: {}".format(true_positive_count / (true_positive_count + false_positive_count)))
+    print("\n\n")
 
     mismatched.to_csv("mismatches.csv")
 
 
 def evaluate_classifier(classifier, data):
     train, test = train_test_split(data, test_size=0.25)
-    out_train = classifier.fit(train)
+    classifier.fit(train)
+    out_train = classifier.predict(train)
     out_test = classifier.predict(test)
-    evaluate_outputs(test, out_test)
+    evaluate_outputs(train, out_train, "train")
+    evaluate_outputs(test, out_test, "test")
 
 
 if __name__ == "__main__":
