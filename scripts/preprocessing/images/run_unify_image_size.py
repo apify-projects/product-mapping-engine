@@ -1,7 +1,6 @@
-import os
-
 import click
-from PIL import Image
+
+from image_preprocessing import create_output_directory, unify_image_size
 
 
 @click.command()
@@ -24,18 +23,9 @@ from PIL import Image
               required=False, help='Folder to store resized images')
 # Load folder with images and resize them to required size
 def main(**kwargs):
-    try:
-        os.stat(kwargs['output_file'])
-    except:
-        os.mkdir(kwargs['output_file'])
+    create_output_directory(kwargs['output_file'])
 
-    for filename in os.listdir(kwargs['input_file']):
-        if filename.endswith('.jpg'):
-            input_path = os.path.join(kwargs['input_file'], filename)
-            image = Image.open(input_path)
-            new_image = image.resize((kwargs['width'], kwargs['height']))
-            output_path = os.path.join(kwargs['output_file'], filename)
-            new_image.save(output_path)
+    unify_image_size(kwargs['input_file'], kwargs['output_file'], kwargs['width'], kwargs['height'])
 
 
 if __name__ == '__main__':
