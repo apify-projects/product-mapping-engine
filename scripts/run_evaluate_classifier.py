@@ -2,12 +2,13 @@ import os
 import json
 import click
 import pandas as pd
+import subprocess
 from sklearn.model_selection import train_test_split
 
 from evaluate_classifier import compute_name_similarities
 from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
 from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
-
+from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
 
 @click.command()
 @click.option('--dataset_folder', '-d',
@@ -79,7 +80,15 @@ def preprocess_data(dataset_folder):
 
         if True or not image_similarities_exist:
             # TODO delete the next line and fill this
-            product_pairs.to_csv(image_similarities_path, index=False)
+            img_source_dir = os.path.join(dataset_folder, 'images_cropped')
+            img_dir = os.path.join(dataset_folder, 'images')
+            create_output_directory(img_source_dir)
+            # crop_images_contour_detection(img_dir, img_source_dir)
+            hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
+            # subprocess.call(f'node scripts/preprocessing/images/image_hash_creator/main.js {img_source_dir} {hashes_dir}')
+            # ouje! works till here
+            # TODO: compute similarity of hashes
+            #product_pairs.to_csv(image_similarities_path, index=False)
 
     name_similarities = pd.read_csv(name_similarities_path)
     image_similarities = pd.read_csv(image_similarities_path)

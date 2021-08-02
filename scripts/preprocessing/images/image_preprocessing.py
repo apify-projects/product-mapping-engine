@@ -1,3 +1,4 @@
+import imghdr
 import os
 
 import cv2
@@ -56,9 +57,10 @@ def crop_images_contour_detection(input_folder, output_folder):
     @param output_folder: folder to store output images
     @return:
     """
-    max_object = False
-    for filename in os.listdir():
-        if filename.endswith('.jpg'):
+    max_object = True
+    for filename in os.listdir(input_folder):
+        #if filename.endswith('.jpg'):
+        if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
 
@@ -93,14 +95,15 @@ def crop_images_contour_detection(input_folder, output_folder):
                 for i, c in enumerate(contours):
                     x, y, w, h = cv2.boundingRect(c)
                     cropped = image[y:y + h, x:x + w]
-                    cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped)
+                    #cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
+                    #cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
                     if w * h > maxarea:
                         maxy, maxx, maxw, maxh = y, x, w, h
                         maxarea = w * h
 
                 # crop image to the biggest found object
                 cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
-                cv2.imwrite(f'{output_folder}{filename}', cropped)
+                cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
 
 
 def create_output_directory(output_folder):
