@@ -3,6 +3,11 @@ import json
 import click
 import pandas as pd
 import subprocess
+import sys
+
+# Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 from sklearn.model_selection import train_test_split
 
 from evaluate_classifier import compute_name_similarities

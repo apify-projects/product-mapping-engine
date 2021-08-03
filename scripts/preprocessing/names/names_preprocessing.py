@@ -131,7 +131,7 @@ def id_detection(word):
     """
     # check whether is capslock ad whether is not too short
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
-    if not word_sub.isupper() or len(word_sub) < ID_LEN or word in VOCABULARY_CZ or word in VOCABULARY_EN:
+    if (not word_sub.isupper() and word_sub.isalpha()) or len(word_sub) < ID_LEN or word in VOCABULARY_CZ or word in VOCABULARY_EN:
         return word
 
     if word_sub.isnumeric():
@@ -204,6 +204,7 @@ def detect_ids_brands_and_colors(data, compare_words, detect_id=True, detect_col
                 word = brand_detection(word)
             if detect_id:
                 word = id_detection(word)
+
             word_list.append(word)
 
             # compute number of words that are in dictionary and that were found in Morphoditta
