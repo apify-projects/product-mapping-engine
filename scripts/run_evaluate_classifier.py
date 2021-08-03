@@ -76,11 +76,19 @@ def preprocess_data(dataset_folder):
 
             name_similarities_list = []
             for pair in product_pairs.itertuples():
-                name_similarities = compute_name_similarities(pair.name1, pair.name2, names_by_id[pair.id1],
-                                                              names_by_id[pair.id2], tf_idfs)
+                name1_index = names_by_id[pair.id1]
+                name2_index = names_by_id[pair.id2]
+                name_similarities = compute_name_similarities(
+                    names[name1_index],
+                    names[name2_index],
+                    name1_index,
+                    name2_index,
+                    tf_idfs
+                )
                 name_similarities_list.append(name_similarities)
 
             name_similarities_dataframe = pd.DataFrame(name_similarities_list)
+            name_similarities_dataframe.fillna(0, inplace=True)
             name_similarities_dataframe.to_csv(name_similarities_path, index=False)
 
         if True or not image_similarities_exist:
