@@ -86,7 +86,7 @@ def crop_images_contour_detection(input_folder, output_folder):
             dilate = cv2.dilate(canny, kernel, iterations=1)
 
             # finding contours
-            contours, hierarchies = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            (_, contours, _) = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if max_object:
                 # select max object in the picture

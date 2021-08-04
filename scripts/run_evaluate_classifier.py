@@ -5,8 +5,9 @@ import pandas as pd
 import subprocess
 import sys
 
+current_directory = os.path.dirname(os.path.realpath(__file__))
 # Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+sys.path.append(os.path.join(current_directory, ".."))
 
 from sklearn.model_selection import train_test_split
 
@@ -58,7 +59,7 @@ def preprocess_data(dataset_folder):
         if pair.image1 > 0 and pair.image2 > 0:
             imaged_count += 1
 
-    if True or not name_similarities_exist or not image_similarities_exist:
+    if not name_similarities_exist or not image_similarities_exist:
         if not name_similarities_exist:
             names = []
             names_by_id = {}
@@ -92,27 +93,35 @@ def preprocess_data(dataset_folder):
             name_similarities_dataframe.fillna(0, inplace=True)
             name_similarities_dataframe.to_csv(name_similarities_path, index=False)
 
-        if True or not image_similarities_exist:
+        if not image_similarities_exist:
             img_source_dir = os.path.join(dataset_folder, 'images_cropped')
             img_dir = os.path.join(dataset_folder, 'images')
             create_output_directory(img_source_dir)
-            # crop_images_contour_detection(img_dir, img_source_dir)
+            crop_images_contour_detection(img_dir, img_source_dir)
             hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
-            #subprocess.call(f'node scripts/preprocessing/images/image_hash_creator/main.js {img_source_dir} {hashes_dir}')
+            script_dir = os.path.join(current_directory, "preprocessing/images/image_hash_creator/main.js")
+            subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
 
             data = load_and_parse_data(hashes_dir)
             hashes, names = create_hash_sets_wdc(data)
-            # ouje! works till here
-            image_similarities = compute_distances_wdc(hashes, names, metric='binary',
-                                             filter_dist=False,
+            imaged_pairs_similarities = compute_distances_wdc(hashes, names, metric='binary',
+                                             filter_dist=True,
                                              thresh=0.9)
+
+            # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
+            image_similarities = []
+            for x in range(total_count):
+                image_similarities.append(0)
+            for index, similarity in imaged_pairs_similarities:
+                image_similarities[index] = similarity
+
             image_similarities_dataframe = pd.DataFrame(image_similarities, columns=['hash_similarity'])
             image_similarities_dataframe.fillna(0, inplace=True)
             image_similarities_dataframe.to_csv(image_similarities_path, index=False)
 
     name_similarities = pd.read_csv(name_similarities_path)
     image_similarities = pd.read_csv(image_similarities_path)
-    return pd.concat([name_similarities, product_pairs["match"]], axis=1)
+    return pd.concat([name_similarities, image_similarities, product_pairs["match"]], axis=1)
 
 
 def evaluate_outputs(data, outputs, data_type):
@@ -144,6 +153,7 @@ def evaluate_classifier(classifier, data):
     out_test = classifier.predict(test)
     evaluate_outputs(train, out_train, "train")
     evaluate_outputs(test, out_test, "test")
+    # TODO generate ROC curve
 
 
 if __name__ == "__main__":

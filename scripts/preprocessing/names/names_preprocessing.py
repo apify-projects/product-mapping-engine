@@ -176,9 +176,14 @@ def brand_detection(word):
     @param word: word to be checked
     @return: word with marker whether it is a brand
     """
+    is_brand = False
+
     if word.lower() in BRANDS:
-        return "#bnd#" + word
-    return word
+        is_brand = True
+    elif word.isalpha() and len(word) < ID_LEN and word.isupper():
+        is_brand = True
+
+    return "#bnd#" + word if is_brand else word
 
 
 def detect_ids_brands_and_colors(data, compare_words, detect_id=True, detect_color=True, detect_brand=True):
@@ -194,6 +199,9 @@ def detect_ids_brands_and_colors(data, compare_words, detect_id=True, detect_col
     data_list = []
     cnt_voc = 0
     cnt_lem = 0
+
+    word_statistics = {}
+
     for name in data:
         # print(name)
         word_list = []
@@ -232,12 +240,13 @@ def to_list(data):
     @param data: input list on names
     @return: list of names where each name is a list of words
     """
-    rgx = re.compile("([\w][\w'][\w-]*\w)")
+    rgx = re.compile("(\w+['-]?[\w]*)")
     data_list = []
     for d in data:
         words = rgx.findall(d)
         if words != '':
             data_list.append(words)
+
     return data_list
 
 

@@ -3,5 +3,6 @@
   "brand": 3,
   "words": 1,
   "cos": 2,
+  "hash_similarity": 1,
   "threshold": 0.5
 }

@@ -171,6 +171,7 @@ def compute_distances_wdc(hashes, names, metric, filter_dist, thresh):
     """
     pair_similarities = []
     for hash_set, names_set in zip(hashes, names):
+        pair_index = int(names_set[0].split('_')[0].split('pair')[1])
         first_product = []
         second_product = []
         first_name = names_set[0].split('_')[1]
@@ -180,7 +181,7 @@ def compute_distances_wdc(hashes, names, metric, filter_dist, thresh):
             else:
                 second_product.append([h, n])
         if len(first_product) == 0 or len(second_product) == 0:
-            pair_similarities.append(0)
+            pair_similarities.append((pair_index, 0))
             continue
         for (first_hash, first_name) in first_product:
             for (second_hash, second_name) in second_product:
@@ -203,8 +204,8 @@ def compute_distances_wdc(hashes, names, metric, filter_dist, thresh):
 
                 similarities.append(sim)
         # for each image from the first set find the most similar in the second set and check whether is the distance below threshold
-        sim = sum([float(s) for s in similarities if s != None])
-        pair_similarities.append(sim)
+        sim = sum([float(s) for s in similarities if s is not None])
+        pair_similarities.append((pair_index, sim))
 
     return pair_similarities
 
