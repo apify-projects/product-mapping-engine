@@ -195,7 +195,7 @@ def evaluate_dataset(scores, threshs):
             print('Confusion matrix')
             print(conf_matrix)
             print('======')
-    plot_roc(true_labels, pred_labels_list, threshs)
+    plot_roc(true_labels, pred_labels_list, threshs, print_stats=False)
 
 
 def are_idxs_same(i, j):

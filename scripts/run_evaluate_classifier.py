@@ -14,6 +14,7 @@ from evaluate_classifier import compute_name_similarities
 from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
 from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
+from scripts.score_computation.images.compute_hashes_similarity import load_and_parse_data, create_hash_sets_wdc, save_to_txt_wdc, compute_distances_wdc
 
 @click.command()
 @click.option('--dataset_folder', '-d',
@@ -23,7 +24,7 @@ from scripts.preprocessing.images.image_preprocessing import crop_images_contour
               default='Linear',
               type=click.Choice(['Linear']))
 @click.option('--classifier_parameters_path', '-p',
-              default='classifier_parameters/linear.json')
+              default='scripts/classifier_parameters/linear.json')
 # Load product names and images compute their similarity
 def main(**kwargs):
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
@@ -92,16 +93,22 @@ def preprocess_data(dataset_folder):
             name_similarities_dataframe.to_csv(name_similarities_path, index=False)
 
         if True or not image_similarities_exist:
-            # TODO delete the next line and fill this
             img_source_dir = os.path.join(dataset_folder, 'images_cropped')
             img_dir = os.path.join(dataset_folder, 'images')
             create_output_directory(img_source_dir)
             # crop_images_contour_detection(img_dir, img_source_dir)
             hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
-            # subprocess.call(f'node scripts/preprocessing/images/image_hash_creator/main.js {img_source_dir} {hashes_dir}')
+            #subprocess.call(f'node scripts/preprocessing/images/image_hash_creator/main.js {img_source_dir} {hashes_dir}')
+
+            data = load_and_parse_data(hashes_dir)
+            hashes, names = create_hash_sets_wdc(data)
             # ouje! works till here
-            # TODO: compute similarity of hashes
-            #product_pairs.to_csv(image_similarities_path, index=False)
+            image_similarities = compute_distances_wdc(hashes, names, metric='binary',
+                                             filter_dist=False,
+                                             thresh=0.9)
+            image_similarities_dataframe = pd.DataFrame(image_similarities, columns=['hash_similarity'])
+            image_similarities_dataframe.fillna(0, inplace=True)
+            image_similarities_dataframe.to_csv(image_similarities_path, index=False)
 
     name_similarities = pd.read_csv(name_similarities_path)
     image_similarities = pd.read_csv(image_similarities_path)

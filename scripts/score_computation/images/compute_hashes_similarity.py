@@ -49,6 +49,34 @@ def create_hash_sets(data):
     return hashes, names
 
 
+def create_hash_sets_wdc(data):
+    NAME_CHAR_SUBSET = 6
+    hashes = []
+    names = []
+    last_name = list(data.keys())[0].split('_')
+    last_name = last_name[0] + last_name[1]
+    img_names = []
+    hash_set = []
+    for orig_name, hashval in data.items():
+        orig_name = orig_name.split('_')
+        name = orig_name[0] + orig_name[1]
+        orig_name = f'{orig_name[0]}{orig_name[1]}_{orig_name[2]}{orig_name[3]}_{orig_name[4]}{orig_name[5]}'
+        if name == last_name:
+            hash_set.append(hashval)
+            img_names.append(orig_name)
+        else:
+            hashes.append(hash_set)
+            names.append(img_names)
+            hash_set = []
+            img_names = []
+            hash_set.append(hashval)
+            img_names.append(orig_name)
+            last_name = name
+    names.append(img_names)
+    hashes.append(hash_set)
+    return hashes, names
+
+
 def hex_to_dec(hex_val):
     """
     Takes every groups of BIT_GROUPS characters and converts them from hex to dec
@@ -103,7 +131,7 @@ def get_nearest_image(img, name, imgset, names):
     return dist, nearest_name
 
 
-def bit_distance(img, name, imgset, names):
+def bit_distance_old(img, name, imgset, names):
     """
     Find one image in the image set for given image with the highest number of matching bits
     @param img: image to be compared
@@ -123,6 +151,62 @@ def bit_distance(img, name, imgset, names):
             match = matches
             nearest_name = name2
     return match / len(img), nearest_name
+
+def bit_distance(hash1, hash2):
+    matches = 0
+    for i1, i2 in zip(hash1, hash2):
+        if i1 == i2:
+            matches += 1
+    return matches / len(hash1)
+
+def compute_distances_wdc(hashes, names, metric, filter_dist, thresh):
+    """
+    Convert hashes to dec or binary and compute distances between every two set of images of products
+    @param hashes: set of hashes of images
+    @param names: set of image names
+    @param metric: metric of computing the distance
+    @param filter_dist: whether the images that are too far should be filtered or not
+    @param thresh: thresh value above which the images should be filtered
+    @return: distances of all images
+    """
+    pair_similarities = []
+    for hash_set, names_set in zip(hashes, names):
+        first_product = []
+        second_product = []
+        first_name = names_set[0].split('_')[1]
+        for h, n in zip(hash_set, names_set):
+            if n.split('_')[1] == first_name:
+                first_product.append([h, n])
+            else:
+                second_product.append([h, n])
+        if len(first_product) == 0 or len(second_product) == 0:
+            pair_similarities.append(0)
+            continue
+        for (first_hash, first_name) in first_product:
+            for (second_hash, second_name) in second_product:
+                similarities = []
+
+                if metric == 'binary':
+                    first_hash_tranf = [hex_to_bin(k) for k in first_hash]
+                    second_hash_transf = [hex_to_bin(k) for k in second_hash]
+                else:
+                    first_hash_tranf = [hex_to_dec(k) for k in first_hash]
+                    second_hash_transf = [hex_to_dec(k) for k in second_hash]
+
+                if metric == 'binary':
+                    sim = bit_distance(first_hash_tranf, second_hash_transf)
+                else:
+                    # TODO: opravit
+                    sim, nearest_name = get_nearest_image(first_hash_tranf, first_name, second_hash_transf, second_name)
+                if filter_dist and sim > thresh:
+                    sim = None
+
+                similarities.append(sim)
+        # for each image from the first set find the most similar in the second set and check whether is the distance below threshold
+        sim = sum([float(s) for s in similarities if s != None])
+        pair_similarities.append(sim)
+
+    return pair_similarities
 
 
 def compute_distances(hashes, names, metric, filter_dist, thresh):
@@ -181,3 +265,14 @@ def save_to_txt(data, output_file):
         for img_sim_set in data:
             for one_set in img_sim_set:
                 f.write(f'{one_set[0]}, {one_set[1]}, {one_set[2]}\n')
+
+def save_to_txt_wdc(data, output_file):
+    """
+    Save data to txt file
+    @param data: data to save
+    @param output_file: file to save data
+    @return:
+    """
+    with open(output_file, 'w') as f:
+        for d in data:
+            f.write(f'{d}\n')
