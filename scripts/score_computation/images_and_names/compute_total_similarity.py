@@ -39,7 +39,7 @@ def create_thresh(scores, intervals):
     """
     scores = np.asarray(sorted(scores))
     subarrays = np.array_split(scores, intervals)
-    return [round(s[-1]) for s in subarrays][:-1]
+    return [(s[-1]) for s in subarrays][:-1]
 
 
 def plot_roc(true_labels, pred_labels_list, threshs, print_stats):
@@ -61,8 +61,8 @@ def plot_roc(true_labels, pred_labels_list, threshs, print_stats):
         fpr, tpr, _ = roc_curve(true_labels, pred_labels)
         fprs.append(fpr[1])
         tprs.append(tpr[1])
-        labels += f'thresh={t} AUC={round(auc, 3)}\n'
         if print_stats:
+            labels += f'thresh={round(t,3)} AUC={round(auc, 3)}\n'
             print(f'ROC AUC={round(auc, 3)}')
     fprs.append(0)
     tprs.append(0)

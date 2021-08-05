@@ -1,6 +1,7 @@
 import os
 import json
 import click
+import numpy as np
 import pandas as pd
 import subprocess
 import sys
@@ -12,6 +13,7 @@ sys.path.append(os.path.join(current_directory, ".."))
 from sklearn.model_selection import train_test_split
 
 from evaluate_classifier import compute_name_similarities
+from scripts.score_computation.images_and_names.compute_total_similarity import plot_roc, create_thresh
 from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
 from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
@@ -149,10 +151,18 @@ def evaluate_outputs(data, outputs, data_type):
 def evaluate_classifier(classifier, data):
     train, test = train_test_split(data, test_size=0.25)
     classifier.fit(train)
-    out_train = classifier.predict(train)
-    out_test = classifier.predict(test)
+    out_train, scores_train = classifier.predict(train)
+    out_test, scores_test = classifier.predict(test)
     evaluate_outputs(train, out_train, "train")
     evaluate_outputs(test, out_test, "test")
+    threshs = create_thresh(scores_train, 10)
+    out_train = []
+    out_test = []
+    for t in threshs:
+        out_train.append([0 if score < t else 1 for score in scores_train])
+        out_test.append([0 if score < t else 1 for score in scores_test])
+    plot_roc(train['match'].tolist(), out_train, threshs, print_stats=False)
+    plot_roc(test['match'].tolist(), out_test, threshs, print_stats=False)
     # TODO generate ROC curve
 
 

@@ -15,7 +15,7 @@ class LinearClassifier:
     def predict(self, data):
         scores = self.model.predict(data.drop(columns=['match']))
         outputs = [ 0 if score < self.weights['threshold'] else 1 for score in scores ]
-        return outputs
+        return outputs, scores
 
     def render_roc(self, true_labels, pred_labels_list, threshs, print_stats):
         plot_roc(true_labels, pred_labels_list, threshs, print_stats)
