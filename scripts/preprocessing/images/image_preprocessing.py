@@ -1,6 +1,6 @@
 import imghdr
 import os
-
+import shutil
 import cv2
 import numpy as np
 from PIL import Image
@@ -15,8 +15,8 @@ def unify_image_size(input_folder, output_folder, width, height):
     @param height: required height of images
     @return:
     """
-    for filename in os.listdir():
-        if filename.endswith('.jpg'):
+    for filename in os.listdir(input_folder):
+        if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = Image.open(input_path)
             new_image = image.resize((width, height))
@@ -32,7 +32,7 @@ def crop_images_simple(input_folder, output_folder):
     @return:
     """
     for filename in os.listdir(input_folder):
-        if filename.endswith('.jpg'):
+        if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
 
@@ -59,7 +59,7 @@ def crop_images_contour_detection(input_folder, output_folder):
     """
     max_object = True
     for filename in os.listdir(input_folder):
-        #if filename.endswith('.jpg'):
+        # if filename.endswith('.jpg'):
         if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
@@ -95,8 +95,8 @@ def crop_images_contour_detection(input_folder, output_folder):
                 for i, c in enumerate(contours):
                     x, y, w, h = cv2.boundingRect(c)
                     cropped = image[y:y + h, x:x + w]
-                    #cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
-                    #cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+                    # cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
+                    # cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
                     if w * h > maxarea:
                         maxy, maxx, maxw, maxh = y, x, w, h
                         maxarea = w * h
@@ -108,11 +108,10 @@ def crop_images_contour_detection(input_folder, output_folder):
 
 def create_output_directory(output_folder):
     """
-    Check whether output directory exists and eventually create it
+    Check whether output directory exists and emtpy it or eventually create it
     @param output_folder: output folder to be checked
     @return:
     """
-    try:
-        os.stat(output_folder)
-    except:
-        os.mkdir(output_folder)
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+    os.mkdir(output_folder)

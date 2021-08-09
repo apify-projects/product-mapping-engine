@@ -1,10 +1,10 @@
-import os
 import json
-import click
-import numpy as np
-import pandas as pd
+import os
 import subprocess
 import sys
+
+import click
+import pandas as pd
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 # Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
@@ -12,20 +12,22 @@ sys.path.append(os.path.join(current_directory, ".."))
 
 from sklearn.model_selection import train_test_split
 
-from evaluate_classifier import compute_name_similarities
-from scripts.score_computation.images_and_names.compute_total_similarity import plot_roc, create_thresh
+from scripts.evaluate_classifier import plot_roc, create_thresh
 from preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
-from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
+from score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf, \
+    compute_name_similarities
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
-from scripts.score_computation.images.compute_hashes_similarity import load_and_parse_data, create_hash_sets_wdc, save_to_txt_wdc, compute_distances_wdc
+from scripts.score_computation.images.compute_hashes_similarity import load_and_parse_data, create_hash_sets, \
+    compute_distances
+
 
 @click.command()
 @click.option('--dataset_folder', '-d',
               default='data/wdc_dataset/dataset/preprocessed',
               help='Dataset to use for the evaluation')
 @click.option('--classifier', '-c',
-              default='Linear',
-              type=click.Choice(['Linear']))
+              default='Svm',
+              type=click.Choice(['Linear', 'Svm']))
 @click.option('--classifier_parameters_path', '-p',
               default='scripts/classifier_parameters/linear.json')
 # Load product names and images compute their similarity
@@ -43,7 +45,7 @@ def main(**kwargs):
     classifier_parameters = json.loads(classifier_parameters_json)
     classifier = classifier_class(classifier_parameters)
 
-    evaluate_classifier(classifier, data)
+    evaluate_classifier(classifier, classifier_class_name, data)
 
 
 def preprocess_data(dataset_folder):
@@ -105,10 +107,10 @@ def preprocess_data(dataset_folder):
             subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
 
             data = load_and_parse_data(hashes_dir)
-            hashes, names = create_hash_sets_wdc(data)
-            imaged_pairs_similarities = compute_distances_wdc(hashes, names, metric='binary',
-                                             filter_dist=True,
-                                             thresh=0.9)
+            hashes, names = create_hash_sets(data)
+            imaged_pairs_similarities = compute_distances(hashes, names, metric='binary',
+                                                          filter_dist=True,
+                                                          thresh=0.9)
 
             # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
             image_similarities = []
@@ -148,7 +150,7 @@ def evaluate_outputs(data, outputs, data_type):
     mismatched.to_csv("mismatches.csv")
 
 
-def evaluate_classifier(classifier, data):
+def evaluate_classifier(classifier, classifier_class_name, data):
     train, test = train_test_split(data, test_size=0.25)
     classifier.fit(train)
     out_train, scores_train = classifier.predict(train)
@@ -161,9 +163,8 @@ def evaluate_classifier(classifier, data):
     for t in threshs:
         out_train.append([0 if score < t else 1 for score in scores_train])
         out_test.append([0 if score < t else 1 for score in scores_test])
-    plot_roc(train['match'].tolist(), out_train, threshs, print_stats=False)
-    plot_roc(test['match'].tolist(), out_test, threshs, print_stats=False)
-    # TODO generate ROC curve
+    plot_roc(train['match'].tolist(), out_train, threshs, classifier_class_name, print_stats=False, )
+    plot_roc(test['match'].tolist(), out_test, threshs, classifier_class_name, print_stats=False)
 
 
 if __name__ == "__main__":

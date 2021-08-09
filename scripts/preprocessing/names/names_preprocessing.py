@@ -1,17 +1,19 @@
 import json
+import os
 import re
 import time
 
 import requests
-import os
 
 ID_LEN = 5
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
 BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.txt')
-VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
-VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
+VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
+                                  '../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
+VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
+                                  '../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
 
 
 def load_input_file(input_file):
@@ -131,7 +133,8 @@ def id_detection(word):
     """
     # check whether is capslock ad whether is not too short
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
-    if (not word_sub.isupper() and word_sub.isalpha()) or len(word_sub) < ID_LEN or word in VOCABULARY_CZ or word in VOCABULARY_EN:
+    if (not word_sub.isupper() and word_sub.isalpha()) or len(
+            word_sub) < ID_LEN or word in VOCABULARY_CZ or word in VOCABULARY_EN:
         return word
 
     if word_sub.isnumeric():
@@ -147,7 +150,6 @@ def id_detection(word):
     return word
 
 
-# detect colors in names
 def color_detection(word):
     """
     Check whether word is not in list of colors
