@@ -1,6 +1,6 @@
 import click
 
-from scripts.preprocessing.names.names_preprocessing import load_input_file, detect_ids_brands_and_colors, write_to_file
+from scripts.preprocessing.names.names_preprocessing import to_list, detect_ids_brands_and_colors
 
 
 @click.command()
@@ -11,9 +11,11 @@ from scripts.preprocessing.names.names_preprocessing import load_input_file, det
 @click.option('--output_file', '-o',
               default='test/data/10_products/dataset/preprocessed/names/names_products_1_prepro.csv',
               required=False, help='Output preprocessed file with product names')
-# Load product names and search for ids, brands, colors and parameters
+# Load product names and search for ids, brands, colors and parameters and save the preprocessed product names to output file
 def main(**kwargs):
-    data = load_input_file(kwargs['input_file'])
+    with open(kwargs['input_file'], encoding='utf-8') as f:
+        data = [line.rstrip() for line in f]
+    data = to_list(data)
 
     compare_words = False
     data, cnt_voc, cnt_lem = detect_ids_brands_and_colors(data, compare_words=compare_words)
@@ -21,7 +23,10 @@ def main(**kwargs):
         print('Number of words in names that were in manually created vocabulary: ' + str(cnt_voc))
         print('Number of words in names that were recognised in Morphoditta: ' + str(cnt_lem))
 
-    write_to_file(data, kwargs['output_file'])
+    with open(kwargs['output_file'], 'w', encoding='utf-8') as f:
+        for d in data:
+            f.write(' '.join(d))
+            f.write('\n')
 
 
 if __name__ == '__main__':

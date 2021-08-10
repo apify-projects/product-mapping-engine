@@ -1,23 +1,20 @@
 const fs = require('fs');
+const util = require('util');
+const Apify = require('apify');
 const { imageHash }= require('image-hash');
+const promisifiedImageHash = util.promisify(imageHash);
 var path = require('path');
 var img_path = process.argv[2]
-const files = fs.readdirSync(img_path);
-const util = require('util');
-const promisifiedImageHash = util.promisify(imageHash);
 var output_file = process.argv[3]
 const writeStream = fs.createWriteStream(output_file);
 const pathName = writeStream.path;
+const files = fs.readdirSync(img_path);
 
-// Import Apify SDK. For more information, see https://sdk.apify.com/
-const Apify = require('apify');
-
+// Create images hashes of images in given input folder and store image hashes to given output folder
 Apify.main(async () => {
 	let hashes = [];
 	let imgs = []
 	let data = []
-
-
 
 	for (let i = 0; i < files.length; i++) {
 		var imgPath = path.join(img_path, files[i]);

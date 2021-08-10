@@ -8,7 +8,7 @@ from PIL import Image
 
 def unify_image_size(input_folder, output_folder, width, height):
     """
-    Unify size of images
+    Unify size of images to given shapes
     @param input_folder: folder with input images
     @param output_folder: folder to store output images
     @param width: required width of images
@@ -59,7 +59,6 @@ def crop_images_contour_detection(input_folder, output_folder):
     """
     max_object = True
     for filename in os.listdir(input_folder):
-        # if filename.endswith('.jpg'):
         if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
@@ -108,7 +107,7 @@ def crop_images_contour_detection(input_folder, output_folder):
 
 def create_output_directory(output_folder):
     """
-    Check whether output directory exists and emtpy it or eventually create it
+    Check whether output directory exists - if yes empty it, if not create it
     @param output_folder: output folder to be checked
     @return:
     """

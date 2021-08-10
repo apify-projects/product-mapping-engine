@@ -7,7 +7,6 @@ ID_MARK = '#id#'
 BND_MARK = '#bnd#'
 COL_MARK = '#col#'
 MARKS = [ID_MARK, BND_MARK, COL_MARK]
-PRINT_STATS = False
 
 
 def lower_case(data):
@@ -22,35 +21,20 @@ def lower_case(data):
     return lowercased
 
 
-def diff(li1, li2):
+def diff(list1, list2):
     """
-    Find differeces between two list of words of names
-    @param li1: word list from the first name
-    @param li2: word list from the second name
-    @return: word alist of different words
+    Find differences between two list of words of names
+    @param list1: word list from the first name
+    @param list2: word list from the second name
+    @return: wordlist of different words
     """
-    return list(set(li1) - set(li2)) + list(set(li2) - set(li1))
-
-
-def load_file(name_file):
-    """
-    Load file with product names
-    @param name_file: name of the input file
-    @return: list of product names
-    """
-    names = []
-
-    file = open(name_file, 'r', encoding='utf-8')
-    lines = file.read().splitlines()
-    for line in lines:
-        names.append(line)
-    return names
+    return list(set(list1) - set(list2)) + list(set(list2) - set(list1))
 
 
 def remove_markers(data):
     """
     Remove all ids, colors, brands, etc. from names
-    @param data: product name
+    @param data: original product name
     @return: product name without markers
     """
     replaced = []
@@ -64,7 +48,7 @@ def remove_markers(data):
 def remove_colors(data):
     """
     Remove colors from names
-    @param data: product name
+    @param data: original product name
     @return: product name without colors
     """
     replaced = []
@@ -77,9 +61,10 @@ def remove_colors(data):
     return replaced
 
 
-def compute_tf_idf(data):
+def compute_tf_idf(data, print_stats=False):
     """
     Compute tf.idf score for each word in dataset
+    @param print_stats: whether to print statistical values
     @param data: dataset with names
     @return: tf.idf for each word
     """
@@ -90,7 +75,7 @@ def compute_tf_idf(data):
     dense = vectors.todense()
     denselist = dense.tolist()
     df = pd.DataFrame(denselist, columns=feature_names)
-    if PRINT_STATS:
+    if print_stats:
         print('Tf.idf matrix score is:')
         print(df)
     return df
@@ -104,7 +89,7 @@ def compute_name_similarities(n1, n2, i, j, tf_idfs):
     @param i: first name index
     @param j: second name index
     @param tf_idfs: tf ids of names
-    @return: similarity score of names and images
+    @return: similarity score of names
     """
     name1 = n1.split(' ')
     name2 = n2.split(' ')

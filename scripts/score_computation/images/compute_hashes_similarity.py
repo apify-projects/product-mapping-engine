@@ -1,24 +1,6 @@
-import json
-
 NAME_CHAR_SUBSET = 6
 BIT_GROUPS = 4
 HEX_GROUPS = 1
-
-
-def load_and_parse_data(input_file):
-    """
-    Load input file and split name and hash into dictionary
-    @param input_file: file with hashes and names
-    @return: dictionary with name and has value of the image
-    """
-    data = {}
-    with open(input_file) as json_file:
-        loaded_data = json.load(json_file)
-
-    for d in loaded_data:
-        dsplit = d.split(';')
-        data[dsplit[0]] = dsplit[1]
-    return data
 
 
 def hex_to_dec(hex_val):
@@ -43,7 +25,7 @@ def hex_to_bin(val):
     return str.join('', [val for sub in hash_bin for val in sub])
 
 
-def dec_distance(list1, list2):
+def dec_similarity(list1, list2):
     """
     Compute difference of two list of hashes of images of two given products
     @param list1: hash 1 in decimal
@@ -56,12 +38,12 @@ def dec_distance(list1, list2):
     return diff
 
 
-def bit_distance(hash1, hash2):
+def bit_similarity(hash1, hash2):
     """
     Compute number of different bits in two hashes
     @param hash1: image hash 1
     @param hash2: image hash 2
-    @return: ratio of different hashes
+    @return: ratio of different bits
     """
     matches = 0
     for i1, i2 in zip(hash1, hash2):
@@ -101,11 +83,11 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
                 if metric == 'binary':
                     first_hash_tranf = [hex_to_bin(k) for k in first_hash]
                     second_hash_transf = [hex_to_bin(k) for k in second_hash]
-                    sim = bit_distance(first_hash_tranf, second_hash_transf)
+                    sim = bit_similarity(first_hash_tranf, second_hash_transf)
                 else:
                     first_hash_tranf = hex_to_dec(first_hash)
                     second_hash_transf = hex_to_dec(second_hash)
-                    sim = dec_distance(first_hash_tranf, second_hash_transf)
+                    sim = dec_similarity(first_hash_tranf, second_hash_transf)
 
                 if filter_dist and sim > thresh:
                     sim = None

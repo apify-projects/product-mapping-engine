@@ -1,7 +1,7 @@
 import click
-import pandas as pd
 
-from scripts.score_computation.names.compute_names_similarity import load_file, lower_case, remove_colors, \
+from scripts.score_computation.dataset_handler import save_to_csv, load_file
+from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, \
     compute_tf_idf, compute_name_similarities
 
 
@@ -15,7 +15,7 @@ from scripts.score_computation.names.compute_names_similarity import load_file, 
               required=False,
               help='Input file 2 with product names dictionary file to preprocess')
 @click.option('--output_file', '-o',
-              default='test/data/10_products/dataset/preprocessed/name_similarities.txt',
+              default='test/data/10_products/dataset/preprocessed/name_similarities.csv',
               required=False, help='Output file with similarity scores')
 # Load product names and compute their similarities
 def main(**kwargs):
@@ -34,9 +34,7 @@ def main(**kwargs):
         name_similarities = compute_name_similarities(n1, n2, i, i, tf_idfs)
         name_similarities_list.append(name_similarities)
 
-    name_similarities_dataframe = pd.DataFrame(name_similarities_list)
-    name_similarities_dataframe.fillna(0, inplace=True)
-    name_similarities_dataframe.to_csv(kwargs['output_file'], index=False)
+    save_to_csv(name_similarities_list, kwargs['output_file'])
 
 
 if __name__ == "__main__":
