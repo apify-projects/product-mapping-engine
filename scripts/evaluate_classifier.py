@@ -25,8 +25,8 @@ def evaluate_classifier(classifier, classifier_class_name, data):
     for t in threshs:
         out_train.append([0 if score < t else 1 for score in scores_train])
         out_test.append([0 if score < t else 1 for score in scores_test])
-    plot_roc(train['match'].tolist(), out_train, threshs, classifier_class_name, print_stats=False, )
-    plot_roc(test['match'].tolist(), out_test, threshs, classifier_class_name, print_stats=False)
+    plot_roc(train['match'].tolist(), out_train, test['match'].tolist(), out_test, threshs, classifier_class_name, print_stats=False, )
+    classifier.print_feature_importances()
 
 
 def evaluate_predictions(data, outputs, data_type):
@@ -74,19 +74,42 @@ def create_thresh(scores, intervals):
     return [(s[-1]) for s in subarrays][:-1]
 
 
-def plot_roc(true_labels, pred_labels_list, threshs, classifier, print_stats=False):
+def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs, classifier, print_stats=False):
     """
     Plot roc curve
+    @param true_train_labels:  true train labels
+    @param pred_test_labels_list: predicted train labels
+    @param true_train_labels:  true test labels
+    @param pred_test_labels_list: predicted test labels
     @param classifier: classifier name to whose plot should be created
+    @param threshs: threshold to evaluate accuracy of similarities
+    @param print_stats:
+    @return:
+    """
+    tprs_train, fprs_train = create_roc_curve_points(true_train_labels, pred_train_labels_list, print_stats, threshs)
+    tprs_test, fprs_test = create_roc_curve_points(true_test_labels, pred_test_labels_list, print_stats, threshs)
+
+    plt.plot(fprs_train, tprs_train, marker='.', label='train', color='green')
+    plt.plot(fprs_test, tprs_test, marker='.', label='test', color='red')
+    plt.plot([0, 1], [0, 1], 'b--')
+    plt.title(f'ROC curve for {classifier}')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(['train', 'test'])
+    plt.show()
+
+
+def create_roc_curve_points(true_labels, pred_labels_list, print_stats, threshs):
+    """
+    Create points for roc curve
     @param true_labels: true labels
     @param pred_labels_list: predicted labels
-    @param threshs: threshold to evaluate accuracy of similarities
     @param print_stats: whether statistical values should be printed
-    @return:
+    @param threshs: threshold to evaluate accuracy of similarities
+    @return: list of true positives, list of false positives
     """
     fprs = []
     tprs = []
-    labels = ''
     fprs.append(1)
     tprs.append(1)
     for t, pred_labels in zip(threshs, pred_labels_list):
@@ -96,15 +119,7 @@ def plot_roc(true_labels, pred_labels_list, threshs, classifier, print_stats=Fal
         fprs.append(fpr[1])
         tprs.append(tpr[1])
         if print_stats:
-            labels += f'thresh={round(t, 3)} AUC={round(auc, 3)}\n'
-            print(f'ROC AUC={round(auc, 3)}')
+            print(f'thresh={round(t, 3)} AUC={round(auc, 3)}\n')
     fprs.append(0)
     tprs.append(0)
-
-    plt.plot(fprs, tprs, marker='.', label=labels, color='red')
-    plt.plot([0, 1], [0, 1], 'b--')
-    plt.title(f'ROC curve for {classifier}')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend()
-    plt.show()
+    return tprs, fprs

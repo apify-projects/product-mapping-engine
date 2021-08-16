@@ -12,9 +12,9 @@ from score_computation.dataset_handler import preprocess_data
               default='data/wdc_dataset/dataset/preprocessed',
               help='Dataset to use for the evaluation')  #
 @click.option('--classifier', '-c',
-              default='RandomForests',
+              default='NeuralNetwork',
               type=click.Choice(
-                  ['Linear', 'Svm', 'NeuralNetwork', 'DecisionTree', 'LogisticRegression', 'RandomForests']))
+                  ['LinearRegression', 'Svm', 'NeuralNetwork', 'DecisionTree', 'LogisticRegression', 'RandomForests']))
 @click.option('--classifier_parameters_path', '-p',
               default='scripts/classifier_parameters/linear.json')
 # Load product names and images compute their similarity
