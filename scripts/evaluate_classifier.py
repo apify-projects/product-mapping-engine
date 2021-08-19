@@ -31,8 +31,11 @@ def evaluate_classifier(classifier, classifier_class_name, data, plot_roc_curve=
         plot_roc(train['match'].tolist(), out_train, test['match'].tolist(), out_test, threshs, classifier_class_name,
                  print_stats=False)
         classifier.print_feature_importances()
+    explore_outliers(train, out_train, test, out_test)
     return train_stats, test_stats
 
+def explore_outliers(train_data, train_data_predictions, test_data, test_data_predictions):
+    pass
 
 def evaluate_predictions(data, outputs, data_type, print_stats):
     """
@@ -61,7 +64,7 @@ def evaluate_predictions(data, outputs, data_type, print_stats):
     conf_matrix = confusion_matrix(data['match'], data['match_prediction'])
     if print_stats:
         print(f'\n\nClassifier results for {data_type} data')
-        print(''----------------------------'')
+        print('----------------------------')
         print(f'Accuracy: {accuracy}')
         print(f'Recall: {recall}')
         print(f'Specificity: {specificity}')
