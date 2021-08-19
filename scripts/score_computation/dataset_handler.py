@@ -3,14 +3,15 @@ import os
 import subprocess
 import sys
 
-import numpy
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
 from scripts.preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
-from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
+from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf, \
+    compute_name_similarities
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 # Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
@@ -143,6 +144,11 @@ def preprocess_data(dataset_folder):
 
 
 def analyse_dataset(data):
+    """
+    Compute percent of non zero values, create correlation matrix and plot data distribution for every feature
+    @param data: Dataset to analyse
+    @return:
+    """
     print('\n\nDataset analysis')
     print('----------------------------')
     data_size = data.shape[0]
@@ -152,7 +158,6 @@ def analyse_dataset(data):
         ratio_of_nonzero_ids = len_nonzero / data_size
         print(f'Pairs with nonzero {column} match: {round(100 * ratio_of_nonzero_ids, 2)}%')
 
-
     corr = data.iloc[:, :-1].corr()
     print('\n\nCorrelation matrix of features')
     print(corr.values)
@@ -160,7 +165,13 @@ def analyse_dataset(data):
 
     plot_features(data)
 
+
 def plot_features(data):
+    """
+    Plot graph of data distribution for every feature
+    @param data: Datase to visualize
+    @return:
+    """
     for column in data.iloc[:, :-1]:
         subset = data[[column, 'match']]
         groups = subset.groupby('match')
