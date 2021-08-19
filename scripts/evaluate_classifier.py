@@ -5,76 +5,124 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 
-def evaluate_classifier(classifier, classifier_class_name, data, plot_roc_curve=False, print_stats=False):
+def train_classifier(classifier, data):
     """
-    Evaluate classifier - let it train and predict weights for images and hashes and plot ROC curve
-    @param classifier: classifier to train and evaluate
-    @param classifier_class_name: name of the classifier
-    @param data: data to train and evaluate classifier
-    @param plot_roc_curve: whether to plot ROC curve of single run
-    @param print_stats: whether to print accuracy, recall, specificity, precision and confusion matrix of single run
-    @return: train and test accuracy, recall, specificity, precision
+    Train classifier on given dataset
+    @param classifier: classifier to train
+    @param data: dataset used for training
+    @return: train and test datasets with predictions
     """
     train, test = train_test_split(data, test_size=0.25)
     classifier.fit(train)
-    out_train, scores_train = classifier.predict(train)
-    out_test, scores_test = classifier.predict(test)
-    train_stats = evaluate_predictions(train, out_train, "train", print_stats)
-    test_stats = evaluate_predictions(test, out_test, "test", print_stats)
-    threshs = create_thresh(scores_train, 10)
+    train['predicted_match'], train['predicted_scores'] = classifier.predict(train)
+    test['predicted_match'], test['predicted_scores'] = classifier.predict(test)
+    return train, test
+
+
+def evaluate_classifier(classifier, classifier_class_name, train_data, test_data):
+    """
+    Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
+    @param classifier: classifier to train and evaluate
+    @param classifier_class_name: name of the classifier
+    @param train_data: training data to evaluate classifier
+    @param test_data: testing data to evaluate classifier
+    @return: train and test accuracy, recall, specificity, precision
+    """
+    train_stats = compute_prediction_accuracies(train_data, "train")
+    test_stats = compute_prediction_accuracies(test_data, "test")
+    threshs = create_thresh(train_data['predicted_scores'], 10)
     out_train = []
     out_test = []
     for t in threshs:
-        out_train.append([0 if score < t else 1 for score in scores_train])
-        out_test.append([0 if score < t else 1 for score in scores_test])
-    if plot_roc_curve:
-        plot_roc(train['match'].tolist(), out_train, test['match'].tolist(), out_test, threshs, classifier_class_name,
-                 print_stats=False)
-        classifier.print_feature_importances()
-    explore_outliers(train, out_train, test, out_test)
+        out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
+        out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
+    plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
+             classifier_class_name)
+    classifier.print_feature_importances()
     return train_stats, test_stats
 
-def explore_outliers(train_data, train_data_predictions, test_data, test_data_predictions):
-    pass
 
-def evaluate_predictions(data, outputs, data_type, print_stats):
+def compute_and_plot_outliers(train_data, test_data):
+    """
+    Compute number of FP and FN and plot their distribution
+    @param train_data: train data
+    @param test_data: test data
+    @return:
+    """
+    for data, data_type in zip([train_data, test_data], ['train_data', 'test_data']):
+        print(data_type)
+        mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
+        tp_data = data[(data['predicted_match'] == 1) & (data['match'] == 1)]
+        fp_data = data[(data['predicted_match'] == 1) & (data['match'] == 0)]
+        tn_data = data[(data['predicted_match'] == 0) & (data['match'] == 0)]
+        fn_data = data[(data['predicted_match'] == 0) & (data['match'] == 1)]
+
+        print(f'Number of mismatching values for {data} is: {mismatched_count}')
+        print('----------------------------')
+        print(f'Number of FPs is: {len(fp_data)}')
+        print(f'Number of FNs is: {len(fn_data)}')
+        print('----------------------------')
+        print('\n\n')
+
+        visualize_outliers(tp_data, fp_data, ['TP', 'FP', data_type])
+        visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
+
+        mismatched = data[data['predicted_match'] != data['match']]
+        mismatched.to_csv(f'results/mismatches_{data_type}.csv')
+
+
+def visualize_outliers(correct_data, wrong_data, labels):
+    """
+    Plot outliers according to the feature values
+    @param correct_data: correctly predicted data
+    @param wrong_data: wrongly predicted data
+    @param labels: labels whether iit is TP+FP or TN+FN
+    @return:
+    """
+    for column in correct_data.iloc[:, :-3]:
+        plt.scatter(np.arange(0, len(correct_data)), correct_data[column], color='green')
+        plt.scatter(np.arange(0, len(wrong_data)), wrong_data[column], color='red')
+        plt.title(f'{labels[0]} and {labels[1]} distribution on {labels[2]} by {column} match')
+        plt.xlabel(f'{labels[2]}')
+        plt.ylabel(f'{column} data match value')
+        plt.legend(labels)
+        plt.show()
+        plt.clf()
+
+
+def compute_prediction_accuracies(data, data_type):
     """
     Compute accuracy, precision, recall and show confusion matrix
     @param data: all dataset used for training and prediction
-    @param outputs: predicted outputs
     @param data_type: whether data are train or test
-    @param print_stats: whether to print accuracy, recall, specificity, precision and confusion matrix of single run
     @return: accuracy, recall, specificity, precision
     """
-    data['match_prediction'] = outputs
     data_count = data.shape[0]
-    mismatched = data[data['match_prediction'] != data['match']]
-    mismatched_count = data[data['match_prediction'] != data['match']].shape[0]
+    mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
     actual_positive_count = data[data['match'] == 1].shape[0]
     actual_negative_count = data[data['match'] == 0].shape[0]
-    true_positive_count = data[(data['match_prediction'] == 1) & (data['match'] == 1)].shape[0]
-    false_positive_count = data[(data['match_prediction'] == 1) & (data['match'] == 0)].shape[0]
-    true_negative_count = data[(data['match_prediction'] == 0) & (data['match'] == 0)].shape[0]
-    false_negative_count = data[(data['match_prediction'] == 0) & (data['match'] == 1)].shape[0]
+    true_positive_count = data[(data['predicted_match'] == 1) & (data['match'] == 1)].shape[0]
+    false_positive_count = data[(data['predicted_match'] == 1) & (data['match'] == 0)].shape[0]
+    true_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 0)].shape[0]
+    false_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 1)].shape[0]
 
     accuracy = (data_count - mismatched_count) / data_count
     recall = true_positive_count / actual_positive_count
     specificity = true_negative_count / actual_negative_count
     precision = true_positive_count / (true_positive_count + false_positive_count)
-    conf_matrix = confusion_matrix(data['match'], data['match_prediction'])
-    if print_stats:
-        print(f'\n\nClassifier results for {data_type} data')
-        print('----------------------------')
-        print(f'Accuracy: {accuracy}')
-        print(f'Recall: {recall}')
-        print(f'Specificity: {specificity}')
-        print(f'Precision: {precision}')
-        print('Confusion matrix:')
-        print(conf_matrix)
-        print('----------------------------')
-        print('\n\n')
+    conf_matrix = confusion_matrix(data['match'], data['predicted_match'])
 
-    mismatched.to_csv("mismatches.csv")
+    print(f'Classifier results for {data_type} data')
+    print('----------------------------')
+    print(f'Accuracy: {accuracy}')
+    print(f'Recall: {recall}')
+    print(f'Specificity: {specificity}')
+    print(f'Precision: {precision}')
+    print('Confusion matrix:')
+    print(conf_matrix)
+    print('----------------------------')
+    print('\n\n')
+
     return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision}
 
 
@@ -90,8 +138,7 @@ def create_thresh(scores, intervals):
     return [(s[-1]) for s in subarrays][:-1]
 
 
-def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs, classifier,
-             print_stats=False):
+def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs, classifier):
     """
     Plot roc curve
     @param true_train_labels:  true train labels
@@ -100,11 +147,10 @@ def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_t
     @param pred_test_labels_list: predicted test labels
     @param classifier: classifier name to whose plot should be created
     @param threshs: threshold to evaluate accuracy of similarities
-    @param print_stats:
     @return:
     """
-    tprs_train, fprs_train = create_roc_curve_points(true_train_labels, pred_train_labels_list, print_stats, threshs)
-    tprs_test, fprs_test = create_roc_curve_points(true_test_labels, pred_test_labels_list, print_stats, threshs)
+    tprs_train, fprs_train = create_roc_curve_points(true_train_labels, pred_train_labels_list, threshs, 'train')
+    tprs_test, fprs_test = create_roc_curve_points(true_test_labels, pred_test_labels_list, threshs, 'test')
 
     plt.plot(fprs_train, tprs_train, marker='.', label='train', color='green')
     plt.plot(fprs_test, tprs_test, marker='.', label='test', color='red')
@@ -114,35 +160,44 @@ def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_t
     plt.ylabel('True Positive Rate')
     plt.legend(['train', 'test'])
     plt.show()
+    plt.clf()
 
 
-def create_roc_curve_points(true_labels, pred_labels_list, print_stats, threshs):
+def create_roc_curve_points(true_labels, pred_labels_list, threshs, label):
     """
     Create points for roc curve
     @param true_labels: true labels
     @param pred_labels_list: predicted labels
-    @param print_stats: whether statistical values should be printed
     @param threshs: threshold to evaluate accuracy of similarities
+    @param label: whether working with train or test dataset
     @return: list of true positives, list of false positives
     """
     fprs = []
     tprs = []
     fprs.append(1)
     tprs.append(1)
+    print(f'AUC score for different threshs for {label} data')
+    print('----------------------------')
     for t, pred_labels in zip(threshs, pred_labels_list):
         # calculate auc score and roc curve
         auc = roc_auc_score(true_labels, pred_labels)
         fpr, tpr, _ = roc_curve(true_labels, pred_labels)
         fprs.append(fpr[1])
         tprs.append(tpr[1])
-        if print_stats:
-            print(f'thresh={round(t, 3)} AUC={round(auc, 3)}\n')
+        print(f'thresh={round(t, 3)} AUC={round(auc, 3)}')
+    print('----------------------------')
+    print('\n\n')
     fprs.append(0)
     tprs.append(0)
     return tprs, fprs
 
 
 def compute_mean_values(statistics):
+    """
+    Compute mean values of accuracy, recall, specificity and precision after several runs
+    @param statistics: accuracy, recall, specificity and precision from all the runs
+    @return:
+    """
     mean_train_accuracy = statistics['train_accuracy'].mean()
     mean_train_recall = statistics['train_recall'].mean()
     mean_train_specificity = statistics['train_specificity'].mean()
@@ -151,15 +206,15 @@ def compute_mean_values(statistics):
     mean_test_recall = statistics['test_recall'].mean()
     mean_test_specificity = statistics['test_specificity'].mean()
     mean_test_precision = statistics['test_precision'].mean()
-    print("----------------------------")
     print(f'Evaluation results after {statistics.shape[0]} runs:')
-    print(f"Mean Train Accuracy: {round(mean_train_accuracy*100, 2)}")
-    print(f"Mean Train Recall: {round(mean_train_recall*100, 2)}")
-    print(f"Mean Train Specificity: {round(mean_train_specificity*100, 2)}")
-    print(f"Mean Train Precision: {round(mean_train_precision*100, 2)}")
-    print(f"Mean Test Accuracy: {round(mean_test_accuracy*100, 2)}")
-    print(f"Mean Test Recall: {round(mean_test_recall*100, 2)}")
-    print(f"Mean Test Specificity: {round(mean_test_specificity*100, 2)}")
-    print(f"Mean Test Precision: {round(mean_test_precision*100, 2)}")
+    print("----------------------------")
+    print(f"Mean Train Accuracy: {round(mean_train_accuracy * 100, 2)}")
+    print(f"Mean Train Recall: {round(mean_train_recall * 100, 2)}")
+    print(f"Mean Train Specificity: {round(mean_train_specificity * 100, 2)}")
+    print(f"Mean Train Precision: {round(mean_train_precision * 100, 2)}")
+    print(f"Mean Test Accuracy: {round(mean_test_accuracy * 100, 2)}")
+    print(f"Mean Test Recall: {round(mean_test_recall * 100, 2)}")
+    print(f"Mean Test Specificity: {round(mean_test_specificity * 100, 2)}")
+    print(f"Mean Test Precision: {round(mean_test_precision * 100, 2)}")
     print("----------------------------")
     print("\n\n")

@@ -182,6 +182,7 @@ def plot_features(data):
         plt.ylabel(f'{column} match value')
         plt.legend(['0', '1'])
         plt.show()
+        plt.clf()
 
     subset = data[['words', 'cos', 'match']]
     groups = subset.groupby('match')
