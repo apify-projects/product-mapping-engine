@@ -13,7 +13,7 @@ from score_computation.dataset_handler import preprocess_data
               default='data/wdc_dataset/dataset/preprocessed',
               help='Dataset to use for the evaluation')  #
 @click.option('--classifier', '-c',
-              default='Svm',
+              default='RandomForests',
               type=click.Choice(
                   ['LinearRegression', 'LogisticRegression', 'Svm', 'NeuralNetwork', 'DecisionTree', 'RandomForests']))
 @click.option('--classifier_parameters_path', '-p',
@@ -39,7 +39,7 @@ def main(**kwargs):
     for i in range(0, kwargs['runs']):
         train_data, test_data = train_classifier(classifier, data)
         train_stats, test_stats = evaluate_classifier(classifier, classifier_class_name, train_data, test_data)
-        compute_and_plot_outliers(train_data, test_data)
+        compute_and_plot_outliers(train_data, test_data, classifier_class_name)
         statistics.loc[i] = list(train_stats.values()) + list(test_stats.values())
 
     if kwargs['runs'] > 1:

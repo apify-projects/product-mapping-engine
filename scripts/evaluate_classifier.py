@@ -42,9 +42,10 @@ def evaluate_classifier(classifier, classifier_class_name, train_data, test_data
     return train_stats, test_stats
 
 
-def compute_and_plot_outliers(train_data, test_data):
+def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
     """
     Compute number of FP and FN and plot their distribution
+    @param classifier_class_name: name of the classifier
     @param train_data: train data
     @param test_data: test data
     @return:
@@ -68,7 +69,7 @@ def compute_and_plot_outliers(train_data, test_data):
         visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
 
         mismatched = data[data['predicted_match'] != data['match']]
-        mismatched.to_csv(f'results/mismatches_{data_type}.csv')
+        mismatched.to_csv(f'results/mismatches/{classifier_class_name}_{data_type}.csv')
 
 
 def visualize_outliers(correct_data, wrong_data, labels):
