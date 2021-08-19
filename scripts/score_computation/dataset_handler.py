@@ -3,13 +3,14 @@ import os
 import subprocess
 import sys
 
+import numpy
+import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
 from scripts.preprocessing.names.names_preprocessing import detect_ids_brands_and_colors, to_list
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
-from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf, \
-    compute_name_similarities
+from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 # Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
@@ -139,3 +140,44 @@ def preprocess_data(dataset_folder):
     name_similarities = pd.read_csv(name_similarities_path)
     image_similarities = pd.read_csv(image_similarities_path)
     return pd.concat([name_similarities, image_similarities, product_pairs["match"]], axis=1)
+
+
+def analyse_dataset(data):
+    print('\n\nDataset analysis')
+    print('----------------------------')
+    data_size = data.shape[0]
+    for column in data:
+        values = data[column].to_numpy()
+        len_nonzero = np.count_nonzero(values)
+        ratio_of_nonzero_ids = len_nonzero / data_size
+        print(f'Pairs with nonzero {column} match: {round(100 * ratio_of_nonzero_ids, 2)}%')
+
+
+    corr = data.iloc[:, :-1].corr()
+    print('\n\nCorrelation matrix of features')
+    print(corr.values)
+    print('----------------------------')
+
+    plot_features(data)
+
+def plot_features(data):
+    for column in data.iloc[:, :-1]:
+        subset = data[[column, 'match']]
+        groups = subset.groupby('match')
+        for name, group in groups:
+            plt.plot(np.arange(0, len(group)), group[column], marker="o", linestyle="", label=name)
+        plt.title(f'Data distribution according to the {column} match value')
+        plt.xlabel('Data pair')
+        plt.ylabel(f'{column} match value')
+        plt.legend(['0', '1'])
+        plt.show()
+
+    subset = data[['words', 'cos', 'match']]
+    groups = subset.groupby('match')
+    for name, group in groups:
+        plt.plot(group['words'], group['cos'], marker="o", linestyle="", label=name)
+    plt.title(f'Data distribution according to the words and cos match value')
+    plt.xlabel('Words match value')
+    plt.ylabel(f'Cos match value')
+    plt.legend(['0', '1'])
+    plt.show()
