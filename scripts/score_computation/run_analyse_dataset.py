@@ -18,7 +18,7 @@ from dataset_handler import preprocess_data, analyse_dataset
 # Load product names and images compute their similarity
 def main(**kwargs):
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
-    data.to_csv("data.csv", index=False)
+    data.rename(columns={0: 'Index'}, inplace=True)
     analyse_dataset(data)
 
 

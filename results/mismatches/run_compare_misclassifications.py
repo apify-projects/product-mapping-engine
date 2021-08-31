@@ -10,7 +10,8 @@ def main():
     for filename in os.listdir(directory):
         if filename.endswith(".csv"):
             df = pd.read_csv(os.path.join(directory, filename))
-            product_indices_list.append(df['Unnamed: 0'].values)  # TODO: prejmenovat na neco smysluplneho pri ukladani
+            df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
+            product_indices_list.append(df['index'].values)
 
     product_indices_dict = {}
     for product_indices in product_indices_list:
@@ -24,8 +25,8 @@ def main():
 
     plt.bar(values_occurrences.keys(), values_occurrences.values(), color='green')
     plt.title('Comparison of frequencies of misclassified products among classificators')
-    plt.xlabel('Frequencies of misclassified products')
-    plt.ylabel('NUmber of misclassified products')
+    plt.xlabel('Frequencies of misclassified products among all classificators')
+    plt.ylabel('Number of misclassified products')
     plt.show()
 
 
