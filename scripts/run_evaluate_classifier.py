@@ -22,9 +22,9 @@ from score_computation.dataset_handler import preprocess_data
 # Load product names and images compute their similarity
 def main(**kwargs):
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
-    data.to_csv("data.csv", index=False)
+    data.to_csv('data.csv', index=False)
 
-    classifier_class_name = kwargs['classifier'] + "Classifier"
+    classifier_class_name = kwargs['classifier'] + 'Classifier'
     classifier_class = getattr(__import__('classifiers', fromlist=[classifier_class_name]), classifier_class_name)
     classifier_parameters_path = kwargs["classifier_parameters_path"]
     classifier_parameters_json = '{}'

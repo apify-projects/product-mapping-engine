@@ -28,8 +28,8 @@ def evaluate_classifier(classifier, classifier_class_name, train_data, test_data
     @param test_data: testing data to evaluate classifier
     @return: train and test accuracy, recall, specificity, precision
     """
-    train_stats = compute_prediction_accuracies(train_data, "train")
-    test_stats = compute_prediction_accuracies(test_data, "test")
+    train_stats = compute_prediction_accuracies(train_data, 'train')
+    test_stats = compute_prediction_accuracies(test_data, 'test')
     threshs = create_thresh(train_data['predicted_scores'], 10)
     out_train = []
     out_test = []

@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from scripts.score_computation.dataset_handler import preprocess_data
 
 def main():
     directory = 'results/mismatches'
@@ -28,6 +29,12 @@ def main():
     plt.xlabel('Frequencies of misclassified products among all classificators')
     plt.ylabel('Number of misclassified products')
     plt.show()
+
+
+    # plot product pairs which were predicted wrongly by all classificators
+    product_indices_allwrong_idxs = [k for k, v in product_indices_dict.items() if v == 6]
+    product_indices_allwrong_idxs.sort()
+    print(product_indices_allwrong_idxs)
 
 
 if __name__ == "__main__":
