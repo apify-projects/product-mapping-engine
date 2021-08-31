@@ -4,3 +4,5 @@ venv/*
 data/wdc_dataset/data_files/*
 data/wdc_dataset/dataset/*
 **/__pycache__/*
+*.pdf
+*.csv
