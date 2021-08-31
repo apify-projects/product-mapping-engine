@@ -69,7 +69,7 @@ def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
         visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
 
         mismatched = data[data['predicted_match'] != data['match']]
-        mismatched.to_csv(f'results/mismatches/{classifier_class_name}_{data_type}.csv')
+        mismatched.to_csv(f'results/mismatches/data/{classifier_class_name}_{data_type}.csv')
 
 
 def visualize_outliers(correct_data, wrong_data, labels):

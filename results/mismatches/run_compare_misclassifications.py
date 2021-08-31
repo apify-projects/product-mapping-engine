@@ -1,12 +1,12 @@
 import os
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from scripts.score_computation.dataset_handler import preprocess_data
 
 def main():
-    directory = 'results/mismatches'
+    directory = 'results/mismatches/data'
     product_indices_list = []
     for filename in os.listdir(directory):
         if filename.endswith(".csv"):
@@ -28,14 +28,23 @@ def main():
     plt.title('Comparison of frequencies of misclassified products among classificators')
     plt.xlabel('Frequencies of misclassified products among all classificators')
     plt.ylabel('Number of misclassified products')
-    plt.show()
-
+    # plt.show()
 
     # plot product pairs which were predicted wrongly by all classificators
     product_indices_allwrong_idxs = [k for k, v in product_indices_dict.items() if v == 6]
     product_indices_allwrong_idxs.sort()
-    print(product_indices_allwrong_idxs)
+    indices = np.array(product_indices_allwrong_idxs)
+    data = pd.read_csv('data/wdc_dataset/dataset/preprocessed/product_pairs.csv')
+    names = np.asarray(data[['name1', 'name2', 'match']])
 
+    mismatched_names = np.array([names[i] for i in indices])
+
+    #print(mismatched_names)
+    print(f'Number of mismatched pairs is: {len(mismatched_names)}')
+
+    output_file = 'results/mismatches/mismatched_product_pairs.csv'
+    df = pd.DataFrame(mismatched_names, columns=['name1','name2', 'match'])
+    df.to_csv(output_file)
 
 if __name__ == "__main__":
     main()
