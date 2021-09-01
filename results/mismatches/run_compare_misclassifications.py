@@ -72,9 +72,14 @@ def find_mismatching_product_names(product_indices_dict, data, mismatches):
     names = np.asarray(data[['name1', 'name2', 'match']])
     mismatched_names = np.array([names[i] for i in indices])
     print(f'Number of mismatched pairs is: {len(mismatched_names)}')
-    output_file = 'results/mismatches/mismatched_product_pairs.csv'
+    output_file_path = 'results/mismatches/'
     df = pd.DataFrame(mismatched_names, columns=['name1', 'name2', 'match'])
-    df.to_csv(output_file)
+    df = df.replace(to_replace='^\[ ', value='', regex=True)
+    df = df.replace(to_replace='\ ]$', value='', regex=True)
+    df_fp = df[(df['match'] == 0)]
+    df_fn = df[(df['match'] == 1)]
+    df_fp.to_csv(os.path.join(output_file_path, 'mismatched_product_pairs_fp.csv'))
+    df_fn.to_csv(os.path.join(output_file_path, 'mismatched_product_pairs_fn.csv'))
 
 
 if __name__ == "__main__":
