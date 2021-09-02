@@ -73,6 +73,7 @@ class SvmLinearClassifier(Classifier):
     def print_feature_importances(self):
         print(f'Feature importances for {self.name} \n {self.model.coef_}')
 
+
 class SvmRbfClassifier(Classifier):
     def __init__(self, weights):
         self.weights = weights
@@ -83,6 +84,7 @@ class SvmRbfClassifier(Classifier):
     def print_feature_importances(self):
         print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
 
+
 class SvmPolyClassifier(Classifier):
     def __init__(self, weights):
         self.weights = weights
@@ -92,6 +94,7 @@ class SvmPolyClassifier(Classifier):
 
     def print_feature_importances(self):
         print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
+
 
 class NeuralNetworkClassifier(Classifier):
     def __init__(self, weights):
