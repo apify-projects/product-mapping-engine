@@ -6,6 +6,7 @@ import time
 import requests
 
 ID_LEN = 5
+COLOR_PREFIX = '#col#'
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
@@ -133,7 +134,7 @@ def detect_color(word):
     @return: word with marker if it is a colors, otherwise the original word
     """
     if word.lower() in COLORS:
-        word = '#col#' + word
+        word = COLOR_PREFIX + word
     return word
 
 
@@ -148,18 +149,21 @@ def detect_vocabulary_words(word):
     return word
 
 
-def detect_brand(word):
+def detect_brand(word, is_first, first_likelihood):
     """
-    Check whethe the word is not in list of brands
+    Check whether the word is not in list of brands
     @param word: the word to be checked
+    @param is_first: the word to be checked
+    @param first_likelihood: the probability that this word is the first one in titles that include it
     @return: word with if it is a brand, otherwise the original word
     """
     is_brand = False
 
     if word.lower() in BRANDS:
         is_brand = True
-    elif word.isalpha() and len(word) < ID_LEN and (word.isupper()):
-        is_brand = True
+    elif is_first:
+        if (word.isalpha() and len(word) < ID_LEN and word.isupper()) or first_likelihood > 0.9:
+            is_brand = True
 
     return "#bnd#" + word if is_brand else word
 
@@ -179,14 +183,36 @@ def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_d
     cnt_lem = 0
 
     data = split_units_and_values(data)
+
+    word_counts = {}
+    first_likelihood = {}
+    for name in data:
+        is_first = True
+        for word in name:
+            if word not in word_counts:
+                word_counts[word] = 0
+                first_likelihood[word] = 0
+
+            word_counts[word] += 1
+            if is_first:
+                first_likelihood[word] += 1
+
+            is_first = False
+
+    for word in first_likelihood:
+        first_likelihood[word] = first_likelihood[word] / word_counts[word]
+
+    print(first_likelihood)
+
     for name in data:
         # print(name)
         word_list = []
+        is_first = True
         for word in name:
             if color_detection:
                 word = detect_color(word)
-            if brand_detection:
-                word = detect_brand(word)
+            if brand_detection and not word.startswith(COLOR_PREFIX):
+                word = detect_brand(word, is_first, first_likelihood[word])
             if id_detection:
                 word = detect_id(word)
 
@@ -207,7 +233,10 @@ def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_d
                 if (rec_voc and not rec_lem) or (not rec_voc and rec_lem):
                     print(word)
 
+            is_first = False
+
         data_list.append(word_list)
+
     return data_list, cnt_voc, cnt_lem
 
 
