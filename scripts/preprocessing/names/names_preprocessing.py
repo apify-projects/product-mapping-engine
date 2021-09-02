@@ -158,7 +158,7 @@ def detect_brand(word):
 
     if word.lower() in BRANDS:
         is_brand = True
-    elif word.isalpha() and len(word) < ID_LEN and word.isupper():
+    elif word.isalpha() and len(word) < ID_LEN and (word.isupper()):
         is_brand = True
 
     return "#bnd#" + word if is_brand else word
