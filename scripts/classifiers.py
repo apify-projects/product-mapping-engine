@@ -63,7 +63,7 @@ class LogisticRegressionClassifier(Classifier):
         print(f'Feature importances for {self.name} \n {self.model.coef_}')
 
 
-class SvmClassifier(Classifier):
+class SvmLinearClassifier(Classifier):
     def __init__(self, weights):
         self.weights = weights
         self.kernel = 'poly'  # linear, rbf, poly
@@ -71,10 +71,27 @@ class SvmClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importances(self):
-        if self.kernel == 'linear':
-            print(f'Feature importances for {self.name} \n {self.model.coef_}')
-        if self.kernel == 'poly' or self.kernel == 'rbf':
-            print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
+        print(f'Feature importances for {self.name} \n {self.model.coef_}')
+
+class SvmRbfClassifier(Classifier):
+    def __init__(self, weights):
+        self.weights = weights
+        self.kernel = 'rbf'
+        self.model = svm.SVC(kernel=self.kernel, probability=True)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+    def print_feature_importances(self):
+        print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
+
+class SvmPolyClassifier(Classifier):
+    def __init__(self, weights):
+        self.weights = weights
+        self.kernel = 'poly'
+        self.model = svm.SVC(kernel=self.kernel, probability=True)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+    def print_feature_importances(self):
+        print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
 
 class NeuralNetworkClassifier(Classifier):
     def __init__(self, weights):

@@ -15,7 +15,7 @@ from score_computation.dataset_handler import preprocess_data
 @click.option('--classifier', '-c',
               default='NeuralNetwork',
               type=click.Choice(
-                  ['LinearRegression', 'LogisticRegression', 'Svm', 'NeuralNetwork', 'DecisionTree', 'RandomForests']))
+                  ['LinearRegression', 'LogisticRegression', 'SvmLinear', 'SvmRbf', 'SvmPoly', 'NeuralNetwork', 'DecisionTree', 'RandomForests']))
 @click.option('--classifier_parameters_path', '-p',
               default='scripts/classifier_parameters/linear.json')
 @click.option('--runs', '-r', default=100, type=int, help='Number of trains of classifier')
