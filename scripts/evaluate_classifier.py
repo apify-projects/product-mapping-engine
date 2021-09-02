@@ -1,8 +1,28 @@
+import json
+
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
+
+
+def setup_classifier(classifier_type, classifier_parameters_file):
+    """
+    Setup particular classifier
+    @param classifier_type: type of classifier
+    @param classifier_parameters_file: file with classifier params
+    @return: set up classifier
+    """
+    classifier_class_name = classifier_type + 'Classifier'
+    classifier_class = getattr(__import__('classifiers', fromlist=[classifier_class_name]), classifier_class_name)
+    classifier_parameters_path = classifier_parameters_file
+    classifier_parameters_json = '{}'
+    with open(classifier_parameters_path, 'r') as classifier_parameters_file:
+        classifier_parameters_json = classifier_parameters_file.read()
+    classifier_parameters = json.loads(classifier_parameters_json)
+    classifier = classifier_class(classifier_parameters)
+    return classifier
 
 
 def train_classifier(classifier, data):
@@ -19,12 +39,11 @@ def train_classifier(classifier, data):
     return train, test
 
 
-def evaluate_classifier(classifier, classifier_class_name, train_data, test_data, plot_and_print_stats):
+def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats):
     """
     Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
     @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @param classifier: classifier to train and evaluate
-    @param classifier_class_name: name of the classifier
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
     @return: train and test accuracy, recall, specificity, precision
@@ -39,8 +58,9 @@ def evaluate_classifier(classifier, classifier_class_name, train_data, test_data
         out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
     if plot_and_print_stats:
         plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
-                 classifier_class_name)
+                 classifier.name)
         classifier.print_feature_importances()
+    classifier.save()
     return train_stats, test_stats
 
 

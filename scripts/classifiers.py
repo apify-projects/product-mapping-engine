@@ -1,4 +1,5 @@
 import os
+import pickle
 from io import StringIO
 
 import pydot
@@ -36,6 +37,14 @@ class Classifier:
 
     def print_feature_importances(self):
         pass
+
+    def save(self, path='results/models'):
+        filename = f'{self.name}.sav'
+        pickle.dump(self.model, open(os.path.join(path, filename), 'wb'))
+
+    def load(self, path='results/models'):
+        filename = f'{self.name}.sav'
+        self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
 
 
 class LinearRegressionClassifier(Classifier):
