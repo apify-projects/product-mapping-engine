@@ -13,11 +13,6 @@ from scripts.score_computation.images.compute_hashes_similarity import create_ha
 from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf, \
     compute_name_similarities
 
-current_directory = os.path.dirname(os.path.realpath(__file__))
-# Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
-sys.path.append(os.path.join(current_directory, ".."))
-
-
 def load_and_parse_data(input_file):
     """
     Load input file and split name and hash into dictionary

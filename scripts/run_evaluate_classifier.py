@@ -1,8 +1,12 @@
 import json
 import os
-
+import sys
 import click
 import pandas as pd
+
+# DO NOT REMOVE
+# Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 from evaluate_classifier import train_classifier, evaluate_classifier, compute_mean_values, compute_and_plot_outliers
 from score_computation.dataset_handler import preprocess_data
@@ -39,7 +43,7 @@ def main(**kwargs):
     for i in range(0, kwargs['runs']):
         train_data, test_data = train_classifier(classifier, data)
         train_stats, test_stats = evaluate_classifier(classifier, classifier_class_name, train_data, test_data, plot_and_print_stats=False)
-        #compute_and_plot_outliers(train_data, test_data, classifier_class_name)
+        compute_and_plot_outliers(train_data, test_data, classifier_class_name)
         statistics.loc[i] = list(train_stats.values()) + list(test_stats.values())
 
     if kwargs['runs'] > 1:
