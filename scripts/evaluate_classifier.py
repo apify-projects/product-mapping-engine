@@ -19,9 +19,10 @@ def train_classifier(classifier, data):
     return train, test
 
 
-def evaluate_classifier(classifier, classifier_class_name, train_data, test_data):
+def evaluate_classifier(classifier, classifier_class_name, train_data, test_data, plot_and_print_stats):
     """
     Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
+    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @param classifier: classifier to train and evaluate
     @param classifier_class_name: name of the classifier
     @param train_data: training data to evaluate classifier
@@ -36,9 +37,10 @@ def evaluate_classifier(classifier, classifier_class_name, train_data, test_data
     for t in threshs:
         out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
         out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
-    plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
-             classifier_class_name)
-    classifier.print_feature_importances()
+    if plot_and_print_stats:
+        plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
+                 classifier_class_name)
+        classifier.print_feature_importances()
     return train_stats, test_stats
 
 
@@ -209,13 +211,13 @@ def compute_mean_values(statistics):
     mean_test_precision = statistics['test_precision'].mean()
     print(f'Evaluation results after {statistics.shape[0]} runs:')
     print("----------------------------")
-    print(f"Mean Train Accuracy: {round(mean_train_accuracy * 100, 2)}")
-    print(f"Mean Train Recall: {round(mean_train_recall * 100, 2)}")
-    print(f"Mean Train Specificity: {round(mean_train_specificity * 100, 2)}")
-    print(f"Mean Train Precision: {round(mean_train_precision * 100, 2)}")
-    print(f"Mean Test Accuracy: {round(mean_test_accuracy * 100, 2)}")
-    print(f"Mean Test Recall: {round(mean_test_recall * 100, 2)}")
-    print(f"Mean Test Specificity: {round(mean_test_specificity * 100, 2)}")
-    print(f"Mean Test Precision: {round(mean_test_precision * 100, 2)}")
+    print(f"Mean Train Accuracy: \t{round(mean_train_accuracy * 100, 2)}")
+    print(f"Mean Train Recall: \t{round(mean_train_recall * 100, 2)}")
+    print(f"Mean Train Specificity: \t{round(mean_train_specificity * 100, 2)}")
+    print(f"Mean Train Precision: \t{round(mean_train_precision * 100, 2)}")
+    print(f"Mean Test Accuracy: \t{round(mean_test_accuracy * 100, 2)}")
+    print(f"Mean Test Recall: \t{round(mean_test_recall * 100, 2)}")
+    print(f"Mean Test Specificity: \t{round(mean_test_specificity * 100, 2)}")
+    print(f"Mean Test Precision: \t{round(mean_test_precision * 100, 2)}")
     print("----------------------------")
     print("\n\n")
