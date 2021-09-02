@@ -66,7 +66,7 @@ class LogisticRegressionClassifier(Classifier):
 class SvmClassifier(Classifier):
     def __init__(self, weights):
         self.weights = weights
-        self.kernel = 'rbf'  # linear, rbf, poly
+        self.kernel = 'poly'  # linear, rbf, poly
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 

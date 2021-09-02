@@ -107,7 +107,7 @@ def preprocess_data(dataset_folder):
                 )
                 name_similarities_list.append(name_similarities)
 
-            save_to_csv(name_similarities_list, )
+            save_to_csv(name_similarities_list, os.path.join(dataset_folder, "name_similarities.csv"))
 
         if not image_similarities_exist:
             img_source_dir = os.path.join(dataset_folder, 'images_cropped')
@@ -131,7 +131,7 @@ def preprocess_data(dataset_folder):
             for index, similarity in imaged_pairs_similarities:
                 image_similarities[index] = similarity
 
-            save_to_csv(image_similarities, )
+            save_to_csv(image_similarities, os.path.join(dataset_folder, "image_similarities.csv"))
 
     name_similarities = pd.read_csv(name_similarities_path)
     image_similarities = pd.read_csv(image_similarities_path)
