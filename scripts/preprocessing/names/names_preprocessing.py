@@ -178,6 +178,7 @@ def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_d
     cnt_voc = 0
     cnt_lem = 0
 
+    data = split_units_and_values(data)
     for name in data:
         # print(name)
         word_list = []
@@ -224,6 +225,25 @@ def to_list(data):
             data_list.append(words)
 
     return data_list
+
+
+def split_units_and_values(data):
+    """
+    Split parameter values and units inot two words
+    @param data: data with list of product names
+    @return: splitted data with list of product names
+    """
+    data_splitted = []
+    for name_list in data:
+        words = []
+        for word in name_list:
+            if re.match('^[0-9]+[a-z]+$', word) is not None:
+                words.append(re.split('[a-z]+$', word)[0])
+                words.append(re.split('^[0-9]+', word)[1])
+            else:
+                words.append(word)
+        data_splitted.append(words)
+    return data_splitted
 
 
 BRANDS = load_brands()
