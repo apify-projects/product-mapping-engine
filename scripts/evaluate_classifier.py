@@ -36,6 +36,7 @@ def train_classifier(classifier, data):
     classifier.fit(train)
     train['predicted_match'], train['predicted_scores'] = classifier.predict(train)
     test['predicted_match'], test['predicted_scores'] = classifier.predict(test)
+    classifier.save()
     return train, test
 
 
@@ -60,7 +61,6 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats)
         plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
                  classifier.name)
         classifier.print_feature_importances()
-    classifier.save()
     return train_stats, test_stats
 
 
@@ -161,15 +161,16 @@ def create_thresh(scores, intervals):
     return [(s[-1]) for s in subarrays][:-1]
 
 
-def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs, classifier):
+def plot_train_test_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs,
+                        classifier):
     """
     Plot roc curve
     @param true_train_labels:  true train labels
     @param pred_test_labels_list: predicted train labels
     @param true_train_labels:  true test labels
     @param pred_test_labels_list: predicted test labels
-    @param classifier: classifier name to whose plot should be created
     @param threshs: threshold to evaluate accuracy of similarities
+    @param classifier: classifier name to whose plot should be created
     @return:
     """
     tprs_train, fprs_train = create_roc_curve_points(true_train_labels, pred_train_labels_list, threshs, 'train')
@@ -182,6 +183,25 @@ def plot_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_t
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(['train', 'test'])
+    plt.show()
+    plt.clf()
+
+
+def plot_test_roc(true_test_labels, pred_test_labels_list, threshs, classifier):
+    """
+    Plot roc curve for test data
+    @param true_test_labels:  true test labels
+    @param pred_test_labels_list:  predicted test labels
+    @param threshs:  threshold to evaluate accuracy of similarities
+    @param classifier: classifier name to whose plot should be created
+    @return:
+    """
+    tprs_test, fprs_test = create_roc_curve_points(true_test_labels, pred_test_labels_list, threshs, 'test')
+    plt.plot(fprs_test, tprs_test, marker='.', label='test', color='red')
+    plt.plot([0, 1], [0, 1], 'b--')
+    plt.title(f'ROC test data curve for {classifier}')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
     plt.show()
     plt.clf()
 

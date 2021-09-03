@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
 
-from evaluate_classifier import plot_roc
+from evaluate_classifier import plot_train_test_roc
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
@@ -33,7 +33,7 @@ class Classifier:
         return outputs, scores
 
     def render_roc(self, true_labels, pred_labels_list, threshs, print_stats):
-        plot_roc(true_labels, pred_labels_list, threshs, print_stats)
+        plot_train_test_roc(true_labels, pred_labels_list, threshs, print_stats)
 
     def print_feature_importances(self):
         pass
@@ -45,6 +45,7 @@ class Classifier:
     def load(self, path='results/models'):
         filename = f'{self.name}.sav'
         self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
+        return self
 
 
 class LinearRegressionClassifier(Classifier):
