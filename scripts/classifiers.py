@@ -27,7 +27,9 @@ class Classifier:
         self.model.fit(inputs, target)
 
     def predict(self, data):
-        scores = self.model.predict_proba(data.drop(columns=['match']))
+        if 'match' in data.columns:
+            data = data.drop(columns=['match'])
+        scores = self.model.predict_proba(data)
         scores = [s[1] for s in scores]
         outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
         return outputs, scores
