@@ -3,22 +3,26 @@ import sys
 
 # DO NOT REMOVE
 # Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
-import pandas as pd
-
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+import pandas as pd
 
 from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from scripts.score_computation.dataset_handler import preprocess_data_without_saving
 
 
-# Load dataset and train and save model
 def main(**kwargs):
+    # Load dataset and train and save model
     # load_data_and_train_classifier('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
     # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
-    matching_pairs = find_matching_products(pd.read_csv('data/wdc_dataset/dataset/preprocessed/amazon.csv'),
-                                            pd.read_csv('data/wdc_dataset/dataset/preprocessed/extra.csv'),
+
+    # Load datasets and model and fund matching pairs
+    output_file = 'data/extra_dataset/dataset/preprocessed/matching_pairs.csv'
+    dataset1 = 'data/extra_dataset/dataset/source/amazon.csv'
+    dataset2 = 'data/extra_dataset/dataset/source/extra.csv'
+    matching_pairs = find_matching_products(pd.read_csv(dataset1),
+                                            pd.read_csv(dataset2),
                                             'DecisionTree')
-    print(matching_pairs)
+    matching_pairs.to_csv(output_file, index=False)
 
 
 def filter_products_with_no_similar_words(product, dataset):
@@ -46,7 +50,7 @@ def find_matching_products(dataset1, dataset2, classifier):
     @param classifier: Classifier used for product matching
     @return: List of same products for every given product
     """
-    predicted_matches = []
+    predicted_matches = pd.DataFrame(columns=['name1', 'name2', 'predicted_scores'])
     classifier = setup_classifier(classifier, 'scripts/classifier_parameters/linear.json')
     classifier = classifier.load()
     dataset1['price'] = pd.to_numeric(dataset1['price'])
@@ -54,7 +58,7 @@ def find_matching_products(dataset1, dataset2, classifier):
     for idx, product in dataset1.iterrows():
         data_subset = dataset2[
             (dataset2['price'] / 2 <= product['price']) & (product['price'] <= dataset2['price'] * 2)]
-        # data_subset = data_subset[data_subset['class'] != data_subset['class']]
+        # data_subset = data_subset[data_subset['category'] != data_subset['category']]
 
         # create pairs of product and each row from dataset
         data_subset = filter_products_with_no_similar_words(product, data_subset)
@@ -62,7 +66,7 @@ def find_matching_products(dataset1, dataset2, classifier):
         rows = len(data_subset.index)
         data = pd.DataFrame()
         for _ in range(0, rows):
-            data = data.append(product,ignore_index=True)
+            data = data.append(product, ignore_index=True)
         data = data.rename(columns=lambda s: s + '1')
         data.reset_index(drop=True, inplace=True)
         data_subset.reset_index(drop=True, inplace=True)
@@ -70,10 +74,11 @@ def find_matching_products(dataset1, dataset2, classifier):
         data = data.rename(columns={'url1': 'id1', 'url2': 'id2'})
         # preprocess data
         images_folder = None
-        data = preprocess_data_without_saving(data, images_folder)
+        data_prepro = preprocess_data_without_saving(data, images_folder)
 
-        data['predicted_match'], data['predicted_scores'] = classifier.predict(data)
-        predicted_matches.append(data[data['predicted_match'] == 1])
+        data['predicted_match'], data['predicted_scores'] = classifier.predict(data_prepro)
+        predicted_matches = predicted_matches.append(
+            data[data['predicted_match'] == 1][['name1', 'id1', 'name2', 'id2', 'predicted_scores']])
     return predicted_matches
 
 
