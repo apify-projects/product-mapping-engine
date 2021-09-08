@@ -2,132 +2,140 @@
 Project for automatic mapping among products from different websites.
 
 ## Folder *data*
-Contains all necessary datasets for product mapping
+Contains all necessary datasets for product mapping project
 
-### Folder *preprocessed*
-Contains all preprocessed source datasets 
-- folder *dataset_name*
-  - folder *names*
-  - folder *images*
-    - folder *cropped*
-      - contains cropped images by cropping white surrounding 
-    - folder *cropped_masked*
-      - contains cropped images using masking and object detection 
-    - folder *cropped_resized*
-      - contains images after resizing them to unique size
-    - folder *hashes*
-      - contains hashes generated from images
-
-### Folder *source*
-Contains all source datasets
-- folder *dataset_name*
-  - folder *names*
-    - contains dataset with source names of products
-  - folder *images*
-    - contains dataset with source images of products
-      - folder *cropped*
-      - folder *cropped_masked*
-      - folder *cropped_resized*
-      - folder *hashes*
 
 ### Folder *vocabularies*
 Folder containing all the vocabularies and corpus and other stuff for names preprocessing
 - folder *corpus*
-  - contains text corpus to parse dictionaries from it
-  - contains all files before and after processing CZ corpus from https://www.paracrawl.eu/index.php
-  - en-cs.txt is the corpus file
-  - cz.csv and en.csv are the files with unique words parsed from corpus
-  - en_cleaned.txt and cz_cleaned.txt contains words from dictionary that were also found in MORPHODITTA
+  - contains all files and scripts for processing CZ corpus from https://www.paracrawl.eu/index.php
+  - folder *preprocessed*
+    - contains preprocessed corpus - parsed to Czech and English vocabulary and cleaned them
+    - contains text corpus to parse dictionaries from it
+    - cz_dict.csv and en_dict.csv are the files with unique words parsed from corpus
+    - en_dict_cleaned.csv and cz_dict_cleaned.csv contains words from dictionary that were also found in MORPHODITTA
   - folder *source*
     - contains source corpus (not in git as it has 8 GB)
-  - folder *preprocessed*
-    - contains preprocessed corpus - parsed to Czech and English vocabulary and cleaned them 
+    - en-cs.txt is the corpus file
+  - contains all necessary scripts for corpus preprocessing
+  - `corpus_preprocessing.py`
+    - `run_corpus_preprocessing.py`
+    - load corpus file, split Czech and English sentences and create dictionary of unique words for each language 
+  - `vocabulary_cleaner.py`
+    - `run_vocabulary_cleaner.py`
+    - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITTA
 - brands.txt
     - brands of notebooks manually extracted from Alza, Datart and CZC
 - colors.txt
   - colors in English and Czech manually extracted from https://www.color-ize.com/color-list.php and https://cs.wikipedia.org/wiki/Seznam_barev
 
-## Folder *results*
-Contains all results after runs of scripts.
+### Folder *wdc_dataset*
+Contains the most common dataset of products from webs 
+- folder *dataset*
+  - contains all source and preprocessed data
+  - folder *preprocessed*
+    - contains folder with preprocessed data - file with product pairs
+    - images prepro: images and file with image hashes and image hashes similarities
+    - names prepro: contains file with name similarities
+  - folder *source*
+    - contains source data
+- `wdc_dataset_preparation.py`
+  - script for downloading and preprocessing data from [here](http://webdatacommons.org/)
 
-### Folder *similarity_score*
-- contains all results after computation of names similarity score
-- folder *dataset_name*
-  - folder *names*
-    - contains similarity of names
-  - folder *images*
-    - contains similarity of images
-  - folder *names_and_images*
-    - contains similarity of names and images together
 
+### Folder *extra_dataset*
+Contains datasets of products for first POC received from the website Extra
+- folder *dataset*
+  - contains all source and preprocessed data
+  - folder *results*
+    - contains folder with predicted data - file with product pairs
+  - folder *source*
+    - contains two source dataset to find matching pairs: extra and amazon 
 
 ## Folder *scripts*
 This is the folder containing all the necessary scripts for product mapping
 
-### Folder *preprocessing* 
-#### Folder *corpus_stuff*
-- contains all necessary scripts for corpus preprocessing
-- `corpus_preprocessing.py`
-- `run_corpus_preprocessing.py`
-  - load corpus file, split Czech and English sentences and create dictionary of unique words for each language 
-- `vocabulary_cleaner.py`
-- `run_vocabulary_cleaner.py`
-  - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITTA
+### Folder *classifier_parameters*
+- contains configurable parameters for model classificators
+- `classifiers.py`
+  - contains all possible models to be trained to find amtching products
+- `evaluate_classifier.py`
+  - library with all necessary functions for evaluation of classifiers
+- `run_evaluate_classifier.py`
+  - single classifier evaluator
+- `run_compare_classifier.py`
+  - multiple classifiers evaluator and comparator
 
+  
+### Folder *preprocessing* 
 #### Folder *images*
 This is the folder containing all the necessary scripts for images preprocessing
 - folder image_hash_creator
   - contains javascript code to create hashes from images
   - using apify run from cmd call main.js which creates hashes of images in given folder
-- other scripts serve to preprocess images  
-  - `run_crop_images_contour_detection.py`
-    - crop image using object detection using edges detection and crop image to the biggest object found in it
-  - `run_crop_images_simple.py`
-    - crop white background around images using finding the edge nonwhite pixels
-    - does not work well because there can be small logo in the corner of the image
-  - `run_unify_image_size.py`
-    - unify all images in the folder to the chosen shape
+  - `image_preprocessing.py`
+    - serves to preprocess images: crop, resize, object detection 
   
 #### Folder *names*
 This is the folder containing all the necessary scripts for names preprocessing
 - `names_preprocessing.py`
-- `run_names_preprocessing.py`
   - preprocess names of products - detects, ids, colors, brands
-    
+ 
+#### Folder *specification*
+This is the folder containing all the necessary scripts for specifition preprocessing
+- TODO:
+
+
 ### Folder *score_computation* 
 This is the folder containing all the necessary scripts for similarity score computation
 - folder *images*
   - This folder contains all the necessary scripts for comparison images of the products
   - `compute_names_similarity.py`
-  - `run_compute_names_similarity.py`
     - compares created hashes using bit distance (comparison of % of bits that differs)
     - select the most similar images - they have the highest similarity of hashes
-- folder *images_and_names*
-  - This folder contains all the necessary scripts for comparison names and images of the products
-  - `compute_total_similarity.py`
-  - `run_compute_total_similarity.py`
-  - `evaluate_classifier.py`
-  - `run_evaluate_classifier.py`
-  - `evaluate.sh`
-    - input is a list of images and names and it makes all preprocessing and score computation at once  
 - folder *names*
   - This folder contains all the necessary scripts for comparison names of the products
   - `compute_name_similarity.py`
-  - `run_compute_name_similarity.py`
     - compute similarity between two names according to the ids, brands and cosine similarity of vectors created from all words by tf.idf
+- `actor_model_interface.py`
+  - interface for website Extra to train model and save it and then load trained model, preprocess their datasets and predict possibly matching pairs
+- `dataset_handler.py`
+  -  all necessary stuff for operating with datasets (loda, save, prerocess, analyse, etc)
+- `run_analyse_dataset.py`
+  - preprocess and analyse dataset
 
+
+## Folder *test*
+Contains data and scripts for testing
+- folder *data*
+  - folder *10_products*
+    - manually extracted the 10 pairs of products from different web pages (Alza, CZC, Datart) also with corresponding image sets
+    -  folder *source*
+      - contains source data  
+    - folder *preprocessed*
+      - contains preprocessed data
+- folder *preprocessing*
+  - folder *images*
+    - contains scripts for testing functions for images preprocessing 
+  - folder *names*
+    - contains scripts for testing functions for names preprocessing 
+- folder *score_computation*
+  - contains scripts for testing functions for compute names and images similarity 
+ 
+## Folder *results*
+Contains all results after runs of scripts.
+- folder *classifier_visualization*
+  - contains images of classifiers
+- folder *mismatches*
+  - contains mismatched pair
+  - folder *data*
+    - contains wrongly predicted pairs of every classificator 
+  - `run_compare_missclassification.py`
+    - loads misclassified pairs from all classificators and analyses them
+- folder *models*
+  - contains saved model parameters
 ### ReadMe.md
 - File you should definitely read!
-
-
-# Datasets
-Used and created datasets.
-## 10_products
-- two files with the same 10 products with different names 
-- manually extracted from different web pages (Alza, CZC, Datart) also with corresponding image sets
-## 100_products
-- one file with 20 different products each with 5 different variants of names
-- manually extracted from different web pages using Heureka
 
 
 
