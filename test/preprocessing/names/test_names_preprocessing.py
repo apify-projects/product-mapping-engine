@@ -9,8 +9,8 @@ from scripts.preprocessing.names.names_preprocessing import to_list, detect_ids_
               required=False,
               help='Input file with product names dictionary file to preprocess')
 @click.option('--output_file', '-o',
-              default='test/data/10_products/dataset/preprocessed/names/names_products_1_prepro.csv',
-              required=False, help='Output preprocessed file with product names')
+              default='test/data/10_products/dataset/results/names/names_products_1_prepro.csv',
+              required=False, help='Output results file with product names')
 # Load product names and search for ids, brands, colors and parameters and save the preprocessed product names to output file
 def main(**kwargs):
     with open(kwargs['input_file'], encoding='utf-8') as f:

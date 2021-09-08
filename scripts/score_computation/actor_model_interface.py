@@ -16,7 +16,7 @@ def main(**kwargs):
     # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
 
     # Load datasets and model and fund matching pairs
-    output_file = 'data/extra_dataset/dataset/preprocessed/matching_pairs.csv'
+    output_file = 'data/extra_dataset/dataset/results/matching_pairs.csv'
     dataset1 = 'data/extra_dataset/dataset/source/amazon.csv'
     dataset2 = 'data/extra_dataset/dataset/source/extra.csv'
     matching_pairs = load_model_create_dataset_and_predict_matches(pd.read_csv(dataset1),
