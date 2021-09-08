@@ -63,7 +63,7 @@ def find_mismatching_product_names(product_indices_dict, data, mismatches):
     Print product pairs which were predicted wrongly by given number of classificators
     @param product_indices_dict: indices of products and number of classifiers predicted them wrongly
     @param data: original dataset with product pairs
-    @param mismatches: number of classificators, that predicted wronglygit a given products
+    @param mismatches: number of classificators, that predicted wrongly a given products
     @return:
     """
     product_indices_allwrong_idxs = [k for k, v in product_indices_dict.items() if v == mismatches]
