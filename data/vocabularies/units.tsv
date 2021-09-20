@@ -1,0 +1,80 @@
+name	plural	czech	shortcut	prefixes
+meter	meters	metr	m	p,n,μ,m,c,d,k
+gram	grams		g	m,c,k
+decigram	decigrams	dekagram	dg,dkg,dag	
+second	seconds	sekunda	s	p,n,μ,m
+second	seconds	vteřina	s
+minute	minutes	minuta	min	
+hour	hours	hodina	h,hr,hrs,hod	
+day	days	den	d	
+year	years	rok	ann, a.,yrs,y	
+week	weeks	týden	wk,wks	
+month	months	měsíc	mo,mon	
+radian	radians		rad	
+kelvin			K	
+coulomb	coulombs		C	
+candela	candelas		cd	
+candela per square meter	candelas per square meter	candela na metr čtvereční	cd/m^2,Nits	
+hertz			Hz	k,M,G
+newton	newtons		N 	
+pascal	pascals		Pa	k,M
+joule	joules		J	k,M
+ampere	amperes	ampér	A,amp,amps	m,k,M
+volt	volts		V	m,k,M
+farad	farads		F	
+ohm	ohms		Ω 	
+watt	watts		W	m,k,M
+mile per hour	miles per hour	míle za hodinu	miph,mi/h	
+meter per hour	meters per hour	metr za hodinu	mph,m/h	
+kilometer per second	kilometers per second	kilometr za sekundu	kmps,km/s	
+meter per second	meters per second	metr za sekundu	mps,m/s	
+kilometer per hour	kilometers per hour	kilometr za hodinu	kmph,km/h	
+Newton meter	Newton meters	Newton metr	Nm	
+watt hour	watt hours	watt hodina	Wh	m,k,M,G
+amper hour	amper hours	ampér hodina	Ah,amp hr	m,k,M
+electron volt	electron volts	elektron volt	eV	m,k,M
+volt ampere	volt amperes	volt ampér	VA	
+horsepower		koňská síla,koní	 hp,k	
+degree Celsius	degrees Celsius	stupeň Celsia	°C,Cel 	
+degree Fahrenheit	degrees Fahrenheit	stupeň Fahrneita	°F,R	
+lumen	lumens		lm 	
+lux			lx	
+becquerel 	becquerels		Bq	
+degree	degrees	stupeň	°,deg	
+minute 	minutes	minuta	 "	
+second 	seconds	vteřina	 '	
+liter	liters	litr	l	m,c,d,h
+are	ares	ar	ar, m^2	
+tonne	tonnes	tuna	t	
+bar	bars		bar	
+inch	inches	palec	in,"	
+foot	feet	stopa	ft	
+yard	yards		yd	
+mile	miles	míle	mi,mil	
+rod	rods		rd	
+gallon	gallons		gal	
+peck	pecks		pk	
+bushel	bushels		bu	
+quart	quarts		qt	
+pint	pints		pt	
+gill	gills		gil	
+fluid ounce	fluid ounces		foz	
+fluid dram	fluid drams		fdr	
+minim	minims		min	
+grain	grains		gr	
+pound	pounds		lb	
+ounce	ounces		oz	
+dram	drams		dr	
+pennyweight	pennyweights		pwt	
+ton	tons		t	
+pound per inch	pounds per inch		PPI	
+calorie	calories	kalorie	cal	k
+baud	bauds		Bd	
+neper	nepers		Np, nep	
+bel	bels		b	
+decibel	decibels		db	
+pixel	pixels		px	
+bit per second	bits per seconds	bit za sekundu,bit za vteřinu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+byte per second	bytes per seconds	byte za sekundu,byte za vteřinu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
+byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
