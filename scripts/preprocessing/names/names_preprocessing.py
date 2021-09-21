@@ -202,10 +202,9 @@ def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_d
     for word in first_likelihood:
         first_likelihood[word] = first_likelihood[word] / word_counts[word]
 
-    print(first_likelihood)
+    #print(first_likelihood)
 
     for name in data:
-        # print(name)
         word_list = []
         is_first = True
         for word in name:

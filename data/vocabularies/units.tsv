@@ -41,8 +41,8 @@ lumen	lumens		lm
 lux			lx	
 becquerel 	becquerels		Bq	
 degree	degrees	stupeň	°,deg	
-minute 	minutes	minuta	 "	
-second 	seconds	vteřina	 '	
+minute 	minutes	minuta	"	
+second 	seconds	vteřina	'	
 liter	liters	litr	l	m,c,d,h
 are	ares	ar	ar, m^2	
 tonne	tonnes	tuna	t	
@@ -73,8 +73,9 @@ baud	bauds		Bd
 neper	nepers		Np, nep	
 bel	bels		b	
 decibel	decibels		db	
-pixel	pixels		px	
+pixel	pixels		px	M
 bit per second	bits per seconds	bit za sekundu,bit za vteřinu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
 byte per second	bytes per seconds	byte za sekundu,byte za vteřinu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
 bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
 byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
+standard atmosphere		atmosféra	ATM
