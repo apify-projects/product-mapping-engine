@@ -1,4 +1,6 @@
-from scripts.preprocessing.description.description_preprocessing import remove_useless_spaces, split_words, split_params, detect_parameters, detect_ids_brands_and_colors, compare_units_in_descriptions
+from scripts.preprocessing.description.description_preprocessing import remove_useless_spaces, split_words, \
+    split_params, detect_parameters, compare_units_in_descriptions
+from scripts.preprocessing.names.names_preprocessing import detect_ids_brands_and_colors
 
 test_text = 'Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ'
 test_texts = [
@@ -18,10 +20,10 @@ def main():
         text_split = split_params(text_lower)
         text_split = split_words(text_split)
 
-        data, cnt_voc, cnt_lem = detect_ids_brands_and_colors(text_split, compare_words=False)
-        detected_text, params = detect_parameters(data)
+        data, _, _ = detect_ids_brands_and_colors(text_split, compare_words=False)
+        data, params = detect_parameters(data)
         parameters.append(params)
-        #print(detected_text)
+        # print(data)
         print(params)
     similarity_scores = compare_units_in_descriptions(parameters, parameters)
     print(similarity_scores)

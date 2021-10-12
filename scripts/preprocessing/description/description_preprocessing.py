@@ -2,10 +2,9 @@ import re
 
 import pandas as pd
 
-from scripts.preprocessing.names.names_preprocessing import detect_ids_brands_and_colors
-
 UNITS_PATH = 'data/vocabularies/units.tsv'
 PREFIXES_PATH = 'data/vocabularies/prefixes.tsv'
+
 
 def split_params(text):
     """
@@ -108,7 +107,6 @@ def detect_parameters(text):
     return detected_text, params
 
 
-
 def compare_units_in_descriptions(dataset1, dataset2):
     similarity_scores = []
     for i, description1 in enumerate(dataset1):
@@ -116,7 +114,7 @@ def compare_units_in_descriptions(dataset1, dataset2):
             description1_set = set(tuple(x) for x in description1)
             description2_set = set(tuple(x) for x in description2)
             matches = description1_set.intersection(description2_set)
-            match_ratio = len(matches)/len(description2_set)
+            match_ratio = len(matches) / len(description2_set)
 
             similarity_scores.append([i, j, match_ratio])
     return similarity_scores
