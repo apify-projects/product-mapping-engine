@@ -1,27 +1,36 @@
 import os
+import shutil
 import sys
 
 # DO NOT REMOVE
-# Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
+# Adding the higher level directories to sys.path so that we can import from the other folders
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 import pandas as pd
 
-from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from scripts.score_computation.dataset_handler import preprocess_data_without_saving
+from evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
+from score_computation.dataset_handler import preprocess_data_without_saving
 
 
 def main(**kwargs):
     # Load dataset and train and save model
-    # load_data_and_train_classifier('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
+    load_data_and_train_model('data/extra_dataset/dataset', 'DecisionTree')
     # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
 
     # Load datasets and model and fund matching pairs
-    output_file = 'data/extra_dataset/dataset/results/matching_pairs.csv'
-    dataset1 = 'data/extra_dataset/dataset/source/amazon.csv'
-    dataset2 = 'data/extra_dataset/dataset/source/extra.csv'
-    matching_pairs = load_model_create_dataset_and_predict_matches(pd.read_csv(dataset1),
-                                                                   pd.read_csv(dataset2),
-                                                                   'DecisionTree')
+    dataset1 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/amazon.csv')
+    dataset2 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/extra.csv')
+    results_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/results')
+    if os.path.exists(results_directory):
+        shutil.rmtree(results_directory)
+    os.mkdir(results_directory)
+    output_file = os.path.join(results_directory, 'matching_pairs.csv')
+    matching_pairs = load_model_create_dataset_and_predict_matches(
+        pd.read_csv(dataset1),
+        pd.read_csv(dataset2),
+        'DecisionTree'
+    )
     matching_pairs.to_csv(output_file, index=False)
 
 
@@ -82,7 +91,6 @@ def create_dataset_for_predictions(product, maybe_the_same_products):
     final_dataset.reset_index(drop=True, inplace=True)
     maybe_the_same_products.reset_index(drop=True, inplace=True)
     final_dataset = pd.concat([final_dataset, maybe_the_same_products], axis=1)
-    final_dataset = final_dataset.rename(columns={'url1': 'id1', 'url2': 'id2'})
     return final_dataset
 
 
@@ -101,30 +109,31 @@ def filter_products(product, dataset):
     return data_filtered
 
 
-def load_data_and_train_model(dataset_folder, classifier):
+def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, dataset_images_kvs=None, output_key_value_store=None):
     """
     Load dataset and train and save model
-    @param dataset_folder: folder containing data
-    @param classifier: classifier type
+    @param dataset_folder: (optional) folder containing data
+    @param classifier_type: classifier type
     @return:
     """
-    data = preprocess_data_without_saving(os.path.join(os.getcwd(), dataset_folder))
-    data.to_csv('data.csv', index=False)
-    classifier = setup_classifier(classifier, 'scripts/classifier_parameters/linear.json')
+    data = preprocess_data_without_saving(dataset_folder=os.path.join(os.getcwd(), dataset_folder), dataset_dataframe=dataset_dataframe, dataset_images_kvs=dataset_images_kvs)
+    #data.to_csv('data.csv', index=False)
+    classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, data)
-    _, _ = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
-    classifier.save()
+    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
+    classifier.save(key_value_store=output_key_value_store)
+    return train_stats, test_stats
 
 
-def load_model_and_predict_matches(dataset_folder, classifier):
+def load_model_and_predict_matches(dataset_folder, classifier_type, model_key_value_store=None):
     """
     Directly load model and already created unlabeled dataset with product pairs and predict pairs
     @param dataset_folder: folder containing test data
-    @param classifier: classifier type
+    @param classifier_type: classifier type
     @return: pair indices of matches
     """
-    classifier = setup_classifier(classifier, 'scripts/classifier_parameters/linear.json')
-    classifier = classifier.load()
+    classifier = setup_classifier(classifier_type)
+    classifier.load(key_value_store=model_key_value_store)
     data = preprocess_data_without_saving(os.path.join(os.getcwd(), dataset_folder))
     data['predicted_match'], data['predicted_scores'] = classifier.predict(data)
     return data[data['predicted_match'] == 1]
