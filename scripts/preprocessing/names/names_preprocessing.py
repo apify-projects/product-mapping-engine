@@ -94,7 +94,7 @@ def is_param(word):
     """
     Check whether string is not a parameter
     @param word: the word to be checked
-    @return: True if it is a parameter from specification, otherwise False
+    @return: True if it is a parameter from description, otherwise False
     """
     rgx = re.compile("^[0-9]+[A-Za-z]+$|^[A-Za-z]+[0-9]+$")
     if re.match(rgx, word):
@@ -170,7 +170,7 @@ def detect_brand(word, is_first, first_likelihood):
 
 def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_detection=True, brand_detection=True):
     """
-    Detect ids, colors, brands and specification parameters in names
+    Detect ids, colors, brands and description parameters in names
     @param data: List of product names to be checked
     @param compare_words: True if we want to compare number of words from names found in dictionary and in Marphoditta
     @param id_detection: True if id should be detected
@@ -202,7 +202,7 @@ def detect_ids_brands_and_colors(data, compare_words, id_detection=True, color_d
     for word in first_likelihood:
         first_likelihood[word] = first_likelihood[word] / word_counts[word]
 
-    #print(first_likelihood)
+    # print(first_likelihood)
 
     for name in data:
         word_list = []
