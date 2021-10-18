@@ -6,39 +6,6 @@ UNITS_PATH = 'data/vocabularies/units.tsv'
 PREFIXES_PATH = 'data/vocabularies/prefixes.tsv'
 
 
-def split_params(text):
-    """
-    Split text to single parameteres separated by comma
-    @param text: input text
-    @return: split parameters
-    """
-    return text.split(',')
-
-
-def remove_useless_spaces(text):
-    text = re.sub(r'(?<=\d) - (?=\d)', r'-', text)
-    text = re.sub(r'(?<=\d),(?=\d)', r'.', text)
-    text = re.sub(r'(?<=\d)"', r' inch', text)
-    text = text.replace(' × ', '×')
-    text = text.replace('(', '')
-    text = text.replace(')', '')
-    return text
-
-
-def split_words(text_list):
-    """
-    Split list of specifications to the single words
-    @param text: list of specifications to be split
-    @return: list of words of specifications
-    """
-    split_text = []
-    rgx = re.compile("\w+[\"\-'×.,]?\w*")
-    for text in text_list:
-        words = rgx.findall(text)
-        split_text.append(words)
-    return split_text
-
-
 def load_units_with_prefixes():
     """
     Load vocabulary with units and their prefixes and create all possible units variants and combination
@@ -83,6 +50,51 @@ def create_unit_vocabulary(units):
     return units_vocabulary
 
 
+def load_units_vocabulary():
+    """
+    Load vocabulary with units
+    @return: list of units
+    """
+    units = load_units_with_prefixes()
+    return create_unit_vocabulary(units)
+
+
+UNITS_VOCAB = load_units_vocabulary()
+
+
+def split_params(text):
+    """
+    Split text to single parameteres separated by comma
+    @param text: input text
+    @return: split parameters
+    """
+    return text.split(',')
+
+
+def remove_useless_spaces(text):
+    text = re.sub(r'(?<=\d) - (?=\d)', r'-', text)
+    text = re.sub(r'(?<=\d),(?=\d)', r'.', text)
+    text = re.sub(r'(?<=\d)"', r' inch', text)
+    text = text.replace(' × ', '×')
+    text = text.replace('(', '')
+    text = text.replace(')', '')
+    return text
+
+
+def split_words(text_list):
+    """
+    Split list of specifications to the single words
+    @param text: list of specifications to be split
+    @return: list of words of specifications
+    """
+    split_text = []
+    rgx = re.compile("\w+[\"\-'×.,]?\w*")
+    for text in text_list:
+        words = rgx.findall(text)
+        split_text.append(words)
+    return split_text
+
+
 def detect_parameters(text):
     """
     Detect units in text according to the loaded dictionary
@@ -90,20 +102,15 @@ def detect_parameters(text):
     @return: text with detected parameters, separated parameters and values
     """
     params = []
-    units = load_units_with_prefixes()
-    unit_vocab = create_unit_vocabulary(units)
     detected_text = []
-    for sentence in text:
-        new_sentence = []
-        previous = ''
-        for word in sentence:
-            word_new = word
-            if word in unit_vocab and previous.replace('.', '', 1).isnumeric():
-                word_new = "#UNIT#" + word
-                params.append([word, float(previous)])
-            new_sentence.append(word_new)
-            previous = word
-        detected_text.append(new_sentence)
+    previous = ''
+    for word in text:
+        word_new = word
+        if word.lower() in UNITS_VOCAB and previous.replace('.', '', 1).isnumeric():
+            word_new = "#unit#" + word
+            params.append([word, float(previous)])
+        detected_text.append(word_new)
+        previous = word
     return detected_text, params
 
 
@@ -114,7 +121,9 @@ def compare_units_in_descriptions(dataset1, dataset2):
             description1_set = set(tuple(x) for x in description1)
             description2_set = set(tuple(x) for x in description2)
             matches = description1_set.intersection(description2_set)
-            match_ratio = len(matches) / len(description2_set)
-
-            similarity_scores.append([i, j, match_ratio])
+            if not len(description2_set) == 0:
+                match_ratio = len(matches) / len(description2_set)
+                similarity_scores.append([i, j, match_ratio])
+            else:
+                similarity_scores.append([i, j, 0])
     return similarity_scores
