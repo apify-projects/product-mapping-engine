@@ -7,7 +7,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 
-def setup_classifier(classifier_type, classifier_parameters_file):
+def setup_classifier(classifier_type, classifier_parameters_file = None):
     """
     Setup particular classifier
     @param classifier_type: type of classifier
@@ -16,11 +16,13 @@ def setup_classifier(classifier_type, classifier_parameters_file):
     """
     classifier_class_name = classifier_type + 'Classifier'
     classifier_class = getattr(__import__('classifiers', fromlist=[classifier_class_name]), classifier_class_name)
-    classifier_parameters_path = classifier_parameters_file
-    classifier_parameters_json = '{}'
-    with open(classifier_parameters_path, 'r') as classifier_parameters_file:
-        classifier_parameters_json = classifier_parameters_file.read()
-    classifier_parameters = json.loads(classifier_parameters_json)
+    classifier_parameters = {}
+    if classifier_parameters_file is not None:
+        classifier_parameters_path = classifier_parameters_file
+        classifier_parameters_json = '{}'
+        with open(classifier_parameters_path, 'r') as classifier_parameters_file:
+            classifier_parameters_json = classifier_parameters_file.read()
+        classifier_parameters = json.loads(classifier_parameters_json)
     classifier = classifier_class(classifier_parameters)
     return classifier
 
@@ -146,7 +148,7 @@ def compute_prediction_accuracies(data, data_type):
     print('----------------------------')
     print('\n\n')
 
-    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision}
+    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision, "confusion_matrix": conf_matrix}
 
 
 def create_thresh(scores, intervals):
