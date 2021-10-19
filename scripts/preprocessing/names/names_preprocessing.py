@@ -4,7 +4,7 @@ import re
 import time
 
 import requests
-from scripts.preprocessing.description.description_preprocessing import detect_parameters
+from scripts.preprocessing.description.short_description_preprocessing import detect_parameters
 ID_LEN = 5
 COLOR_PREFIX = '#col#'
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
