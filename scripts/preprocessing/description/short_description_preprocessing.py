@@ -1,10 +1,9 @@
+import os
+import pandas as pd
 import re
 
-import pandas as pd
-
-UNITS_PATH = 'data/vocabularies/units.tsv'
-PREFIXES_PATH = 'data/vocabularies/prefixes.tsv'
-
+UNITS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/units.tsv')
+PREFIXES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/prefixes.tsv')
 
 def load_units_with_prefixes():
     """
