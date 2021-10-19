@@ -51,7 +51,7 @@ def filter_products_with_no_similar_words(product, dataset):
     return data_subset
 
 
-def load_model_create_dataset_and_predict_matches(dataset1, dataset2, classifier):
+def load_model_create_dataset_and_predict_matches(dataset1, dataset2, classifier, model_key_value_store=None):
     """
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
@@ -60,8 +60,8 @@ def load_model_create_dataset_and_predict_matches(dataset1, dataset2, classifier
     @return: List of same products for every given product
     """
     predicted_matches = pd.DataFrame(columns=['name1', 'name2', 'predicted_scores'])
-    classifier = setup_classifier(classifier, 'scripts/classifier_parameters/linear.json')
-    classifier = classifier.load()
+    classifier = setup_classifier(classifier)
+    classifier = classifier.load(key_value_store=model_key_value_store)
     dataset1['price'] = pd.to_numeric(dataset1['price'])
     dataset2['price'] = pd.to_numeric(dataset2['price'])
     for idx, product in dataset1.iterrows():

@@ -102,9 +102,13 @@ def create_image_similarities_data(total_count, images_folder='', dataset_images
     subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
     hashes, names = create_hash_sets(data)
-    imaged_pairs_similarities = compute_distances(hashes, names, metric='binary',
-                                                  filter_dist=True,
-                                                  thresh=0.9)
+    imaged_pairs_similarities = compute_distances(
+        hashes,
+        names,
+        metric='binary',
+        filter_dist=True,
+        thresh=0.9
+    )
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []
