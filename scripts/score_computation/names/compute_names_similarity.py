@@ -63,15 +63,17 @@ def remove_colors(data):
     return replaced
 
 
-def compute_tf_idf(data, print_stats=False):
+def compute_tf_idf(data, print_stats=False, do_remove_markers=True):
     """
     Compute tf.idf score for each word in dataset
     @param print_stats: whether to print statistical values
     @param data: dataset with names
+    @param do_remove_markers: whether it is necessary to remove markes from the text
     @return: tf.idf for each word
     """
-    data = remove_markers(data)
-    vectorizer = TfidfVectorizer(token_pattern='(?u)\\b\\w+\\b', lowercase=False)
+    if do_remove_markers:
+        data = remove_markers(data)
+    vectorizer = TfidfVectorizer(token_pattern='(?u)\\b[\w.,-]+\\b', lowercase=False) #unicode and then matchin \b empty line before and after word and \wmatching word
     vectors = vectorizer.fit_transform(data)
     feature_names = vectorizer.get_feature_names()
     dense = vectors.todense()

@@ -1,4 +1,4 @@
-from scripts.preprocessing.description.description_preprocessing import remove_useless_spaces, split_words, \
+from scripts.preprocessing.description.short_description_preprocessing import remove_useless_spaces, split_words, \
     split_params, detect_parameters, compare_units_in_descriptions
 from scripts.preprocessing.names.names_preprocessing import split_units_and_values
 
