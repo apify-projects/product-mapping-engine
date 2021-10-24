@@ -121,14 +121,19 @@ def filter_products(product, dataset):
     return data_filtered
 
 
-def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, dataset_images_kvs=None, output_key_value_store=None):
+def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, images_kvs_1_client=None, images_kvs_2_client=None, output_key_value_store=None):
     """
     Load dataset and train and save model
     @param dataset_folder: (optional) folder containing data
     @param classifier_type: classifier type
     @return:
     """
-    data = preprocess_data_without_saving(dataset_folder=os.path.join(os.getcwd(), dataset_folder), dataset_dataframe=dataset_dataframe, dataset_images_kvs=dataset_images_kvs)
+    data = preprocess_data_without_saving(
+        dataset_folder=os.path.join(os.getcwd(), dataset_folder),
+        dataset_dataframe=dataset_dataframe,
+        dataset_images_kvs1=images_kvs_1_client,
+        dataset_images_kvs2=images_kvs_2_client
+    )
     #data.to_csv('data.csv', index=False)
     classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, data)
