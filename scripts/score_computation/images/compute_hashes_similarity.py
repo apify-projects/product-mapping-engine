@@ -66,7 +66,6 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
     """
     pair_similarities = []
     for hash_set, names_set in zip(hashes, names):
-        print(names_set)
         pair_index = int(names_set[0].split('_')[0].split('pair')[1])
         first_product = []
         second_product = []
