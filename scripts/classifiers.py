@@ -36,7 +36,6 @@ class Classifier:
             data = data.drop(columns=['match'])
         scores = self.model.predict_proba(data)
         scores = [s[1] for s in scores]
-        print(self.weights)
         outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
         return outputs, scores
 

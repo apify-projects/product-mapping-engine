@@ -51,7 +51,7 @@ def filter_products_with_no_similar_words(product, dataset):
     return data_subset
 
 
-def load_model_create_dataset_and_predict_matches(dataset1, dataset2, classifier, model_key_value_store=None):
+def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs1_client, images_kvs2_client, classifier, model_key_value_store=None):
     """
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
@@ -59,20 +59,32 @@ def load_model_create_dataset_and_predict_matches(dataset1, dataset2, classifier
     @param classifier: Classifier used for product matching
     @return: List of same products for every given product
     """
-    predicted_matches = pd.DataFrame(columns=['name1', 'name2', 'predicted_scores'])
     classifier = setup_classifier(classifier)
-    classifier = classifier.load(key_value_store=model_key_value_store)
+    classifier.load(key_value_store=model_key_value_store)
     dataset1['price'] = pd.to_numeric(dataset1['price'])
     dataset2['price'] = pd.to_numeric(dataset2['price'])
+    pairs_dataset_fragments = []
     for idx, product in dataset1.iterrows():
         data_subset = filter_products(product, dataset2)
-        data = create_dataset_for_predictions(product, data_subset)
-        # preprocess data
-        images_folder = None
-        data_prepro = preprocess_data_without_saving(data, images_folder)
-        data['predicted_match'], data['predicted_scores'] = classifier.predict(data_prepro)
-        predicted_matches = predicted_matches.append(
-            data[data['predicted_match'] == 1][['name1', 'id1', 'name2', 'id2', 'predicted_scores']])
+        pairs = create_dataset_for_predictions(product, data_subset)
+        pairs_dataset_fragments.append(pairs)
+
+    pairs_dataset = pd.concat(pairs_dataset_fragments, axis=0)
+    print(pairs_dataset.count())
+
+    # preprocess data
+    preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(
+        dataset_folder='.',
+        dataset_dataframe=pairs_dataset,
+        dataset_images_kvs1=images_kvs1_client,
+        dataset_images_kvs2=images_kvs2_client
+    ))
+
+    # TODO remove after speed testing
+    print(preprocessed_pairs.count())
+
+    pairs_dataset['predicted_match'], pairs_dataset['predicted_scores'] = classifier.predict(preprocessed_pairs)
+    predicted_matches = pairs_dataset[pairs_dataset['predicted_match'] == 1][['name1', 'id1', 'name2', 'id2', 'predicted_scores']]
     return predicted_matches
 
 
