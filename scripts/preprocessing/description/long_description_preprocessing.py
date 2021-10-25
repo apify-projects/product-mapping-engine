@@ -102,5 +102,5 @@ def compare_descriptive_words(tf_idfs, filter_limit, top_words):
         for j in range(ceil(length / 2), length):
             # res = cosine_similarity([representatives.iloc[i].values, representatives.iloc[j].values])[0][1]
             res = compute_descriptive_words_similarity(descriptives.iloc[i].values, descriptives.iloc[j].values)
-            descriptives_similarity.append(res)
+            descriptives_similarity.append(res/top_words)
     return descriptives_similarity
