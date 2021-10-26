@@ -9,8 +9,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 import pandas as pd
 
-from evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from score_computation.dataset_handler import preprocess_data_without_saving
+from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
+from scripts.score_computation.dataset_handler import preprocess_data_without_saving
 
 
 def main(**kwargs):
@@ -51,7 +51,8 @@ def filter_products_with_no_similar_words(product, dataset):
     return data_subset
 
 
-def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs1_client, images_kvs2_client, classifier, model_key_value_store=None):
+def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs1_client, images_kvs2_client,
+                                                  classifier, model_key_value_store=None):
     """
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
@@ -84,7 +85,8 @@ def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs
     print(preprocessed_pairs.count())
 
     pairs_dataset['predicted_match'], pairs_dataset['predicted_scores'] = classifier.predict(preprocessed_pairs)
-    predicted_matches = pairs_dataset[pairs_dataset['predicted_match'] == 1][['name1', 'id1', 'name2', 'id2', 'predicted_scores']]
+    predicted_matches = pairs_dataset[pairs_dataset['predicted_match'] == 1][
+        ['name1', 'id1', 'name2', 'id2', 'predicted_scores']]
     return predicted_matches
 
 
@@ -121,7 +123,8 @@ def filter_products(product, dataset):
     return data_filtered
 
 
-def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, images_kvs_1_client=None, images_kvs_2_client=None, output_key_value_store=None):
+def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, images_kvs_1_client=None,
+                              images_kvs_2_client=None, output_key_value_store=None):
     """
     Load dataset and train and save model
     @param dataset_folder: (optional) folder containing data
@@ -134,7 +137,7 @@ def load_data_and_train_model(classifier_type, dataset_folder='', dataset_datafr
         dataset_images_kvs1=images_kvs_1_client,
         dataset_images_kvs2=images_kvs_2_client
     )
-    #data.to_csv('data.csv', index=False)
+    # data.to_csv('data.csv', index=False)
     classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, data)
     train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
