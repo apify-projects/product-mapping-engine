@@ -1,16 +1,16 @@
-english	czech	prefix
-pico	piko	p
-nano	nano	n
-micro	mikro	μ
-milli	mili	m
-centi	centi	c
-deci	deci	d
-hecto	hekto	h
-kilo	kilo	k
-mega	mega	M
-giga	giga	G
-tera	tera	T
-kibi	kibi	Ki
-mebi	mebi	Mi
-gibi	gibi	Gi
-tebi	tebi	Ti
+english	czech	prefix	value
+pico	piko	p	0.000000000001
+nano	nano	n	0.000000001
+micro	mikro	μ	0.000001
+milli	mili	m	0.001
+centi	centi	c	0.01
+deci	deci	d	0.1
+hecto	hekto	h	100
+kilo	kilo	k	1000
+mega	mega	M	1000000
+giga	giga	G	1000000000
+tera	tera	T	1000000000000
+kibi	kibi	Ki	1024
+mebi	mebi	Mi	1048576
+gibi	gibi	Gi	1073741824
+tebi	tebi	Ti	1099511627776

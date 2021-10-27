@@ -18,6 +18,7 @@ from score_computation.dataset_handler import preprocess_data
               help='Dataset to use for the evaluation')
 # Load product names and images compute their similarity with all classifiers and compare them
 def main(**kwargs):
+    print(sys.path)
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
     data.to_csv('data.csv', index=False)
     roc_data = {}
