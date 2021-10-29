@@ -265,17 +265,14 @@ def split_units_and_values(data):
     @param data: data with list of product names
     @return: splitted data with list of product names
     """
-    data_splitted = []
-    for name_list in data:
-        words = []
-        for word in name_list:
-            if re.match('^[0-9]+[a-z]+$', word) is not None:
-                words.append(re.split('[a-z]+$', word)[0])
-                words.append(re.split('^[0-9]+', word)[1])
-            else:
-                words.append(word)
-        data_splitted.append(words)
-    return data_splitted
+    words_splitted = []
+    for word in data:
+        if re.match('^[0-9]+[a-z]+$', word) is not None:
+            words_splitted.append(re.split('[a-z]+$', word)[0])
+            words_splitted.append(re.split('^[0-9]+', word)[1])
+        else:
+            words_splitted.append(word)
+    return words_splitted
 
 
 BRANDS = load_brands()

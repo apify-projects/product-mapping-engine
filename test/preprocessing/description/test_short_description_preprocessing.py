@@ -16,15 +16,16 @@ def main():
     parameters = []
     datas = []
     for t in test_texts:
+        dd = []
         text_cleaned = remove_useless_spaces(t)
         text_lower = text_cleaned.lower()
         text_split = split_params(text_lower)
         text_split = split_words(text_split)
+        text_split = [item for sublist in text_split for item in sublist]
         data = split_units_and_values(text_split)
-        for d in data:
-            d_detected, params = detect_parameters(d)
-            parameters.append(params)
-            datas.append(d_detected)
+        d_detected, params = detect_parameters(data)
+        parameters.append(params)
+        datas.append(d_detected)
     print(datas)
     print(parameters)
     similarity_scores = compare_units_in_descriptions(parameters, parameters)

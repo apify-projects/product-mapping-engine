@@ -1,18 +1,22 @@
 import os
-import pandas as pd
 import re
+
+import pandas as pd
 
 UNITS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/units.tsv')
 PREFIXES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/prefixes.tsv')
 
+
 def load_units_with_prefixes():
     """
     Load vocabulary with units and their prefixes and create all possible units variants and combination
-    @return: Dataset with units and their prefixes
+    Moreover create a dictionary of units with prefix wit prefix values to convert all non base units to their elementary version
+    @return: Dataset with units and their prefixes; dictionary of units with prefix
     """
     prefixes_df = pd.read_csv(PREFIXES_PATH, sep='\t', keep_default_na=False)
     units_df = pd.read_csv(UNITS_PATH, sep='\t', keep_default_na=False)
     units = pd.DataFrame(columns=units_df.columns)
+    prefix_units_convertor = {}
     for idx, row in units_df.iterrows():
         if row['prefixes'] != '':
             shortcut = row['shortcut'].split(',')
@@ -21,16 +25,23 @@ def load_units_with_prefixes():
             plural = row['plural']
             czech = row['czech']
             for p in prefixes:
+                value = prefixes_df.loc[prefixes_df['prefix'] == p]['value'].values[0]
                 for s in shortcut:
                     row['shortcut'] += f',{p}{s}'
+                    prefix_units_convertor[f'{p.lower()}{s.lower()}'] = {'value': value, 'base': s}
                 prefix_name = prefixes_df.loc[prefixes_df.prefix == p, "english"].values[0]
                 row['name'] += f',{prefix_name}{name}'
+                prefix_units_convertor[f'{prefix_name.lower()}{name.lower()}'] = {'value': value, 'base': name}
                 if row['plural'] != '':
                     row['plural'] += f',{prefix_name}{plural}'
+                    prefix_units_convertor[f'{prefix_name.lower()}{plural.lower()}'] = {'value': value, 'base': plural}
                 if row['czech'] != '':
                     row['czech'] += f',{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0]}{czech}'
+                    prefix_units_convertor[
+                        f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{czech.lower()}'] = {
+                        'value': value, 'base': czech}
         units = units.append(row)
-    return units.iloc[:, :-1]
+    return units.iloc[:, :-1], prefix_units_convertor
 
 
 def create_unit_vocabulary(units):
@@ -51,14 +62,14 @@ def create_unit_vocabulary(units):
 
 def load_units_vocabulary():
     """
-    Load vocabulary with units
-    @return: list of units
+    Load vocabulary with units, create list of prefixed units with their values to convert them to basics units
+    @return: list of units, list of prefixed units with their values to convert them to basics units
     """
-    units = load_units_with_prefixes()
-    return create_unit_vocabulary(units)
+    units, prefix_units_convertor = load_units_with_prefixes()
+    return create_unit_vocabulary(units), prefix_units_convertor
 
 
-UNITS_VOCAB = load_units_vocabulary()
+UNITS_VOCAB, UNITS_CONVERTOR = load_units_vocabulary()
 
 
 def split_params(text):
@@ -71,6 +82,11 @@ def split_params(text):
 
 
 def remove_useless_spaces(text):
+    """
+    Remove useless spaces between numerical values
+    @param text: text to remove spaces
+    @return: text without useless spaces
+    """
     text = re.sub(r'(?<=\d) - (?=\d)', r'-', text)
     text = re.sub(r'(?<=\d),(?=\d)', r'.', text)
     text = re.sub(r'(?<=\d)"', r' inch', text)
@@ -93,7 +109,6 @@ def split_words(text_list):
         split_text.append(words)
     return split_text
 
-
 def detect_parameters(text):
     """
     Detect units in text according to the loaded dictionary
@@ -113,15 +128,50 @@ def detect_parameters(text):
     return detected_text, params
 
 
-def compare_units_in_descriptions(dataset1, dataset2):
+def convert_units_to_basic_form(dataset):
+    """
+    Convert units with prefixes into their basics form.
+    @param dataset: List of products each containing list of units
+    @return:  List of products each containing list of converted units into their basic form
+    """
+    converted_dataset = []
+    for product in dataset:
+        converted_product = []
+        for units in product:
+            if units[0].lower() in UNITS_CONVERTOR:
+                name = UNITS_CONVERTOR[units[0].lower()]['base']
+                value = units[1] * UNITS_CONVERTOR[units[0].lower()]['value']
+                converted_product.append([name.lower(), value])
+            else:
+                converted_product.append(units)
+        converted_dataset.append(converted_product)
+    print(converted_dataset)
+    return converted_dataset
+
+
+def compare_units_in_descriptions(dataset1, dataset2, devation=0.05):
+    """
+    Compare detected units from the texts
+    @param dataset1: List of products each containing list of units from the first dataset
+    @param dataset2: List of products each containing list of units from the second dataset
+    @param devation: percent of toleration of deviations of two compared numbers
+    @return: Ratio of the same units between two products
+    """
     similarity_scores = []
+    dataset1 = convert_units_to_basic_form(dataset1)
+    dataset2 = convert_units_to_basic_form(dataset2)
     for i, description1 in enumerate(dataset1):
         for j, description2 in enumerate(dataset2):
             description1_set = set(tuple(x) for x in description1)
             description2_set = set(tuple(x) for x in description2)
-            matches = description1_set.intersection(description2_set)
+            #matches = len(description1_set.intersection(description2_set))
+            matches = 0
+            for d1 in description1_set:
+                for d2 in description2_set:
+                    if d1[0] == d2[0] and d1[1] > (1 - devation) * d2[1] and d1[1] < (1 + devation) * d2[1]:
+                        matches += 1
             if not len(description2_set) == 0:
-                match_ratio = len(matches) / len(description2_set)
+                match_ratio = matches / len(description2_set)
                 similarity_scores.append([i, j, match_ratio])
             else:
                 similarity_scores.append([i, j, 0])
