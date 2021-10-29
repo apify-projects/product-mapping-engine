@@ -51,17 +51,26 @@ def filter_products_with_no_similar_words(product, dataset):
     return data_subset
 
 
-def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs1_client, images_kvs2_client,
-                                                  classifier, model_key_value_store=None):
+def load_model_create_dataset_and_predict_matches(
+    dataset1,
+    dataset2,
+    images_kvs1_client,
+    images_kvs2_client,
+    classifier,
+    model_key_value_store_client=None
+):
     """
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
+    @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
+    @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param classifier: Classifier used for product matching
+    @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @return: List of same products for every given product
     """
     classifier = setup_classifier(classifier)
-    classifier.load(key_value_store=model_key_value_store)
+    classifier.load(key_value_store=model_key_value_store_client)
     dataset1['price'] = pd.to_numeric(dataset1['price'])
     dataset2['price'] = pd.to_numeric(dataset2['price'])
     pairs_dataset_fragments = []
@@ -92,7 +101,8 @@ def load_model_create_dataset_and_predict_matches(dataset1, dataset2, images_kvs
 
 def create_dataset_for_predictions(product, maybe_the_same_products):
     """
-    Create one dataset for model to predict matches that will consist of following pairs: given product with every product from the dataset of possible matches
+    Create one dataset for model to predict matches that will consist of following
+    pairs: given product with every product from the dataset of possible matches
     @param product: product to be compared with all products in the dataset
     @param maybe_the_same_products: dataset of products that are possibly the same as given product
     @return: one dataset for model to predict pairs
@@ -123,12 +133,22 @@ def filter_products(product, dataset):
     return data_filtered
 
 
-def load_data_and_train_model(classifier_type, dataset_folder='', dataset_dataframe=None, images_kvs_1_client=None,
-                              images_kvs_2_client=None, output_key_value_store=None):
+def load_data_and_train_model(
+    classifier_type,
+    dataset_folder='',
+    dataset_dataframe=None,
+    images_kvs_1_client=None,
+    images_kvs_2_client=None,
+    output_key_value_store_client=None
+):
     """
     Load dataset and train and save model
     @param dataset_folder: (optional) folder containing data
     @param classifier_type: classifier type
+    @param dataset_dataframe: dataframe of pairs to be compared
+    @param images_kvs_1_client: key-value-store client where the images for the source dataset are stored
+    @param images_kvs_2_client: key-value-store client where the images for the target dataset are stored
+    @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @return:
     """
     data = preprocess_data_without_saving(
@@ -141,19 +161,24 @@ def load_data_and_train_model(classifier_type, dataset_folder='', dataset_datafr
     classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, data)
     train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
-    classifier.save(key_value_store=output_key_value_store)
+    classifier.save(key_value_store=output_key_value_store_client)
     return train_stats, test_stats
 
 
-def load_model_and_predict_matches(dataset_folder, classifier_type, model_key_value_store=None):
+def load_model_and_predict_matches(
+    dataset_folder,
+    classifier_type,
+    model_key_value_store_client=None
+):
     """
     Directly load model and already created unlabeled dataset with product pairs and predict pairs
     @param dataset_folder: folder containing test data
     @param classifier_type: classifier type
+    @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @return: pair indices of matches
     """
     classifier = setup_classifier(classifier_type)
-    classifier.load(key_value_store=model_key_value_store)
+    classifier.load(key_value_store=model_key_value_store_client)
     data = preprocess_data_without_saving(os.path.join(os.getcwd(), dataset_folder))
     data['predicted_match'], data['predicted_scores'] = classifier.predict(data)
     return data[data['predicted_match'] == 1]
