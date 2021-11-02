@@ -3,7 +3,7 @@ meter	meters	metr	m	p,n,μ,m,c,d,k
 gram	grams		g	m,c,k
 decigram	decigrams	dekagram	dg,dkg,dag	
 second	seconds	sekunda	s	p,n,μ,m
-second	seconds	vteřina	s
+second	seconds	vteřina	s	
 minute	minutes	minuta	min	
 hour	hours	hodina	h,hr,hrs,hod	
 day	days	den	d	
@@ -34,7 +34,8 @@ watt hour	watt hours	watt hodina	Wh	m,k,M,G
 amper hour	amper hours	ampér hodina	Ah,amp hr	m,k,M
 electron volt	electron volts	elektron volt	eV	m,k,M
 volt ampere	volt amperes	volt ampér	VA	
-horsepower		koňská síla,koní	 hp,k	
+horsepower		koňská síla	 hp,k	
+horsepower		koní	hp	
 degree Celsius	degrees Celsius	stupeň Celsia	°C,Cel 	
 degree Fahrenheit	degrees Fahrenheit	stupeň Fahrneita	°F,R	
 lumen	lumens		lm 	
@@ -74,8 +75,10 @@ neper	nepers		Np, nep
 bel	bels		b	
 decibel	decibels		db	
 pixel	pixels		px	M
-bit per second	bits per seconds	bit za sekundu,bit za vteřinu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
-byte per second	bytes per seconds	byte za sekundu,byte za vteřinu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+bit per second	bits per seconds	bit za sekundu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+bit per second		bit za vteřinu	bps	
+byte per second	bytes per seconds	byte za sekundu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+byte per second		byte za vteřinu	Bps	
 bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
 byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
-standard atmosphere		atmosféra	ATM
+standard atmosphere		atmosféra	ATM	
