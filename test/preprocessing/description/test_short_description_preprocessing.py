@@ -1,10 +1,10 @@
 from scripts.preprocessing.description.short_description_preprocessing import remove_useless_spaces, split_words, \
-    split_params, detect_parameters, compare_units_in_descriptions
+    split_params, detect_parameters, compare_units_in_descriptions, convert_us_to_eu_units
 from scripts.preprocessing.names.names_preprocessing import split_units_and_values
 
 test_text = 'Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ'
 test_texts = [
-    'Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ',
+    '4 sekunda 3 vteřina 6 gallons 5% Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ',
     'Herní PC AMD Ryzen 7 5800X 4.7 GHz, NVIDIA GeForce RTX 3070 8GB, RAM 32GB DDR4, SSD 1000 GB + HDD 6 TB, Bez mechaniky, Wi-Fi, HDMI a DisplayPort, 2× USB 3.2, 2× USB 2.0, typ skříně: Midi Tower, Windows 10 Pro',
     'Fitness náramek - unisex, s přímým měřením tepu ze zápěstí, krokoměr, výpočet kalorií, monitoring spánku, hodnota vodotěsnosti 50 m (5 ATM), kompatibilní s iOS a Android',
     'Chytré hodinky - unisex s měřením tepu ze zápěstí, Apple Pay, monitoring spánku, telefonování pomocí hodinek přes spárovaný telefon, hodnota vodotěsnosti 50 m (5 ATM), watchOS, kompatibilní s iOS, vyžadují iPhone 6s a novější, kapacita úložiště 32 GB, ion-x sklíčko, materiál řemínku: silikon, materiál pouzdra: hliník',
@@ -16,7 +16,6 @@ def main():
     parameters = []
     datas = []
     for t in test_texts:
-        dd = []
         text_cleaned = remove_useless_spaces(t)
         text_lower = text_cleaned.lower()
         text_split = split_params(text_lower)
@@ -28,6 +27,7 @@ def main():
         datas.append(d_detected)
     print(datas)
     print(parameters)
+
     similarity_scores = compare_units_in_descriptions(parameters, parameters)
     print(similarity_scores)
     print('wohoo!')

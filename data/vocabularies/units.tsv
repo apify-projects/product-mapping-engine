@@ -3,11 +3,10 @@ meter	meters	metr	m	p,n,μ,m,c,d,k
 gram	grams		g	m,c,k
 decigram	decigrams	dekagram	dg,dkg,dag	
 second	seconds	sekunda	s	p,n,μ,m
-second	seconds	vteřina	s	
 minute	minutes	minuta	min	
 hour	hours	hodina	h,hr,hrs,hod	
 day	days	den	d	
-year	years	rok	ann, a.,yrs,y	
+year	years	rok	ann,a.,yrs,y	
 week	weeks	týden	wk,wks	
 month	months	měsíc	mo,mon	
 radian	radians		rad	
@@ -34,16 +33,15 @@ watt hour	watt hours	watt hodina	Wh	m,k,M,G
 amper hour	amper hours	ampér hodina	Ah,amp hr	m,k,M
 electron volt	electron volts	elektron volt	eV	m,k,M
 volt ampere	volt amperes	volt ampér	VA	
-horsepower		koňská síla	 hp,k	
-horsepower		koní	hp	
+horsepower		koní	 hp,k	
 degree Celsius	degrees Celsius	stupeň Celsia	°C,Cel 	
 degree Fahrenheit	degrees Fahrenheit	stupeň Fahrneita	°F,R	
 lumen	lumens		lm 	
 lux			lx	
 becquerel 	becquerels		Bq	
 degree	degrees	stupeň	°,deg	
-minute 	minutes	minuta	"	
-second 	seconds	vteřina	'	
+minute 	minutes	minuta	#"	
+second 	seconds	vteřina	#'	
 liter	liters	litr	l	m,c,d,h
 are	ares	ar	ar, m^2	
 tonne	tonnes	tuna	t	
@@ -69,6 +67,20 @@ dram	drams		dr
 pennyweight	pennyweights		pwt	
 ton	tons		t	
 pound per inch	pounds per inch		PPI	
+square mile	square miles	čtvereční míle	sq mi,mi2	
+furlong	furlongs		fur	
+fathom	fathoms	sáh	fth	
+acre	acres	akr	ac,acre	
+square rod	square rods	čtverreční rod	sq rd,rd2	
+square yard	square yards	čtvereční yard	sq yd,yd2	
+square foot	square feet	čtvereční stopa	sq ft,ft2	
+square inch	square inches	čtvereční palec	sq in,in2	
+cubic yard	cubic yards	kubický yard	cu yd,yd3	
+cubic foot	cubic feet	kubická stopa	cu ft,ft3	
+cubic inch	cubic inches	kubický palec	cu in,in3	
+acre-foot	acre-feet		ac ft	
+board foot	board feet		bd ft	
+cord	cords		cd	
 calorie	calories	kalorie	cal	k
 baud	bauds		Bd	
 neper	nepers		Np, nep	
@@ -82,3 +94,4 @@ byte per second		byte za vteřinu	Bps
 bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
 byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
 standard atmosphere		atmosféra	ATM	
+percent	percents	procento	%

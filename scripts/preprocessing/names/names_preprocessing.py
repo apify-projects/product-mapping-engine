@@ -270,6 +270,9 @@ def split_units_and_values(data):
         if re.match('^[0-9]+[a-z]+$', word) is not None:
             words_splitted.append(re.split('[a-z]+$', word)[0])
             words_splitted.append(re.split('^[0-9]+', word)[1])
+        elif re.match('^[0-9]+%$', word) is not None:
+            words_splitted.append(re.split('%', word)[0])
+            words_splitted.append(re.split('^[0-9]+', word)[1])
         else:
             words_splitted.append(word)
     return words_splitted

@@ -1,0 +1,39 @@
+shortcut	value	base	name
+gal	3.785	l	gallon
+qt	0.946	l	quart
+pt	0.473	l	pint
+gil	0.118294	l	gill
+foz	0.029573	l	fluid ounce
+fdr	0.003697	l	fluid dram
+min	0.061610	l	minim
+bu	0.035239	l	bushel
+pk	8.81	l	peck
+qt	1.101	l	quart
+pt	0.551	l	pint
+yd	0.9144	m	yard
+mi	1609	m	mile
+rd	5.029	m	rod
+ft	0.3048	m	foot
+in	0.0254	m	inch
+miph	1609.34	m/h	mile per hour
+t	1000000	g	ton
+sq mi	25910000	m2	square mile
+fur	201	m	furlong
+fth	1.829	m	fathom
+ac	4047	m2	acre
+sq rd	25293	m2	square rod
+sq yd	0.836	m2	square yard
+sq ft	0.093	m2	square foot
+sq in	0.0006452	m2	square inch
+cu yd	765	l	cubic yard
+cu ft	28	l	cubic foot
+cu in	16387	l	cubic inch
+ac ft	1233000	l	acre-foot
+bd ft	2.36	l	board foot
+cd	3.62	l	cord
+gr	0.0647989	g	grain
+lb	453.592	g	pound
+oz	28.3495	g	ounce
+dr	1.77185	g	dram
+pwt	1.55517	g	pennyweight
+ppi	17858	g/m	pound per inch
