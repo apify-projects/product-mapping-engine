@@ -1,5 +1,5 @@
 from scripts.preprocessing.description.short_description_preprocessing import remove_useless_spaces, split_words, \
-    split_params, detect_parameters, compare_units_in_descriptions, convert_us_to_eu_units
+    split_params, detect_parameters, compare_units_in_descriptions
 from scripts.preprocessing.names.names_preprocessing import split_units_and_values
 
 test_text = 'Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ'

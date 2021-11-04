@@ -4,7 +4,9 @@ import re
 import time
 
 import requests
+
 from scripts.preprocessing.description.short_description_preprocessing import detect_parameters
+
 ID_LEN = 5
 COLOR_PREFIX = '#col#'
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -167,7 +169,8 @@ def detect_brand(word, is_first, first_likelihood):
     return "#bnd#" + word if is_brand else word
 
 
-def detect_ids_brands_colors_and_params(data, compare_words, id_detection=True, color_detection=True, brand_detection=True,
+def detect_ids_brands_colors_and_params(data, compare_words, id_detection=True, color_detection=True,
+                                        brand_detection=True,
                                         parameters_detection=True):
     """
     Detect ids, colors, brands and description parameters in names
@@ -183,21 +186,20 @@ def detect_ids_brands_colors_and_params(data, compare_words, id_detection=True, 
     cnt_voc = 0
     cnt_lem = 0
 
-    data = split_units_and_values(data)
-
     word_counts = {}
     first_likelihood = {}
+    new_data = []
     for name in data:
+        name = split_units_and_values(name)
+        new_data.append(name)
         is_first = True
         for word in name:
             if word not in word_counts:
                 word_counts[word] = 0
                 first_likelihood[word] = 0
-
             word_counts[word] += 1
             if is_first:
                 first_likelihood[word] += 1
-
             is_first = False
 
     for word in first_likelihood:
@@ -205,7 +207,7 @@ def detect_ids_brands_colors_and_params(data, compare_words, id_detection=True, 
 
     # print(first_likelihood)
 
-    for name in data:
+    for name in new_data:
         word_list = []
         is_first = True
         for word in name:
@@ -242,7 +244,6 @@ def detect_ids_brands_colors_and_params(data, compare_words, id_detection=True, 
     return data_list, cnt_voc, cnt_lem
 
 
-
 def to_list(data):
     """
     Convert list of names to list of list of words which the name constists of
@@ -267,8 +268,8 @@ def split_units_and_values(data):
     """
     words_splitted = []
     for word in data:
-        if re.match('^[0-9]+[a-z]+$', word) is not None:
-            words_splitted.append(re.split('[a-z]+$', word)[0])
+        if re.match('^[0-9]+[a-zA-Z]+$', word) is not None:
+            words_splitted.append(re.split('[a-zA-Z]+$', word)[0])
             words_splitted.append(re.split('^[0-9]+', word)[1])
         elif re.match('^[0-9]+%$', word) is not None:
             words_splitted.append(re.split('%', word)[0])

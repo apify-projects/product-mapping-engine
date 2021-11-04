@@ -19,13 +19,14 @@ def main(**kwargs):
 
     compare_words = False
     data, cnt_voc, cnt_lem = detect_ids_brands_colors_and_params(data, compare_words=compare_words)
+
     if compare_words:
         print('Number of words in names that were in manually created vocabulary: ' + str(cnt_voc))
         print('Number of words in names that were recognised in Morphoditta: ' + str(cnt_lem))
 
-    with open(kwargs['output_file'], 'w', encoding='utf-8') as f:
+    with open(kwargs['output_file'], 'w', encoding='utf-16') as f:
         for d in data:
-            f.write(' '.join(d))
+            f.write(' '.join([str(word) for word in d]))
             f.write('\n')
 
 

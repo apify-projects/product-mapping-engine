@@ -6,8 +6,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
 from scripts.score_computation.names.compute_names_similarity import compute_tf_idf, lower_case
-
-
+from scripts.preprocessing.names.names_preprocessing import split_units_and_values
 def replace_commas_for_dot_in_numbers(data):
     """
     Replace commas for dots in floats
@@ -28,11 +27,26 @@ def preprocess_descriptions_and_create_tf_idf(dataset1, dataset2):
     @param dataset2: Second dataset to preprocess
     @return: Preprocessed datasets and computed tf.idfs
     """
-    dataset1 = lower_case(dataset1)
-    dataset2 = lower_case(dataset2)
+    dataset1 = preprocess_description(dataset1)
+    dataset2 = preprocess_description(dataset2)
     data = dataset1 + dataset2
     tf_idfs = compute_tf_idf(data, do_remove_markers=False)
     return dataset1, dataset2, tf_idfs
+
+
+def preprocess_description(data):
+    """
+    Lowercase and split units and values in dataset
+    @param data: data to preprocess
+    @return: preprocessed data
+    """
+    new_data = []
+    for d in data:
+        d = lower_case(d.split(' '))
+        d = split_units_and_values(d)
+        d = ' '.join(d)
+        new_data.append(d)
+    return new_data
 
 
 def cosine_similarity_of_datasets(tf_idfs):
