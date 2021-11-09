@@ -7,7 +7,7 @@ from dataset_handler import preprocess_data, analyse_dataset
 
 @click.command()
 @click.option('--dataset_folder', '-d',
-              default='data/wdc_dataset/dataset/results',
+              default='data/wdc_dataset/dataset/preprocessed',
               help='Dataset to use for the evaluation')  #
 @click.option('--classifier', '-c',
               default='Svm',

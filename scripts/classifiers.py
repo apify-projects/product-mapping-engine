@@ -18,6 +18,11 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 class Classifier:
     def __init__(self, weights):
         self.weights = weights
+
+        # TODO arbitrarily chosen, fix this
+        if 'threshold' not in self.weights:
+            self.weights['threshold'] = 0.75
+
         self.model = None
         self.name = None
 
@@ -40,19 +45,27 @@ class Classifier:
     def print_feature_importances(self):
         pass
 
-    def save(self, path='results/models'):
-        filename = f'{self.name}.sav'
-        pickle.dump(self.model, open(os.path.join(path, filename), 'wb'))
+    def save(self, path='results/models', key_value_store=None):
+        if key_value_store is None:
+            if not os.path.exists(path):
+                os.makedirs(path)
 
-    def load(self, path='results/models'):
-        filename = f'{self.name}.sav'
-        self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
-        return self
+            filename = f'{self.name}.sav'
+            pickle.dump(self.model, open(os.path.join(path, filename), 'wb'))
+        else:
+            key_value_store.set_record('model', pickle.dumps(self.model))
+
+    def load(self, path='results/models', key_value_store=None):
+        if key_value_store is None:
+            filename = f'{self.name}.sav'
+            self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
+        else:
+            self.model = pickle.loads(key_value_store.get_record('model')['value'])
 
 
 class LinearRegressionClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -67,7 +80,7 @@ class LinearRegressionClassifier(Classifier):
 
 class LogisticRegressionClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.model = LogisticRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -77,7 +90,7 @@ class LogisticRegressionClassifier(Classifier):
 
 class SvmLinearClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.kernel = 'poly'  # linear, rbf, poly
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
@@ -88,7 +101,7 @@ class SvmLinearClassifier(Classifier):
 
 class SvmRbfClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.kernel = 'rbf'
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
@@ -99,7 +112,7 @@ class SvmRbfClassifier(Classifier):
 
 class SvmPolyClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.kernel = 'poly'
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
@@ -110,7 +123,7 @@ class SvmPolyClassifier(Classifier):
 
 class NeuralNetworkClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.model = MLPClassifier(hidden_layer_sizes=(5, 5), activation='relu', solver='adam', max_iter=1000)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -125,7 +138,7 @@ class NeuralNetworkClassifier(Classifier):
 
 class DecisionTreeClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.model = DecisionTree(max_depth=5, max_leaf_nodes=20)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -140,7 +153,7 @@ class DecisionTreeClassifier(Classifier):
 
 class RandomForestsClassifier(Classifier):
     def __init__(self, weights):
-        self.weights = weights
+        super().__init__(weights)
         self.model = RandomForests(max_depth=5, n_estimators=3)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 

@@ -1,3 +1,5 @@
+from slugify import slugify
+
 NAME_CHAR_SUBSET = 6
 BIT_GROUPS = 4
 HEX_GROUPS = 1
@@ -100,33 +102,41 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
     return pair_similarities
 
 
-def create_hash_sets(data):
+def create_hash_sets(
+    data,
+    pair_ids_and_counts_dataframe,
+    dataset_prefixes
+):
     """
     Create list of lists of image hashes and names for each product
     @param data: input dict of image name and hash value
+    @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
+    @param dataset_prefixes: prefixes of images identifying them as parts of a specific dataset
     @return: list of hashes and list on names of images
     """
     hashes = []
     names = []
-    last_name = list(data.keys())[0].split('_')
-    last_name = last_name[0] + last_name[1]
-    img_names = []
-    hash_set = []
-    for orig_name, hashval in data.items():
-        orig_name = orig_name.split('_')
-        name = orig_name[0] + orig_name[1]
-        orig_name = f'{orig_name[0]}{orig_name[1]}_{orig_name[2]}{orig_name[3]}_{orig_name[4]}{orig_name[5]}'
-        if name == last_name:
-            hash_set.append(hashval)
-            img_names.append(orig_name)
-        else:
-            hashes.append(hash_set)
-            names.append(img_names)
-            hash_set = []
-            img_names = []
-            hash_set.append(hashval)
-            img_names.append(orig_name)
-            last_name = name
-    names.append(img_names)
-    hashes.append(hash_set)
+
+    pair_index = 0
+    for pair in pair_ids_and_counts_dataframe:
+        pair_hashes = []
+        pair_names = []
+        for dataset_index in range(2):
+            id_key = 'id{}'.format(dataset_index+1)
+            image_count_key = 'image{}'.format(dataset_index + 1)
+            for image_index in range(int(pair[image_count_key])):
+                # TODO equalize indexing (images for instance have indexing starting from 0 and from 1)
+                image_name = dataset_prefixes[dataset_index] + '_' + slugify(pair[id_key] + '_image_{}'.format(image_index)) + '.jpg'
+                pair_image_identification = 'pair{}_product{}_image{}'.format(pair_index, dataset_index + 1, image_index + 1)
+                hash = data[image_name]
+
+                pair_hashes.append(hash)
+                pair_names.append(pair_image_identification)
+
+        if len(pair_hashes) > 0:
+            hashes.append(pair_hashes)
+            names.append(pair_names)
+
+        pair_index += 1
+
     return hashes, names
