@@ -1,9 +1,12 @@
 import os
+import shutil
 import sys
 
 # DO NOT REMOVE
-# Adding the higher level directory (scripts/) to sys.path so that we can import from the other folders
+# Adding the higher level directories to sys.path so that we can import from the other folders
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+
 import pandas as pd
 
 from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
@@ -12,13 +15,17 @@ from scripts.score_computation.dataset_handler import preprocess_data_without_sa
 
 def main(**kwargs):
     # Load dataset and train and save model
-    # load_data_and_train_classifier('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
+    load_data_and_train_model('data/extra_dataset/dataset', 'DecisionTree')
     # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
 
     # Load datasets and model and fund matching pairs
-    output_file = 'data/extra_dataset/dataset/results/matching_pairs.csv'
-    dataset1 = 'data/extra_dataset/dataset/source/amazon.csv'
-    dataset2 = 'data/extra_dataset/dataset/source/extra.csv'
+    dataset1 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/amazon.csv')
+    dataset2 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/extra.csv')
+    results_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/results')
+    if os.path.exists(results_directory):
+        shutil.rmtree(results_directory)
+    os.mkdir(results_directory)
+    output_file = os.path.join(results_directory, 'matching_pairs.csv')
     matching_pairs = load_model_create_dataset_and_predict_matches(pd.read_csv(dataset1),
                                                                    pd.read_csv(dataset2),
                                                                    'DecisionTree')
@@ -82,7 +89,6 @@ def create_dataset_for_predictions(product, maybe_the_same_products):
     final_dataset.reset_index(drop=True, inplace=True)
     maybe_the_same_products.reset_index(drop=True, inplace=True)
     final_dataset = pd.concat([final_dataset, maybe_the_same_products], axis=1)
-    final_dataset = final_dataset.rename(columns={'url1': 'id1', 'url2': 'id2'})
     return final_dataset
 
 
