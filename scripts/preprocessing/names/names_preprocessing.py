@@ -262,7 +262,7 @@ def to_list(data):
 
 def split_units_and_values(data):
     """
-    Split parameter values and units inot two words
+    Split parameter values and units into two words
     @param data: data with list of product names
     @return: splitted data with list of product names
     """
@@ -278,6 +278,15 @@ def split_units_and_values(data):
             words_splitted.append(word)
     return words_splitted
 
+def split_words(text):
+    """
+    Split text to the single words
+    @param text: text to be split
+    @return: list of words of text
+    """
+    rgx = re.compile("\w+[\"\-'×.,%]?\w*")
+    split_text = rgx.findall(text)
+    return split_text
 
 BRANDS = load_brands()
 COLORS = load_colors()

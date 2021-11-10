@@ -1,12 +1,15 @@
 import re
 from math import floor, ceil
 
+import majka
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
+from scripts.preprocessing.names.names_preprocessing import split_units_and_values, split_words
 from scripts.score_computation.names.compute_names_similarity import compute_tf_idf, lower_case
-from scripts.preprocessing.names.names_preprocessing import split_units_and_values
+
+
 def replace_commas_for_dot_in_numbers(data):
     """
     Replace commas for dots in floats
@@ -20,31 +23,36 @@ def replace_commas_for_dot_in_numbers(data):
     return new_data
 
 
-def preprocess_descriptions_and_create_tf_idf(dataset1, dataset2):
+def preprocess_descriptions_and_create_tf_idf(dataset1, dataset2, lemmatizer):
     """
     Preprocess data and create tf.idf of both datasets
     @param dataset1: First dataset to preprocess
     @param dataset2: Second dataset to preprocess
+    @param lemmatizer: lemmatizer to be used to lemmatize texts
     @return: Preprocessed datasets and computed tf.idfs
     """
-    dataset1 = preprocess_description(dataset1)
-    dataset2 = preprocess_description(dataset2)
+    dataset1 = preprocess_description(dataset1, lemmatizer)
+    dataset1 = [' '.join(d) for d in dataset1]
+    dataset2 = preprocess_description(dataset2, lemmatizer)
+    dataset2 = [' '.join(d) for d in dataset2]
     data = dataset1 + dataset2
     tf_idfs = compute_tf_idf(data, do_remove_markers=False)
     return dataset1, dataset2, tf_idfs
 
 
-def preprocess_description(data):
+def preprocess_description(data, lemmatizer):
     """
     Lowercase and split units and values in dataset
     @param data: data to preprocess
+    @param lemmatizer: lemmatizer to be used to lemmatize texts
     @return: preprocessed data
     """
     new_data = []
     for d in data:
-        d = lower_case(d.split(' '))
+        d = split_words(d)
         d = split_units_and_values(d)
-        d = ' '.join(d)
+        d = lower_case(d)
+        d = lemmatize_czech_text(d, lemmatizer)
         new_data.append(d)
     return new_data
 
@@ -116,5 +124,31 @@ def compare_descriptive_words(tf_idfs, filter_limit, top_words):
         for j in range(ceil(length / 2), length):
             # res = cosine_similarity([representatives.iloc[i].values, representatives.iloc[j].values])[0][1]
             res = compute_descriptive_words_similarity(descriptives.iloc[i].values, descriptives.iloc[j].values)
-            descriptives_similarity.append(res/top_words)
+            descriptives_similarity.append(res / top_words)
     return descriptives_similarity
+
+
+def set_czech_lemmatizer():
+    morph = majka.Majka('data/vocabularies/majka.w-lt')
+    morph.flags |= majka.ADD_DIACRITICS  # find word forms with diacritics
+    morph.flags |= majka.DISALLOW_LOWERCASE  # do not enable to find lowercase variants
+    morph.flags |= majka.IGNORE_CASE  # ignore the word case whatsoever
+    morph.flags = 0  # unset all flags
+    morph.tags = True  # return just the lemma, do not process the tags
+    morph.compact_tag = False  # not return tag in compact form (as returned by Majka)
+    morph.first_only = True  # return only the first entry (not all entries)
+    return morph
+
+
+def lemmatize_czech_text(text, morph):
+    lemmatized_text = []
+    for word in text:
+        x = morph.find(word)
+        if x == []:
+            lemma = word
+        else:
+            lemma = x[0]['lemma']
+            if 'negation' in x[0]['tags'] and x[0]['tags']['negation']:
+                lemma = 'ne' + lemma
+        lemmatized_text.append(lemma)
+    return lemmatized_text

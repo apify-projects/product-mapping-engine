@@ -1,7 +1,7 @@
-from scripts.preprocessing.description.short_description_preprocessing import remove_useless_spaces, split_words, \
+from scripts.preprocessing.description.short_description_preprocessing import remove_useless_spaces, \
     split_params, detect_parameters, compare_units_in_descriptions
-from scripts.preprocessing.names.names_preprocessing import split_units_and_values
-
+from scripts.preprocessing.names.names_preprocessing import split_units_and_values, split_words
+from scripts.preprocessing.description.long_description_preprocessing import lemmatize_czech_text, set_czech_lemmatizer
 test_text = 'Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ'
 test_texts = [
     '4 sekunda 3 vteřina 6 gallons 5% Notebook - AMD Ryzen 7 4800H, dotykový 14" IPS lesklý 2160 × 1440, RAM 16GB DDR4, AMD Radeon Vega Graphics, SSD 512GB, podsvícená klávesnice, webkamera, USB 3.2 Gen 1, USB-C, čtečka otisků prstů, WiFi 5, Hmotnost 1,49 kg, Windows 10 Home 53012GDQ',
@@ -14,14 +14,19 @@ test_texts = [
 
 def main():
     parameters = []
+    lemmatizer = set_czech_lemmatizer()
     datas = []
     for t in test_texts:
         text_cleaned = remove_useless_spaces(t)
         text_lower = text_cleaned.lower()
         text_split = split_params(text_lower)
-        text_split = split_words(text_split)
-        text_split = [item for sublist in text_split for item in sublist]
-        data = split_units_and_values(text_split)
+        new_sentence = []
+        for sentence in text_split:
+            sentence_split = split_words(sentence)
+            sentence_split = split_units_and_values(sentence_split)
+            sentence_split = lemmatize_czech_text(sentence_split, lemmatizer)
+            new_sentence.append(sentence_split)
+        data = [item for sublist in new_sentence for item in sublist]
         d_detected, params = detect_parameters(data)
         parameters.append(params)
         datas.append(d_detected)

@@ -1,5 +1,3 @@
-import re
-
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -73,7 +71,8 @@ def compute_tf_idf(data, print_stats=False, do_remove_markers=True):
     """
     if do_remove_markers:
         data = remove_markers(data)
-    vectorizer = TfidfVectorizer(token_pattern='(?u)\\b[\w.,-]+\\b', lowercase=False) #unicode and then matchin \b empty line before and after word and \wmatching word
+    vectorizer = TfidfVectorizer(token_pattern='(?u)\\b[\w.,-]+\\b',
+                                 lowercase=False)  # unicode and then matchin \b empty line before and after word and \wmatching word
     vectors = vectorizer.fit_transform(data)
     feature_names = vectorizer.get_feature_names()
     dense = vectors.todense()

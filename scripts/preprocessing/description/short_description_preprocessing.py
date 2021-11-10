@@ -92,20 +92,6 @@ def remove_useless_spaces(text):
     return text
 
 
-def split_words(text_list):
-    """
-    Split list of specifications to the single words
-    @param text: list of specifications to be split
-    @return: list of words of specifications
-    """
-    split_text = []
-    rgx = re.compile("\w+[\"\-'×.,%]?\w*")
-    for text in text_list:
-        words = rgx.findall(text)
-        split_text.append(words)
-    return split_text
-
-
 def detect_parameters(text):
     """
     Detect units in text according to the loaded dictionary
