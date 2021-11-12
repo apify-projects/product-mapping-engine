@@ -77,7 +77,7 @@ def split_params(text):
     return text.split(',')
 
 
-def remove_useless_spaces(text):
+def remove_useless_spaces_and_characters(text):
     """
     Remove useless spaces between numerical values
     @param text: text to remove spaces
@@ -138,7 +138,6 @@ def convert_units_to_basic_form(dataset):
 
 def convert_us_to_eu_units(unit, value):
     if unit in UNITS_US_TO_EU.keys():
-        x = UNITS_US_TO_EU[unit][0]
         value = value * float(UNITS_US_TO_EU[unit][0])
         unit = UNITS_US_TO_EU[unit][1]
     return unit, value

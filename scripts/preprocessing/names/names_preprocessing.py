@@ -278,6 +278,7 @@ def split_units_and_values(data):
             words_splitted.append(word)
     return words_splitted
 
+
 def split_words(text):
     """
     Split text to the single words
@@ -287,6 +288,7 @@ def split_words(text):
     rgx = re.compile("\w+[\"\-'×.,%]?\w*")
     split_text = rgx.findall(text)
     return split_text
+
 
 BRANDS = load_brands()
 COLORS = load_colors()
