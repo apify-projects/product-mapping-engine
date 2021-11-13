@@ -58,7 +58,7 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
     """
     Convert hashes to dec or binary and compute distances between every two set of images of products
     @param hashes: set of hashes of images
-    @param names: set of image names
+    @param names: set of image texts
     @param metric: metric of computing the distance
     @param filter_dist: whether the images that are too far should be filtered or not
     @param thresh: thresh value above which the images should be filtered
@@ -104,9 +104,9 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
 
 def create_hash_sets(data, pair_ids_and_counts, dataset_prefixes):
     """
-    Create list of lists of image hashes and names for each product
+    Create list of lists of image hashes and texts for each product
     @param data: input dict of image name and hash value
-    @return: list of hashes and list on names of images
+    @return: list of hashes and list on texts of images
     """
     hashes = []
     names = []

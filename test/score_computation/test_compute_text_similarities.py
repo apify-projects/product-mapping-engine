@@ -1,8 +1,9 @@
-from scripts.preprocessing.description.long_description_preprocessing import preprocess_descriptions_and_create_tf_idf, \
-    cosine_similarity_of_datasets, compare_descriptive_words, set_czech_lemmatizer
+from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
+from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
+from scripts.preprocessing.texts.text_preprocessing import preprocess_text, set_czech_lemmatizer
 
 test_texts1 = [
-    '1,1 Notebook Lenovo IdeaPad 3 splní všechna vaše přání. Nabízí skvělý displej s jemným rozlišením, procesor s vysokým výkonem, rychlou RAM paměť a až 9,6 hodinovou výdrží baterie s podporou rychlého nabíjení. Dvojice výkonných reproduktorů s technologií Dolby Audio vám zprostředkuje kvalitní zvuk a zásluhou nízké hmotnosti si jej můžete vzít kamkoliv s sebou, aniž by se pronesl. A to nejlepší - jeho stylový design v mnoha barevných provedeních vám vyrazí dech.',
+    '1,1 cm 3 h Notebook Lenovo IdeaPad 3 splní všechna vaše přání. Nabízí skvělý displej s jemným rozlišením, procesor s vysokým výkonem, rychlou RAM paměť a až 9,6 hodinovou výdrží baterie s podporou rychlého nabíjení. Dvojice výkonných reproduktorů s technologií Dolby Audio vám zprostředkuje kvalitní zvuk a zásluhou nízké hmotnosti si jej můžete vzít kamkoliv s sebou, aniž by se pronesl. A to nejlepší - jeho stylový design v mnoha barevných provedeních vám vyrazí dech.',
     'Představujeme notebook IdeaPad Gaming 3, který se postará o dokonalý herní zážitek. S procesory AMD, grafickou kartou Nvidia řady GTX a rychlou DDR4 RAM pamětí zajistí plynulé hraní i těch nejnáročnějších her. Navíc vypadá dokonale a systém chlazení dvou ventilátorů jej ponechá ledově chladným za všech situací!',
     'S notebookem Legion 5 nebude mít váš soupeř jedinou šanci. Je vybaven výkonným procesorem, velkou pamětí RAM a skvělou grafickou kartou, se kterou můžete hrát hry na vysoké FPS bez sekání. IPS displej s jemným rozlišením, vysokým jasem a obnovovací frekvencí 144 Hz ještě umocní skvělý zážitek z hraní her. A navíc má i nové chlazení Legion Coldfront 2.0, které je tiché a vysoce účinné!',
     'Lenovo ThinkBook 15 je firemní notebook se špičkovým zabezpečením, vysokou odolností, dlouhou výdrží baterie a rychlým nabíjením. S výkonným hardwarem a chytrými funkcemi budete s ThinkBookem 15 pracovat efektivněji a rychleji. Na první pohled upoutá pouhých 18,9 mm tenkou konstrukcí a stylovým šedým barevným provedením.',
@@ -20,11 +21,18 @@ test_texts2 = [
 
 def main():
     lemmatizer = set_czech_lemmatizer()
-    dataset1, dataset2, tf_idfs = preprocess_descriptions_and_create_tf_idf(test_texts1, test_texts2, lemmatizer)
-    cos_similarities = cosine_similarity_of_datasets(tf_idfs)
-    print(cos_similarities)
-    representatives_similarity = compare_descriptive_words(tf_idfs, filter_limit=0.3, top_words=10)
-    print(representatives_similarity)
+    dataset1 = preprocess_text(test_texts1, lemmatizer)
+    dataset2 = preprocess_text(test_texts2, lemmatizer)
+    dataset1_detected, units_list1 = detect_ids_brands_colors_and_units(dataset1, id_detection=False,
+                                                                        color_detection=True,
+                                                                        brand_detection=False,
+                                                                        units_detection=True)
+    dataset2_detected, units_list2 = detect_ids_brands_colors_and_units(dataset2, id_detection=False,
+                                                                        color_detection=True,
+                                                                        brand_detection=False,
+                                                                        units_detection=True)
+    datasets_similarity = compute_similarity_of_texts(dataset1_detected, units_list1, dataset2_detected, units_list2)
+    print(datasets_similarity)
 
 
 if __name__ == "__main__":

@@ -53,7 +53,6 @@ def remove_useless_spaces_and_characters(text):
     text = text.replace(')', '')
     return text
 
-
 def preprocess_text(data, lemmatizer=None):
     """
     Lowercase and split units and values in dataset
@@ -105,7 +104,7 @@ def split_units_and_values(word_list):
 
 def lower_case(word_list):
     """
-    Lower case all names in dataset
+    Lower case all texts in dataset
     @param word_list: list of words
     @return: lowercased list of words
     """
@@ -113,3 +112,17 @@ def lower_case(word_list):
     for word in word_list:
         lowercased_word_list.append(word.lower())
     return lowercased_word_list
+
+
+def remove_colors(word_list):
+    """
+    Remove colors from list of words
+    @param text: original list of words
+    @return: list of words without colors
+    """
+    nocolor_word_list = []
+    for word in word_list:
+        if '#COL#' in word:
+            word = re.sub(r'#COL#(?=\w)', r'', word)
+        nocolor_word_list.append(word)
+    return nocolor_word_list

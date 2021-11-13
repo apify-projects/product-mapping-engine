@@ -65,7 +65,7 @@ def load_vocabulary(vocabulary_file):
 def create_unit_dict():
     """
     Load files with units and their possible prefixes and create all possible units variants and combination
-    from shortcuts and different variants of the names with their values for conversion to their elementary version
+    from shortcuts and different variants of the texts with their values for conversion to their elementary version
     @return: Dataset with units their prefixes and values for conversion to bae form
     """
     prefixes_df = pd.read_csv(PREFIXES_PATH, sep='\t', keep_default_na=False)
@@ -162,6 +162,7 @@ def is_param(word):
     return False
 
 
+
 def detect_id(word):
     """
     Check whether the word is not and id (whether it is a valid word)
@@ -240,13 +241,13 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
                                        brand_detection=True,
                                        units_detection=True):
     """
-    Detect ids, colors, brands and units in names
+    Detect ids, colors, brands and units in texts
     @param data: List of texts that each consists of list of words
     @param id_detection: True if id should be detected
     @param color_detection: True if color should be detected
     @param brand_detection: True if brand should be detected
     @param units_detection: True if units should be detected
-    @return: names with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
+    @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
     """
     data_list = []
     first_likelihood = compute_likelihood_of_first_words(data)
@@ -266,7 +267,7 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
             if units_detection and not is_first:
                 word, unit_and_value = detect_units(word, previous)
                 if unit_and_value is not None:
-                    detected_word_list[len(detected_word_list) - 1] = str(unit_and_value['value'])
+                    detected_word_list[len(detected_word_list) - 1] = str(unit_and_value[1])
                     description_parameters.append(unit_and_value)
             detected_word_list.append(word)
             is_first = False
@@ -274,7 +275,7 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
         data_parameters.append(description_parameters)
         data_list.append(detected_word_list)
 
-    return data_list, description_parameters
+    return data_list, data_parameters
 
 
 def compute_likelihood_of_first_words(data):
@@ -354,7 +355,7 @@ def detect_units(word, previous_word):
     if word.lower() in UNITS_DICT.keys() and previous_word.replace('.', '', 1).isnumeric():
         new_word, new_value = convert_unit_and_value_to_base_form(word.lower(), float(previous_word))
         new_word, new_value = convert_us_to_eu_units(new_word, new_value)
-        return "#unit#" + new_word, {'unit': new_word, 'value': new_value}
+        return "#unit#" + new_word, [new_word, new_value]
     if word in SIZE_UNITS:
-        return "#unit#" + word, {'unit': 'size', 'value': word}
+        return "#unit#" + word, ['size', word]
     return word, None
