@@ -56,10 +56,18 @@ def load_file(name_file):
     return names
 
 
-def preprocess_data_without_saving(dataset_folder='', dataset_dataframe=None, dataset_images_kvs1=None, dataset_images_kvs2=None):
+def preprocess_data_without_saving(
+    dataset_folder='',
+    dataset_dataframe=None,
+    dataset_images_kvs1=None,
+    dataset_images_kvs2=None
+):
     """
     For each pair of products compute their image and name similarity without saving anything
     @param dataset_folder: folder containing data to be preprocessed
+    @param dataset_dataframe: dataframe of pairs to be compared
+    @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
+    @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
     @return: preprocessed data
     """
     product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(os.path.join(dataset_folder, "product_pairs.csv"))
@@ -68,7 +76,7 @@ def preprocess_data_without_saving(dataset_folder='', dataset_dataframe=None, da
     image_similarities = [0] * len(product_pairs)
     image_similarities = create_image_similarities_data(
         product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(orient='records'),
-        images_folder=dataset_folder,
+        dataset_folder=dataset_folder,
         dataset_images_kvs1=dataset_images_kvs1,
         dataset_images_kvs2=dataset_images_kvs2
     )
@@ -81,7 +89,19 @@ def preprocess_data_without_saving(dataset_folder='', dataset_dataframe=None, da
     return pd.concat(dataframes_to_concat, axis=1)
 
 
-def download_images_from_kvs(img_dir, dataset_images_kvs, prefix):
+def download_images_from_kvs(
+    img_dir,
+    dataset_images_kvs,
+    prefix
+):
+    """
+    Downloads images from the given key-value-store and saves them into the specified folder, prefixing their name with
+    the provided prefix.
+    @param img_dir: folder to save the downloaded images to
+    @param dataset_images_kvs: key-value-store containing the images
+    @param prefix: prefix identifying the dataset the images come from, will be used in their file names
+    @return: Similarity scores for the images
+    """
     if dataset_images_kvs is not None:
         if not os.path.exists(img_dir):
             os.makedirs(img_dir)
@@ -93,18 +113,25 @@ def download_images_from_kvs(img_dir, dataset_images_kvs, prefix):
                 image_file.write(image_data)
 
 
-def create_image_similarities_data(pair_ids, images_folder='', dataset_images_kvs1=None, dataset_images_kvs2=None):
+def create_image_similarities_data(
+    pair_ids_and_counts_dataframe,
+    dataset_folder='',
+    dataset_images_kvs1=None,
+    dataset_images_kvs2=None
+):
     """
     Compute images similarities and create dataset with hash similarity
-    @param total_count: number of pairs of products to be compared in source dataset
-    @param images_folder: images source folder of pairs of products
+    @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
+    @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
+    @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
+    @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
     @return: Similarity scores for the images
     """
-    if images_folder == '':
-        images_folder = '.'
+    if dataset_folder == '':
+        dataset_folder = '.'
 
-    img_source_dir = os.path.join(images_folder, 'images_cropped')
-    img_dir = os.path.join(images_folder, 'images')
+    img_source_dir = os.path.join(dataset_folder, 'images_cropped')
+    img_dir = os.path.join(dataset_folder, 'images')
 
     dataset_prefixes = ['dataset1', 'dataset2']
     download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
@@ -112,11 +139,11 @@ def create_image_similarities_data(pair_ids, images_folder='', dataset_images_kv
 
     create_output_directory(img_source_dir)
     crop_images_contour_detection(img_dir, img_source_dir)
-    hashes_dir = os.path.join(images_folder, "hashes_cropped.json")
+    hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
     script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../preprocessing/images/image_hash_creator/main.js")
     subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
-    hashes, names = create_hash_sets(data, pair_ids, dataset_prefixes)
+    hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
     imaged_pairs_similarities = compute_distances(
         hashes,
         names,
@@ -127,7 +154,7 @@ def create_image_similarities_data(pair_ids, images_folder='', dataset_images_kv
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []
-    for x in range(len(pair_ids)):
+    for x in range(len(pair_ids_and_counts_dataframe)):
         image_similarities.append(0)
     for index, similarity in imaged_pairs_similarities:
         image_similarities[index] = similarity

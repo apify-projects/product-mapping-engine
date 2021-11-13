@@ -102,17 +102,23 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
     return pair_similarities
 
 
-def create_hash_sets(data, pair_ids_and_counts, dataset_prefixes):
+def create_hash_sets(
+    data,
+    pair_ids_and_counts_dataframe,
+    dataset_prefixes
+):
     """
     Create list of lists of image hashes and texts for each product
     @param data: input dict of image name and hash value
-    @return: list of hashes and list on texts of images
+    @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
+    @param dataset_prefixes: prefixes of images identifying them as parts of a specific dataset
+    @return: list of hashes and list on names of images
     """
     hashes = []
     names = []
 
     pair_index = 0
-    for pair in pair_ids_and_counts:
+    for pair in pair_ids_and_counts_dataframe:
         pair_hashes = []
         pair_names = []
         for dataset_index in range(2):
