@@ -53,10 +53,11 @@ def remove_useless_spaces_and_characters(text):
     text = text.replace(')', '')
     return text
 
-def preprocess_text(data, lemmatizer=None):
+def preprocess_text(data, lower_case_text=True, lemmatizer=None):
     """
     Lowercase and split units and values in dataset
     @param data: list of texts to preprocess
+    @param lower_case_text: whether to lowercase text
     @param lemmatizer: lemmatizer to be used to lemmatize texts
     @return: preprocessed list of texts that consists of list of words
     """
@@ -65,7 +66,8 @@ def preprocess_text(data, lemmatizer=None):
         text = remove_useless_spaces_and_characters(text)
         word_list = split_words(text)
         word_list = split_units_and_values(word_list)
-        word_list = lower_case(word_list)
+        if lower_case_text:
+            word_list = lower_case(word_list)
         if lemmatizer is not None:
             word_list = lemmatize_czech_text(word_list, lemmatizer)
         new_data.append(word_list)
