@@ -162,7 +162,6 @@ def is_param(word):
     return False
 
 
-
 def detect_id(word):
     """
     Check whether the word is not and id (whether it is a valid word)
@@ -251,9 +250,7 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
     """
     data_list = []
     first_likelihood = compute_likelihood_of_first_words(data)
-    data_parameters = []
     for word_list in data:
-        description_parameters = []
         detected_word_list = []
         is_first = True
         previous = ''
@@ -265,17 +262,14 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
             if id_detection:
                 word = detect_id(word)
             if units_detection and not is_first:
-                word, unit_and_value = detect_units(word, previous)
-                if unit_and_value is not None:
-                    detected_word_list[len(detected_word_list) - 1] = str(unit_and_value[1])
-                    description_parameters.append(unit_and_value)
+                new_value, word = detect_units(word, previous)
+                detected_word_list[len(detected_word_list) - 1] = str(new_value)
             detected_word_list.append(word)
             is_first = False
             previous = word
-        data_parameters.append(description_parameters)
         data_list.append(detected_word_list)
 
-    return data_list, data_parameters
+    return data_list
 
 
 def compute_likelihood_of_first_words(data):
@@ -355,7 +349,7 @@ def detect_units(word, previous_word):
     if word.lower() in UNITS_DICT.keys() and previous_word.replace('.', '', 1).isnumeric():
         new_word, new_value = convert_unit_and_value_to_base_form(word.lower(), float(previous_word))
         new_word, new_value = convert_us_to_eu_units(new_word, new_value)
-        return "#unit#" + new_word, [new_word, new_value]
+        return new_value, "#unit#" + new_word
     if word in SIZE_UNITS:
-        return "#unit#" + word, ['size', word]
-    return word, None
+        return previous_word, "size #unit#" + word
+    return previous_word, word

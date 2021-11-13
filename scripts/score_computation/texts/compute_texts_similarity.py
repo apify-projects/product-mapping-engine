@@ -1,3 +1,4 @@
+import copy
 from math import floor
 
 import numpy as np
@@ -14,24 +15,22 @@ TOP_WORDS = 10
 FILTER_LIMIT = 2
 
 
-def compute_similarity_of_texts(dataset1, units_list1, dataset2, units_list2):
+def compute_similarity_of_texts(dataset1, dataset2):
     """
     Compute similarity score of two datasets
     @param dataset1: first dataset
-    @param units_list1: list of units and values for the first dataset
     @param dataset2: second dataset
-    @param units_list2: list of units and values for the first dataset
     @return:
     """
-    dataset1_nomarkers = remove_markers(dataset1)
-    dataset2_nomarkers = remove_markers(dataset2)
+    dataset1_nomarkers = remove_markers(copy.deepcopy(dataset1))
+    dataset2_nomarkers = remove_markers(copy.deepcopy(dataset2))
     tf_idfs = create_tf_idf(dataset1_nomarkers, dataset2_nomarkers)
     descriptive_words = find_descriptive_words(tf_idfs, filter_limit=FILTER_LIMIT, top_words=TOP_WORDS)
     half_length = floor(len(descriptive_words) / 2)
     match_ratios_list = []
 
-    for i, (text1, units1) in enumerate(zip(dataset1, units_list1)):
-        for j, (text2, units2) in enumerate(zip(dataset2, units_list2)):
+    for i, text1 in enumerate(dataset1):
+        for j, text2 in enumerate(dataset2):
             match_ratios = {}
             # detect and compare ids
             id1 = [word for word in text1 if ID_MARK in word]
@@ -57,7 +56,7 @@ def compute_similarity_of_texts(dataset1, units_list1, dataset2, units_list2):
             match_ratios['cos'] = cosine_similarity([tf_idfs.iloc[i].values, tf_idfs.iloc[j].values])[0][1]
             match_ratios_list.append(match_ratios)
 
-            match_ratios['units'] = compare_units_and_values(units1, units2)
+            match_ratios['units'] = compare_units_and_values(text1, text2)
             match_ratios['descriptives'] = compute_descriptive_words_similarity(descriptive_words.iloc[i].values,
                                                                                 descriptive_words.iloc[
                                                                                     half_length + j].values) / TOP_WORDS
@@ -148,23 +147,35 @@ def remove_markers(data):
     return data
 
 
-def compare_units_and_values(unit_list1, unit_list2, devation=0.05):
+def compare_units_and_values(text1, text2, devation=0.05):
     """
     Compare detected units from the texts
-    @param unit_list1: List of units an values for the first product
-    @param unit_list2: List of units an values for the second product
+    @param text1: List of words for unit detection and comparison
+    @param text2: List of words for unit detection and comparison
     @param devation: percent of toleration of deviations of two compared numbers
     @return: Ratio of the same units between two products
     """
-    units_set1 = set(tuple(x) for x in unit_list1)
-    units_set2 = set(tuple(x) for x in unit_list2)
-    # matches = len(description1_set.intersection(description2_set))
+    units_list1 = extract_units_and_values(text1)
+    units_list2 = extract_units_and_values(text2)
     matches = 0
-    for u1 in units_set1:
-        for u2 in units_set2:
+    for u1 in units_list1:
+        for u2 in units_list2:
             if u1[0] == u2[0] and u1[1] > (1 - devation) * u2[1] and u1[1] < (1 + devation) * u2[1]:
                 matches += 1
-    if not len(units_set2) == 0:
-        match_ratio = matches / len(units_set2)
+    if not len(units_list1) == 0:
+        match_ratio = matches / len(units_list1)
         return match_ratio
     return 0
+
+
+def extract_units_and_values(text):
+    """
+    Extract units and values from the list of words
+    @param text: list of words to extract units and values
+    @return: extracted pairs unit-value
+    """
+    unit_list = []
+    for i, word in enumerate(text):
+        if UNIT_MARK in word:
+            unit_list.append([word, float(text[i - 1])])
+    return unit_list
