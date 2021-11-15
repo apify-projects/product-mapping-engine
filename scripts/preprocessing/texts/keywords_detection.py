@@ -7,7 +7,11 @@ import pandas as pd
 import requests
 
 ID_LEN = 5
-COLOR_PREFIX = '#col#'
+ID_MARK = '#id#'
+BRAND_MARK = '#bnd#'
+COLOR_MARK = '#col#'
+UNIT_MARK = '#unit#'
+
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
 BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.txt')
@@ -76,8 +80,6 @@ def create_unit_dict():
 
         shortcut_list = row['shortcut'].split(',')
         base_shortcut = shortcut_list[0]
-        if '#' in base_shortcut:
-            base_shortcut = base_shortcut.replace('#', '')
         units_dict[base_shortcut] = {'value': 1, 'base': base_shortcut}
         if len(shortcut_list) > 1:
             for s in shortcut_list:
@@ -87,7 +89,9 @@ def create_unit_dict():
         if row['plural'] != '':
             units_dict[row['plural']] = {'value': 1, 'base': base_shortcut}
         if row['czech'] != '':
-            units_dict[row['czech']] = {'value': 1, 'base': base_shortcut}
+            czech_names = row['czech'].split(',')
+            for name in czech_names:
+                units_dict[name] = {'value': 1, 'base': base_shortcut}
         if row['prefixes'] != '':
             for p in row['prefixes'].split(','):
                 value = prefixes_df.loc[prefixes_df['prefix'] == p]['value'].values[0]
@@ -99,9 +103,11 @@ def create_unit_dict():
                     units_dict[f'{prefix_name.lower()}{row["plural"].lower()}'] = {'value': value,
                                                                                    'base': base_shortcut}
                 if row['czech'] != '':
-                    units_dict[
-                        f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{row["czech"].lower()}'] = {
-                        'value': value, 'base': base_shortcut}
+                    czech_names = row['czech'].split(',')
+                    for name in czech_names:
+                        units_dict[
+                            f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{name.lower()}'] = {
+                            'value': value, 'base': base_shortcut}
     return units_dict
 
 
@@ -176,14 +182,14 @@ def detect_id(word):
 
     if word_sub.isnumeric():
         word = word.replace("(", "").replace(")", "")
-        return '#id#' + word
+        return ID_MARK + word
     elif word_sub.isalpha():
         if not is_in_vocabulary(word_sub):
-            return '#id#' + word
+            return ID_MARK + word
     else:
         word = word.replace("(", "").replace(")", "")
         if not is_param(word):
-            return '#id#' + word
+            return ID_MARK + word
     return word
 
 
@@ -194,7 +200,7 @@ def detect_color(word):
     @return: word with marker if it is a colors, otherwise the original word
     """
     if word.lower() in COLORS:
-        word = COLOR_PREFIX + word
+        word = COLOR_MARK + word
     return word
 
 
@@ -225,7 +231,7 @@ def detect_brand(word, is_first, first_likelihood):
         if (word.isalpha() and len(word) < ID_LEN and word.isupper()) or first_likelihood > 0.9:
             is_brand = True
 
-    return "#bnd#" + word if is_brand else word
+    return BRAND_MARK + word if is_brand else word
 
 
 BRANDS = load_brands()
@@ -257,7 +263,7 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
         for word in word_list:
             if color_detection:
                 word = detect_color(word)
-            if brand_detection and not word.startswith(COLOR_PREFIX):
+            if brand_detection and not word.startswith(COLOR_MARK):
                 word = detect_brand(word, is_first, first_likelihood[word])
             if id_detection:
                 word = detect_id(word)
@@ -344,12 +350,12 @@ def detect_units(word, previous_word):
     Check whether the word is not a unit
     @param word: word to be detected
     @param previous_word: previous word needed for detection
-    @return: word with marker if it is a brand, otherwise the original word
+    @return: word with marker if it is an unit, otherwise the original word
     """
     if word.lower() in UNITS_DICT.keys() and previous_word.replace('.', '', 1).isnumeric():
         new_word, new_value = convert_unit_and_value_to_base_form(word.lower(), float(previous_word))
         new_word, new_value = convert_us_to_eu_units(new_word, new_value)
-        return new_value, "#unit#" + new_word
+        return new_value, UNIT_MARK + new_word
     if word in SIZE_UNITS:
-        return previous_word, "size #unit#" + word
+        return previous_word, "size " + UNIT_MARK + word
     return previous_word, word

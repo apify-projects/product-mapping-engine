@@ -58,7 +58,7 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
     """
     Convert hashes to dec or binary and compute distances between every two set of images of products
     @param hashes: set of hashes of images
-    @param names: set of image texts
+    @param names: set of image names
     @param metric: metric of computing the distance
     @param filter_dist: whether the images that are too far should be filtered or not
     @param thresh: thresh value above which the images should be filtered
@@ -103,12 +103,12 @@ def compute_distances(hashes, names, metric, filter_dist, thresh):
 
 
 def create_hash_sets(
-    data,
-    pair_ids_and_counts_dataframe,
-    dataset_prefixes
+        data,
+        pair_ids_and_counts_dataframe,
+        dataset_prefixes
 ):
     """
-    Create list of lists of image hashes and texts for each product
+    Create list of lists of image hashes and names for each product
     @param data: input dict of image name and hash value
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_prefixes: prefixes of images identifying them as parts of a specific dataset
@@ -122,12 +122,14 @@ def create_hash_sets(
         pair_hashes = []
         pair_names = []
         for dataset_index in range(2):
-            id_key = 'id{}'.format(dataset_index+1)
+            id_key = 'id{}'.format(dataset_index + 1)
             image_count_key = 'image{}'.format(dataset_index + 1)
             for image_index in range(int(pair[image_count_key])):
                 # TODO equalize indexing (images for instance have indexing starting from 0 and from 1)
-                image_name = dataset_prefixes[dataset_index] + '_' + slugify(pair[id_key] + '_image_{}'.format(image_index)) + '.jpg'
-                pair_image_identification = 'pair{}_product{}_image{}'.format(pair_index, dataset_index + 1, image_index + 1)
+                image_name = dataset_prefixes[dataset_index] + '_' + slugify(
+                    pair[id_key] + '_image_{}'.format(image_index)) + '.jpg'
+                pair_image_identification = 'pair{}_product{}_image{}'.format(pair_index, dataset_index + 1,
+                                                                              image_index + 1)
                 hash = data[image_name]
 
                 pair_hashes.append(hash)

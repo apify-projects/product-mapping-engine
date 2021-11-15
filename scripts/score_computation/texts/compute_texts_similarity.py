@@ -6,20 +6,18 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-ID_MARK = '#id#'
-BND_MARK = '#bnd#'
-COL_MARK = '#col#'
-UNIT_MARK = '#unit#'
-MARKS = [ID_MARK, BND_MARK, COL_MARK, UNIT_MARK]
+from scripts.preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK
+
+MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
 TOP_WORDS = 10
 FILTER_LIMIT = 2
 
 
 def compute_similarity_of_texts(dataset1, dataset2):
     """
-    Compute similarity score of two datasets
-    @param dataset1: first dataset
-    @param dataset2: second dataset
+    Compute similarity score of two text datasets
+    @param dataset1: first list of texts where each is list of words
+    @param dataset2: second list of texts where each is list of words
     @return:
     """
     dataset1_nomarkers = remove_markers(copy.deepcopy(dataset1))
@@ -40,8 +38,8 @@ def compute_similarity_of_texts(dataset1, dataset2):
                 match_ratios['id'] = len(set(id1) & set(id2)) / len(id1)
 
             # detect and compare brands
-            bnd1 = [word for word in text1 if BND_MARK in word]
-            bnd2 = [word for word in text2 if BND_MARK in word]
+            bnd1 = [word for word in text1 if BRAND_MARK in word]
+            bnd2 = [word for word in text2 if BRAND_MARK in word]
             match_ratios['brand'] = 0
             if not bnd1 == [] and bnd1 == bnd2:
                 match_ratios['brand'] = len(set(bnd1) & set(bnd2)) / len(bnd1)
@@ -158,13 +156,13 @@ def compare_units_and_values(text1, text2, devation=0.05):
     units_list1 = extract_units_and_values(text1)
     units_list2 = extract_units_and_values(text2)
     matches = 0
+    total_len = len(units_list1) + len(units_list2)
     for u1 in units_list1:
         for u2 in units_list2:
             if u1[0] == u2[0] and u1[1] > (1 - devation) * u2[1] and u1[1] < (1 + devation) * u2[1]:
                 matches += 1
-    if not len(units_list1) == 0:
-        match_ratio = matches / len(units_list1)
-        return match_ratio
+    if not total_len == 0:
+        return (total_len - 2 * matches) / total_len
     return 0
 
 

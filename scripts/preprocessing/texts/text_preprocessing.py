@@ -2,6 +2,8 @@ import re
 
 import majka
 
+from scripts.preprocessing.texts.keywords_detection import COLOR_MARK
+
 
 def set_czech_lemmatizer():
     """
@@ -53,6 +55,7 @@ def remove_useless_spaces_and_characters(text):
     text = text.replace(')', '')
     return text
 
+
 def preprocess_text(data, lower_case_text=True, lemmatizer=None):
     """
     Lowercase and split units and values in dataset
@@ -64,7 +67,7 @@ def preprocess_text(data, lower_case_text=True, lemmatizer=None):
     new_data = []
     for text in data:
         text = remove_useless_spaces_and_characters(text)
-        word_list = split_words(text)
+        word_list = tokenize(text)
         word_list = split_units_and_values(word_list)
         if lower_case_text:
             word_list = lower_case(word_list)
@@ -74,7 +77,7 @@ def preprocess_text(data, lower_case_text=True, lemmatizer=None):
     return new_data
 
 
-def split_words(text):
+def tokenize(text):
     """
     Split text to the single words
     @param text: string text to be split
@@ -91,17 +94,17 @@ def split_units_and_values(word_list):
     @param word_list: list of words
     @return: list of words with split units
     """
-    word_list_splitted = []
+    word_list_split = []
     for word in word_list:
         if re.match('^[0-9]+[a-zA-Z]+$', word) is not None:
-            word_list_splitted.append(re.split('[a-zA-Z]+$', word)[0])
-            word_list_splitted.append(re.split('^[0-9]+', word)[1])
+            word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
+            word_list_split.append(re.split('^[0-9]+', word)[1])
         elif re.match('^[0-9]+%$', word) is not None:
-            word_list_splitted.append(re.split('%', word)[0])
-            word_list_splitted.append(re.split('^[0-9]+', word)[1])
+            word_list_split.append(re.split('%', word)[0])
+            word_list_split.append(re.split('^[0-9]+', word)[1])
         else:
-            word_list_splitted.append(word)
-    return word_list_splitted
+            word_list_split.append(word)
+    return word_list_split
 
 
 def lower_case(word_list):
@@ -124,7 +127,7 @@ def remove_colors(word_list):
     """
     nocolor_word_list = []
     for word in word_list:
-        if '#COL#' in word:
-            word = re.sub(r'#COL#(?=\w)', r'', word)
+        if COLOR_MARK in word:
+            word = re.sub(r'{COLOR_MARK}(?=\w)', r'', word)
         nocolor_word_list.append(word)
     return nocolor_word_list
