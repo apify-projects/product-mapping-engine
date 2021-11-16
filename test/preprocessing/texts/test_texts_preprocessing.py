@@ -1,4 +1,3 @@
-from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from scripts.preprocessing.texts.text_preprocessing import preprocess_text, set_czech_lemmatizer
 
@@ -15,9 +14,9 @@ def main():
     lemmatizer = set_czech_lemmatizer()
     dataset = preprocess_text(test_texts, lemmatizer)
     dataset_detected = detect_ids_brands_colors_and_units(dataset, id_detection=False,
-                                                                        color_detection=True,
-                                                                        brand_detection=False,
-                                                                        units_detection=True)
+                                                          color_detection=True,
+                                                          brand_detection=False,
+                                                          units_detection=True)
 
     print(dataset_detected)
 
