@@ -1,8 +1,8 @@
-name	plural	czech	shortcut	prefixes
+name	plural	czech	shortcut	prefixes	
 meter	meters	metr	m	p,n,μ,m,c,d,k
 gram	grams		g	m,c,k
 decigram	decigrams	dekagram	dg,dkg,dag	
-second	seconds	sekunda	s	p,n,μ,m
+second	seconds	sekunda,vteřina	s	p,n,μ,m
 minute	minutes	minuta	min	
 hour	hours	hodina	h,hr,hrs,hod	
 day	days	den	d	
@@ -33,21 +33,19 @@ watt hour	watt hours	watt hodina	Wh	m,k,M,G
 amper hour	amper hours	ampér hodina	Ah,amp hr	m,k,M
 electron volt	electron volts	elektron volt	eV	m,k,M
 volt ampere	volt amperes	volt ampér	VA	
-horsepower		koní	 hp,k	
+horsepower		koní,koňská síla	 hp,k	
 degree Celsius	degrees Celsius	stupeň Celsia	°C,Cel 	
 degree Fahrenheit	degrees Fahrenheit	stupeň Fahrneita	°F,R	
 lumen	lumens		lm 	
 lux			lx	
 becquerel 	becquerels		Bq	
 degree	degrees	stupeň	°,deg	
-minute 	minutes	minuta	#"	
-second 	seconds	vteřina	#'	
 liter	liters	litr	l	m,c,d,h
 are	ares	ar	ar, m^2	
 tonne	tonnes	tuna	t	
 bar	bars		bar	
 inch	inches	palec	in,"	
-foot	feet	stopa	ft	
+foot	feet	stopa	ft,'	
 yard	yards		yd	
 mile	miles	míle	mi,mil	
 rod	rods		rd	

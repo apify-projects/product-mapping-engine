@@ -15,7 +15,7 @@ from dataset_handler import preprocess_data, analyse_dataset
                   ['LinearRegression', 'LogisticRegression', 'Svm', 'NeuralNetwork', 'DecisionTree', 'RandomForests']))
 @click.option('--classifier_parameters_path', '-p',
               default='scripts/classifier_parameters/linear.json')
-# Load product names and images compute their similarity
+# Load product texts and images compute their similarity
 def main(**kwargs):
     data = preprocess_data(os.path.join(os.getcwd(), kwargs['dataset_folder']))
     data.rename(columns={0: 'Index'}, inplace=True)
