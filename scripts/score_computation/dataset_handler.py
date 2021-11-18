@@ -7,10 +7,9 @@ import numpy as np
 import pandas as pd
 
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
-from scripts.preprocessing.names.names_preprocessing import detect_ids_brands_colors_and_params, to_list
+from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
-from scripts.score_computation.names.compute_names_similarity import lower_case, remove_colors, compute_tf_idf, \
-    compute_name_similarities
+from scripts.preprocessing.texts.text_preprocessing import lower_case
 
 
 def load_and_parse_data(input_file):
@@ -162,7 +161,7 @@ def create_image_similarities_data(
     return image_similarities
 
 
-def create_name_similarities_data(product_pairs):
+def create_text_similarities_data(product_pairs):
     """
     Compute names similarities and create dataset with cos, id, tf idf and brand similarity
     @param product_pairs: product pairs data
@@ -175,8 +174,7 @@ def create_name_similarities_data(product_pairs):
         names.append(pair.name1)
         names_by_id[pair.id2] = len(names)
         names.append(pair.name2)
-    names = to_list(names)
-    names, _, _ = detect_ids_brands_colors_and_params(names, compare_words=False)
+    names, _ = detect_ids_brands_colors_and_units(names)
     names = [' '.join(name) for name in names]
     names = lower_case(names)
     names = remove_colors(names)
