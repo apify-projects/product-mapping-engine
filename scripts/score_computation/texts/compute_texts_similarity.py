@@ -169,6 +169,8 @@ def compare_units_and_values(text1, text2, devation=0.05):
         for u2 in units_list2:
             if u1[0] == u2[0] and u1[1] > (1 - devation) * u2[1] and u1[1] < (1 + devation) * u2[1]:
                 matches += 1
+    if matches == 0:
+        return 0
     if not total_len == 0:
         return (total_len - 2 * matches) / total_len
     return 0
