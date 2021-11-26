@@ -1,21 +1,24 @@
 from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
-from scripts.preprocessing.texts.text_preprocessing import split_units_and_values
+from scripts.preprocessing.texts.text_preprocessing import preprocess_text
 
 
-def detect_and_convert_unit_values(dataset):
+def preprocess_specification_as_normal_text(dataset):
     """
-    Detect units in specification and convert them to their basis form
-    @param dataset: list of pairs of parameter names and their values
-    @return: dataset with detected units
+    Preprocess specifications to create texts for similarity computations by the same way as all other textual data
+    @param dataset: list of product specifications where each consist of list of both parameter name and value
+    @return: List of preprocessed texts containing whole specification as one long string
     """
-    for i, [_, parameter_value] in enumerate(dataset):
-        parameter_value_split = split_units_and_values(parameter_value.split(' '))
-        parameter_value_detected = detect_ids_brands_colors_and_units([parameter_value_split], id_detection=False,
-                                                                      color_detection=False,
-                                                                      brand_detection=False, units_detection=True)
-        parameter_value = ' '.join(parameter_value_detected[0])
-        dataset[i][1] = parameter_value
-    return dataset
+    joined_dataset = []
+    for product_specification in dataset:
+        product_specification = ' '.join(product_specification)
+        joined_dataset.append(product_specification)
+    preprocessed_dataset = preprocess_text(joined_dataset)
+    preprocessed_dataset = detect_ids_brands_colors_and_units(preprocessed_dataset, id_detection=False,
+                                                              color_detection=False,
+                                                              brand_detection=False,
+                                                              units_detection=True)
+    return preprocessed_dataset
+
 
 
 def separate_parameter_names_and_values(dataset, separator):
@@ -34,14 +37,22 @@ def separate_parameter_names_and_values(dataset, separator):
 
 def preprocess_specification(dataset, separator):
     """
-    Preprocess specifications for each product: separate names and values and detect units and convert their values to the basic form
-    @param separator: separator, that should be used for separation of names and values in parameters
+    Preprocess specifications for further similarity computations - separate parameter name and value and detect units
+    @param separator: separator, that should be used for separation of names and values in specification
     @param dataset: list of products specifications
     @return: list of preprocessed products specifications
     """
     preprocessed_dataset = []
     for product_specification in dataset:
+        specification_dict = {}
         product_specification = separate_parameter_names_and_values(product_specification, separator)
-        product_specification = detect_and_convert_unit_values(product_specification)
-        preprocessed_dataset.append(product_specification)
+        for item in product_specification:
+            item = preprocess_text(item)
+            name = ' '.join(item[0])
+            value = detect_ids_brands_colors_and_units([item[1]], id_detection=False,
+                                                              color_detection=False,
+                                                              brand_detection=False,
+                                                              units_detection=True)
+            specification_dict[name] = ' '.join(value[0])
+        preprocessed_dataset.append(specification_dict)
     return preprocessed_dataset

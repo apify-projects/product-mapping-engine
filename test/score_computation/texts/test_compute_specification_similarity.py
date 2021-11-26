@@ -1,7 +1,9 @@
-from scripts.preprocessing.texts.specification_preprocessing import preprocess_specification
-from scripts.score_computation.texts.compare_specification_similarity import compare_specifications
+from scripts.preprocessing.texts.specification_preprocessing import preprocess_specification, \
+    preprocess_specification_as_normal_text
+from scripts.score_computation.texts.compare_specification_similarity import compute_similarity_of_specifications
+from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
-test_dataset1 = [["Provedení: Pecky 4ml", "Konstrukce: Uzavřená", "Mikrofon: Ano", "Typ připojení: Bluetooth",
+test_dataset1 = [["Provedení: Pecky", "Konstrukce: Uzavřená", "Mikrofon: Ano", "Typ připojení: Bluetooth",
                   "Verze: Bluetooth 5.0", "Maximální výdrž baterie: 25 h", "Výdrž baterie (sluchátka): 5 h",
                   "Výdrž baterie (pouzdro): 20 h", "Nabíjení: USB-C, V pouzdře", "Barva: Zlatá", "Hmotnost: 57 g"],
                  ["SSD Kapacita: 256 GB (0,26 TB)", "Velikost operační paměti RAM: 8 GB",
@@ -22,10 +24,16 @@ test_dataset2 = [["Provedení: Špunty", "Konstrukce: Uzavřená", "Mikrofon: An
 
 
 def main():
+    preprocessed_specification_as_text1 = preprocess_specification_as_normal_text(test_dataset1)
+    preprocessed_specification_as_text2 = preprocess_specification_as_normal_text(test_dataset2)
+    similarity_score_of_texts = compute_similarity_of_texts(preprocessed_specification_as_text1,
+                                                            preprocessed_specification_as_text2)
+    print('Cosine similarity scores:')
+    print(similarity_score_of_texts)
     preprocessed_dataset1 = preprocess_specification(test_dataset1, separator=': ')
     preprocessed_dataset2 = preprocess_specification(test_dataset2, separator=': ')
-    scores = compare_specifications(preprocessed_dataset1, preprocessed_dataset2)
-    print('Similarity scores and cosine sim scores')
+    scores = compute_similarity_of_specifications(preprocessed_dataset1, preprocessed_dataset2)
+    print('Matching similarity scores:')
     print(scores)
 
 
