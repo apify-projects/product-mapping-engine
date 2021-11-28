@@ -92,10 +92,12 @@ def load_model_create_dataset_and_predict_matches(
 
     # TODO remove after speed testing
     print(preprocessed_pairs.count())
+    print(preprocessed_pairs)
 
     pairs_dataset['predicted_match'], pairs_dataset['predicted_scores'] = classifier.predict(preprocessed_pairs)
     predicted_matches = pairs_dataset[pairs_dataset['predicted_match'] == 1][
-        ['name1', 'id1', 'name2', 'id2', 'predicted_scores']]
+        ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
+    ]
     return predicted_matches
 
 
