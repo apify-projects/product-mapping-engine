@@ -7,10 +7,8 @@ import numpy as np
 import pandas as pd
 
 from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
-from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
-from scripts.preprocessing.texts.text_preprocessing import lower_case
-
+from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 def load_and_parse_data(input_file):
     """
@@ -26,7 +24,6 @@ def load_and_parse_data(input_file):
         dsplit = d.split(';')
         data[dsplit[0]] = dsplit[1]
     return data
-
 
 def save_to_csv(data_list, output_file, column_names=None):
     """
@@ -71,7 +68,7 @@ def preprocess_data_without_saving(
     @return: preprocessed data
     """
     product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(os.path.join(dataset_folder, "product_pairs.csv"))
-    name_similarities = create_name_similarities_data(product_pairs)
+    name_similarities = create_text_similarities_data(product_pairs)
 
     image_similarities = [0] * len(product_pairs)
     image_similarities = create_image_similarities_data(
@@ -160,38 +157,14 @@ def create_image_similarities_data(
         image_similarities[index] = similarity
     return image_similarities
 
-
+#TODO remove if not needed
 def create_text_similarities_data(product_pairs):
     """
-    Compute names similarities and create dataset with cos, id, tf idf and brand similarity
+    Compute all the text-based similarities for the product pairs
     @param product_pairs: product pairs data
-    @return: Similarity scores for the names
+    @return: Similarity scores for the product pairs
     """
-    names = []
-    names_by_id = {}
-    for pair in product_pairs.itertuples():
-        names_by_id[pair.id1] = len(names)
-        names.append(pair.name1)
-        names_by_id[pair.id2] = len(names)
-        names.append(pair.name2)
-    names, _ = detect_ids_brands_colors_and_units(names)
-    names = [' '.join(name) for name in names]
-    names = lower_case(names)
-    names = remove_colors(names)
-    tf_idfs = compute_tf_idf(names)
-    name_similarities_list = []
-    for pair in product_pairs.itertuples():
-        name1_index = names_by_id[pair.id1]
-        name2_index = names_by_id[pair.id2]
-        name_similarities = compute_name_similarities(
-            names[name1_index],
-            names[name2_index],
-            name1_index,
-            name2_index,
-            tf_idfs
-        )
-        name_similarities_list.append(name_similarities)
-    return name_similarities_list
+    return compute_similarity_of_texts(product_pairs)
 
 
 def preprocess_data(dataset_folder):
@@ -216,7 +189,7 @@ def preprocess_data(dataset_folder):
 
     if not name_similarities_exist or not image_similarities_exist:
         if not name_similarities_exist:
-            name_similarities_list = create_name_similarities_data(product_pairs)
+            name_similarities_list = create_text_similarities_data(product_pairs)
             save_to_csv(name_similarities_list, os.path.join(dataset_folder, "name_similarities.csv"))
 
         if not image_similarities_exist:
