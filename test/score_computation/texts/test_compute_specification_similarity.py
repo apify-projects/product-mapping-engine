@@ -1,6 +1,6 @@
 from scripts.preprocessing.texts.specification_preprocessing import preprocess_specification, \
     preprocess_specification_as_normal_text
-from scripts.score_computation.texts.compare_specification_similarity import compute_similarity_of_specifications
+from scripts.score_computation.texts.compute_specifications_similarity import compute_similarity_of_specifications
 from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 test_dataset1 = [["Provedení: Pecky", "Konstrukce: Uzavřená", "Mikrofon: Ano", "Typ připojení: Bluetooth",

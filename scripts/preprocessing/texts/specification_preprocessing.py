@@ -20,21 +20,6 @@ def preprocess_specification_as_normal_text(dataset):
     return preprocessed_dataset
 
 
-
-def separate_parameter_names_and_values(dataset, separator):
-    """
-    Separate names and values of parameters from the specification pairs
-    @param dataset: list with items that contain both parameter and its value together
-    @param separator: separator, that should be used from separation of names and values of the parameters
-    @return: list of pairs of parameters names and parameter values
-    """
-    separated_dataset = []
-    for data in dataset:
-        separated_data = data.split(separator)
-        separated_dataset.append([separated_data[0], separated_data[1]])
-    return separated_dataset
-
-
 def preprocess_specification(dataset, separator):
     """
     Preprocess specifications for further similarity computations - separate parameter name and value and detect units
@@ -45,14 +30,16 @@ def preprocess_specification(dataset, separator):
     preprocessed_dataset = []
     for product_specification in dataset:
         specification_dict = {}
-        product_specification = separate_parameter_names_and_values(product_specification, separator)
+        product_specification = [attribute.split(separator) for attribute in product_specification]
         for item in product_specification:
             item = preprocess_text(item)
             name = ' '.join(item[0])
-            value = detect_ids_brands_colors_and_units([item[1]], id_detection=False,
-                                                              color_detection=False,
-                                                              brand_detection=False,
-                                                              units_detection=True)
+            value = detect_ids_brands_colors_and_units(
+                [item[1]], id_detection=False,
+                color_detection=False,
+                brand_detection=False,
+                units_detection=True
+            )
             specification_dict[name] = ' '.join(value[0])
         preprocessed_dataset.append(specification_dict)
     return preprocessed_dataset
