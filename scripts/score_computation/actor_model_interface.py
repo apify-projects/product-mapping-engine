@@ -52,12 +52,12 @@ def filter_products_with_no_similar_words(product, dataset):
 
 
 def load_model_create_dataset_and_predict_matches(
-    dataset1,
-    dataset2,
-    images_kvs1_client,
-    images_kvs2_client,
-    classifier,
-    model_key_value_store_client=None
+        dataset1,
+        dataset2,
+        images_kvs1_client,
+        images_kvs2_client,
+        classifier,
+        model_key_value_store_client=None
 ):
     """
     For each product in first dataset find same products in the second dataset
@@ -136,12 +136,12 @@ def filter_products(product, dataset):
 
 
 def load_data_and_train_model(
-    classifier_type,
-    dataset_folder='',
-    dataset_dataframe=None,
-    images_kvs_1_client=None,
-    images_kvs_2_client=None,
-    output_key_value_store_client=None
+        classifier_type,
+        dataset_folder='',
+        dataset_dataframe=None,
+        images_kvs_1_client=None,
+        images_kvs_2_client=None,
+        output_key_value_store_client=None
 ):
     """
     Load dataset and train and save model
@@ -168,9 +168,9 @@ def load_data_and_train_model(
 
 
 def load_model_and_predict_matches(
-    dataset_folder,
-    classifier_type,
-    model_key_value_store_client=None
+        dataset_folder,
+        classifier_type,
+        model_key_value_store_client=None
 ):
     """
     Directly load model and already created unlabeled dataset with product pairs and predict pairs

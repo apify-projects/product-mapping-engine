@@ -168,10 +168,11 @@ def is_param(word):
     return False
 
 
-def detect_id(word):
+def detect_id(word, next_word):
     """
     Check whether the word is not an id (whether it is a valid word)
     @param word: the word to be checked
+    @param next_word: the word following detected word in the text
     @return: word with marker if it is an id, otherwise the original word
     """
     # check whether is capslock ad whether is not too short
@@ -180,7 +181,7 @@ def detect_id(word):
             word_sub) < ID_LEN or is_in_vocabulary(word):
         return word
 
-    if word_sub.isnumeric():
+    if word_sub.isnumeric() and not next_word in UNITS_DICT:
         word = word.replace("(", "").replace(")", "")
         return ID_MARK + word
     elif word_sub.isalpha():
@@ -260,16 +261,19 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
         detected_word_list = []
         is_first = True
         previous = ''
-        for word in word_list:
+        for i, word in enumerate(word_list):
             if color_detection:
                 word = detect_color(word)
             if brand_detection and not word.startswith(COLOR_MARK):
                 word = detect_brand(word, is_first, first_likelihood[word])
-            if id_detection:
-                word = detect_id(word)
             if units_detection and not is_first:
                 new_value, word = detect_units(word, previous)
                 detected_word_list[len(detected_word_list) - 1] = str(new_value)
+            if id_detection:
+                next_word = ''
+                if i < len(word_list) - 1:
+                    next_word = word_list[i + 1]
+                word = detect_id(word, next_word)
             detected_word_list.append(word)
             is_first = False
             previous = word

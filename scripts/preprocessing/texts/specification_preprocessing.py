@@ -13,10 +13,6 @@ def preprocess_specification_as_normal_text(dataset):
         product_specification = ' '.join(product_specification)
         joined_dataset.append(product_specification)
     preprocessed_dataset = preprocess_text(joined_dataset)
-    preprocessed_dataset = detect_ids_brands_colors_and_units(preprocessed_dataset, id_detection=False,
-                                                              color_detection=False,
-                                                              brand_detection=False,
-                                                              units_detection=True)
     return preprocessed_dataset
 
 

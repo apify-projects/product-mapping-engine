@@ -10,6 +10,7 @@ from scripts.preprocessing.images.image_preprocessing import crop_images_contour
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
 from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
+
 def load_and_parse_data(input_file):
     """
     Load input file and split name and hash into dictionary
@@ -24,6 +25,7 @@ def load_and_parse_data(input_file):
         dsplit = d.split(';')
         data[dsplit[0]] = dsplit[1]
     return data
+
 
 def save_to_csv(data_list, output_file, column_names=None):
     """
@@ -54,10 +56,10 @@ def load_file(name_file):
 
 
 def preprocess_data_without_saving(
-    dataset_folder='',
-    dataset_dataframe=None,
-    dataset_images_kvs1=None,
-    dataset_images_kvs2=None
+        dataset_folder='',
+        dataset_dataframe=None,
+        dataset_images_kvs1=None,
+        dataset_images_kvs2=None
 ):
     """
     For each pair of products compute their image and name similarity without saving anything
@@ -67,7 +69,8 @@ def preprocess_data_without_saving(
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
     @return: preprocessed data
     """
-    product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(os.path.join(dataset_folder, "product_pairs.csv"))
+    product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
+        os.path.join(dataset_folder, "product_pairs.csv"))
     name_similarities = create_text_similarities_data(product_pairs)
 
     image_similarities = [0] * len(product_pairs)
@@ -87,9 +90,9 @@ def preprocess_data_without_saving(
 
 
 def download_images_from_kvs(
-    img_dir,
-    dataset_images_kvs,
-    prefix
+        img_dir,
+        dataset_images_kvs,
+        prefix
 ):
     """
     Downloads images from the given key-value-store and saves them into the specified folder, prefixing their name with
@@ -111,10 +114,10 @@ def download_images_from_kvs(
 
 
 def create_image_similarities_data(
-    pair_ids_and_counts_dataframe,
-    dataset_folder='',
-    dataset_images_kvs1=None,
-    dataset_images_kvs2=None
+        pair_ids_and_counts_dataframe,
+        dataset_folder='',
+        dataset_images_kvs1=None,
+        dataset_images_kvs2=None
 ):
     """
     Compute images similarities and create dataset with hash similarity
@@ -137,7 +140,8 @@ def create_image_similarities_data(
     create_output_directory(img_source_dir)
     crop_images_contour_detection(img_dir, img_source_dir)
     hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
-    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../preprocessing/images/image_hash_creator/main.js")
+    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              "../preprocessing/images/image_hash_creator/main.js")
     subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
     hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
@@ -157,14 +161,28 @@ def create_image_similarities_data(
         image_similarities[index] = similarity
     return image_similarities
 
-#TODO remove if not needed
+
+# TODO: az budou i dalsi sloupecky s texty, tak je sem doplnit
 def create_text_similarities_data(product_pairs):
     """
     Compute all the text-based similarities for the product pairs
     @param product_pairs: product pairs data
     @return: Similarity scores for the product pairs
     """
-    return compute_similarity_of_texts(product_pairs)
+    names1 = []
+    names2 = []
+    for pair in product_pairs.itertuples():
+        names1.append(pair.name1)
+        names2.append(pair.name2)
+    name_similarites = compute_similarity_of_texts(
+        names1,
+        names2,
+        id_detection=True,
+        color_detection=True,
+        brand_detection=True,
+        units_detection=True
+    )
+    return name_similarites
 
 
 def preprocess_data(dataset_folder):
