@@ -243,9 +243,13 @@ UNITS_DICT = create_unit_dict()
 UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
 
 
-def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=True,
-                                       brand_detection=True,
-                                       units_detection=True):
+def detect_ids_brands_colors_and_units(
+        data,
+        id_detection=True,
+        color_detection=True,
+        brand_detection=True,
+        units_detection=True
+):
     """
     Detect ids, colors, brands and units in texts
     @param data: List of texts that each consists of list of words

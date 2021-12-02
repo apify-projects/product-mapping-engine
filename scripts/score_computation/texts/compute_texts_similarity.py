@@ -55,37 +55,60 @@ def compute_similarity_of_texts(dataset1, dataset2, id_detection, color_detectio
         # detect and compare ids
         id1 = [word for word in dataset1[x] if ID_MARK in word]
         id2 = [word for word in dataset2[x] if ID_MARK in word]
-        match_ratios['id'] = 0
-        if not id1 == []:
-            match_ratios['id'] = len(set(id1) & set(id2)) / len(id1)
+        match_ratios['id'] = compute_matching_pairs(id1, id2)
 
         # detect and compare brands
         bnd1 = [word for word in dataset1[x] if BRAND_MARK in word]
         bnd2 = [word for word in dataset2[x] if BRAND_MARK in word]
-        match_ratios['brand'] = 0
-        if not bnd1 == [] and bnd1 == bnd2:
-            match_ratios['brand'] = len(set(bnd1) & set(bnd2)) / len(bnd1)
+        match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
 
         # ratio of the similar words
         list1 = set(dataset1_nomarkers[x])
         intersection = list1.intersection(dataset2_nomarkers[x])
         intersection_list = list(intersection)
-        match_ratios['words'] = len(intersection_list) / len(dataset1[x])
+        match_ratios['words'] = compute_matching_pairs(dataset1_nomarkers[x], dataset2_nomarkers[x])
 
         # cosine similarity of vectors from tf-idf
-        match_ratios['cos'] = cosine_similarity([tf_idfs.iloc[x].values, tf_idfs.iloc[x + len(dataset1)].values])[0][1]
+        cos_similarity = cosine_similarity([tf_idfs.iloc[x].values, tf_idfs.iloc[x + len(dataset1)].values])[0][1]
+        if cos_similarity == 0:
+            match_ratios['cos'] = 0
+        else:
+            match_ratios['cos'] = 2 * cos_similarity - 1
 
         # compare ratio of corresponding units and values in both texts
         match_ratios['units'] = compare_units_and_values(dataset1[x], dataset2[x])
 
         # commpute number of similar words in both texts
-        match_ratios['descriptives'] = compute_descriptive_words_similarity(
+        descriptive_words_sim = compute_descriptive_words_similarity(
             descriptive_words.iloc[x].values,
             descriptive_words.iloc[half_length + x].values
-        ) / TOP_WORDS
+        )/TOP_WORDS
+        if descriptive_words_sim == 0:
+            match_ratios['descriptives'] = 0
+        else:
+            match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
 
         match_ratios_list.append(match_ratios)
     return match_ratios_list
+
+
+def compute_matching_pairs(list1, list2):
+    """
+    Compute matching items in two lists
+    @param list1: first list of items
+    @param list2: second list of items
+    @return: ratio of matching items
+    """
+    matches = 0
+    list1 = set(list1)
+    list2 = set(list2)
+    for item1 in list1:
+        for item2 in list2:
+            if item1 == item2:
+                matches += 1
+    if (len(list1) + len(list2)) == 0:
+        return 0
+    return 4 * matches / (len(list1) + len(list2)) - 1
 
 
 def find_descriptive_words(tf_idfs, filter_limit, number_of_top_words):
@@ -120,8 +143,8 @@ def compute_descriptive_words_similarity(incidence_vector1, incidence_vector2):
     @return: number of words that occur in both vectors
     """
     counter = 0
-    for i, j in zip(incidence_vector1, incidence_vector2):
-        counter += 1 if i != 0 and j != 0 else 0
+    for item1, item2 in zip(incidence_vector1, incidence_vector2):
+        counter += 1 if item1 != 0 and item2 != 0 else 0
     return counter
 
 
