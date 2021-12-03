@@ -181,7 +181,7 @@ def detect_id(word, next_word):
             word_sub) < ID_LEN or is_in_vocabulary(word):
         return word
 
-    if word_sub.isnumeric() and not next_word in UNITS_DICT:
+    if word_sub.isnumeric() and is_word_unit(next_word):
         word = word.replace("(", "").replace(")", "")
         return ID_MARK + word
     elif word_sub.isalpha():
@@ -192,6 +192,16 @@ def detect_id(word, next_word):
         if not is_param(word):
             return ID_MARK + word
     return word
+
+
+def is_word_unit(word):
+    """
+    Checks whether a word is an unit list
+    @param word: checked word
+    @return: true if the word is in the dictionary of units
+    """
+    return word in UNITS_DICT.keys()
+
 
 
 def detect_color(word):
@@ -319,7 +329,7 @@ def convert_units_to_basic_form(dataset):
     for product in dataset:
         converted_product = []
         for unit in product:
-            if unit[0].lower() in UNITS_DICT.keys():
+            if is_word_unit(unit[0].lower()):
                 name, value = convert_unit_and_value_to_basic_form(unit[0].lower(), unit[1])
                 converted_product.append([name.lower(), value])
             else:
@@ -360,7 +370,7 @@ def detect_units(word, previous_word):
     @param previous_word: previous word needed for detection
     @return: word with marker if it is an unit, otherwise the original word
     """
-    if word.lower() in UNITS_DICT.keys() and previous_word.replace('.', '', 1).isnumeric():
+    if is_word_unit(word.lower()) and previous_word.replace('.', '', 1).isnumeric():
         new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(), float(previous_word))
         new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
         return new_value, UNIT_MARK + new_word

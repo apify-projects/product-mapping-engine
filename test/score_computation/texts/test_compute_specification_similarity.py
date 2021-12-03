@@ -1,6 +1,6 @@
-from scripts.preprocessing.texts.specification_preprocessing import preprocess_specification, \
-    preprocess_specification_as_normal_text
-from scripts.score_computation.texts.compute_specifications_similarity import compute_similarity_of_specifications
+from scripts.preprocessing.texts.specification_preprocessing import preprocess_specifications_as_normal_text
+from scripts.score_computation.texts.compute_specifications_similarity import \
+    preprocess_specifications_and_compute_similarity
 from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 test_dataset1 = [["Provedení: 1000000 B Pecky", "Konstrukce: Uzavřená", "Mikrofon: Ano", "Typ připojení: Bluetooth",
@@ -24,8 +24,8 @@ test_dataset2 = [["Provedení: Špunty", "Konstrukce: Uzavřená", "Mikrofon: An
 
 
 def main():
-    preprocessed_specification_as_text1 = preprocess_specification_as_normal_text(test_dataset1)
-    preprocessed_specification_as_text2 = preprocess_specification_as_normal_text(test_dataset2)
+    preprocessed_specification_as_text1 = preprocess_specifications_as_normal_text(test_dataset1)
+    preprocessed_specification_as_text2 = preprocess_specifications_as_normal_text(test_dataset2)
     similarity_score_of_texts = compute_similarity_of_texts(
         preprocessed_specification_as_text1,
         preprocessed_specification_as_text2,
@@ -36,9 +36,7 @@ def main():
     )
     print('Cosine similarity scores:')
     print(similarity_score_of_texts)
-    preprocessed_dataset1 = preprocess_specification(test_dataset1, separator=': ')
-    preprocessed_dataset2 = preprocess_specification(test_dataset2, separator=': ')
-    scores = compute_similarity_of_specifications(preprocessed_dataset1, preprocessed_dataset2, )
+    scores = preprocess_specifications_and_compute_similarity(test_dataset1, test_dataset2, separator=': ')
     print('Matching similarity scores:')
     print(scores)
 

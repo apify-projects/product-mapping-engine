@@ -70,23 +70,22 @@ def compute_similarity_of_texts(dataset1, dataset2, id_detection, color_detectio
 
         # cosine similarity of vectors from tf-idf
         cos_similarity = cosine_similarity([tf_idfs.iloc[x].values, tf_idfs.iloc[x + len(dataset1)].values])[0][1]
-        if cos_similarity == 0:
-            match_ratios['cos'] = 0
-        else:
-            match_ratios['cos'] = 2 * cos_similarity - 1
-
-        # compare ratio of corresponding units and values in both texts
-        match_ratios['units'] = compare_units_and_values(dataset1[x], dataset2[x])
 
         # commpute number of similar words in both texts
         descriptive_words_sim = compute_descriptive_words_similarity(
             descriptive_words.iloc[x].values,
             descriptive_words.iloc[half_length + x].values
-        )/TOP_WORDS
-        if descriptive_words_sim == 0:
+        ) / TOP_WORDS
+
+        if dataset1[x] == "" or dataset2[x] == "":
+            match_ratios['cos'] = 0
             match_ratios['descriptives'] = 0
         else:
+            match_ratios['cos'] = 2 * cos_similarity - 1
             match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
+
+        # compare ratio of corresponding units and values in both texts
+        match_ratios['units'] = compare_units_and_values(dataset1[x], dataset2[x])
 
         match_ratios_list.append(match_ratios)
     return match_ratios_list

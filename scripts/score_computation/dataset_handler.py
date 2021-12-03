@@ -1,13 +1,14 @@
 import json
 import os
-import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
+from scripts.preprocessing.images.image_preprocessing import create_output_directory
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
+from scripts.score_computation.texts.compute_specifications_similarity import \
+    preprocess_specifications_and_compute_similarity
 from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 
@@ -134,15 +135,15 @@ def create_image_similarities_data(
     img_dir = os.path.join(dataset_folder, 'images')
 
     dataset_prefixes = ['dataset1', 'dataset2']
-    download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
-    download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
+    # download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
+    # download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
     create_output_directory(img_source_dir)
-    crop_images_contour_detection(img_dir, img_source_dir)
+    # crop_images_contour_detection(img_dir, img_source_dir)
     hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
     script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                               "../preprocessing/images/image_hash_creator/main.js")
-    subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
+    # subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
     hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
     imaged_pairs_similarities = compute_distances(
@@ -161,28 +162,40 @@ def create_image_similarities_data(
         image_similarities[index] = similarity
     return image_similarities
 
-
-# TODO: az budou i dalsi sloupecky s texty, tak je sem doplnit
+# TODO
 def create_text_similarities_data(product_pairs):
     """
     Compute all the text-based similarities for the product pairs
     @param product_pairs: product pairs data
     @return: Similarity scores for the product pairs
     """
-    names1 = []
-    names2 = []
-    for pair in product_pairs.itertuples():
-        names1.append(pair.name1)
-        names2.append(pair.name2)
-    name_similarites = compute_similarity_of_texts(
-        names1,
-        names2,
-        id_detection=True,
-        color_detection=True,
-        brand_detection=True,
-        units_detection=True
-    )
-    return name_similarites
+    columns = ['name', 'short_description', 'long_description', 'specification']
+    column_similarities = []
+    for column in columns:
+        column1 = f'{column}1'
+        column2 = f'{column}2'
+        if column1 in product_pairs and column2 in product_pairs:
+            columns_similarity = compute_similarity_of_texts(
+                column1,
+                column2,
+                id_detection=True,
+                color_detection=True,
+                brand_detection=True,
+                units_detection=True
+            )
+        else:
+            columns_similarity = len(product_pairs)*[{'id': 0, 'brand': 0, 'words': 0, 'cos': 0, 'descriptives': 0, 'units': 0}]
+        column_similarities.append({f'{column}': columns_similarity})
+
+    spec1 = 'specification1'
+    spec2 = 'specification2'
+    if spec1 in product_pairs and spec2 in product_pairs:
+        specification_similarity = preprocess_specifications_and_compute_similarity(spec1, spec2, separator=': ')
+    else:
+        specification_similarity = len(product_pairs)*[[0, 0]]
+    column_similarities.append({'specification_similarity_special': specification_similarity})
+
+    return column_similarities
 
 
 def preprocess_data(dataset_folder):

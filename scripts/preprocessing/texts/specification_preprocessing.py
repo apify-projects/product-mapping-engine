@@ -2,7 +2,7 @@ from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_col
 from scripts.preprocessing.texts.text_preprocessing import preprocess_text
 
 
-def preprocess_specification_as_normal_text(dataset):
+def preprocess_specifications_as_normal_text(dataset):
     """
     Preprocess specifications to create texts for similarity computations by the same way as all other textual data
     @param dataset: list of product specifications where each consist of list of both parameter name and value
@@ -16,7 +16,7 @@ def preprocess_specification_as_normal_text(dataset):
     return preprocessed_dataset
 
 
-def preprocess_specification(dataset, separator):
+def preprocess_specifications(dataset, separator):
     """
     Preprocess specifications for further similarity computations - separate parameter name and value and detect units
     @param separator: separator, that should be used for separation of names and values in specification
@@ -31,7 +31,8 @@ def preprocess_specification(dataset, separator):
             item = preprocess_text(item)
             name = ' '.join(item[0])
             value = detect_ids_brands_colors_and_units(
-                [item[1]], id_detection=False,
+                [item[1]],
+                id_detection=False,
                 color_detection=False,
                 brand_detection=False,
                 units_detection=True
