@@ -203,7 +203,6 @@ def is_word_unit(word):
     return word in UNITS_DICT.keys()
 
 
-
 def detect_color(word):
     """
     Check whether the word is not in list of colors

@@ -162,7 +162,8 @@ def create_image_similarities_data(
         image_similarities[index] = similarity
     return image_similarities
 
-# TODO
+
+# TODO: udelat dataframe similariies a cpat to do nej
 def create_text_similarities_data(product_pairs):
     """
     Compute all the text-based similarities for the product pairs
@@ -170,32 +171,55 @@ def create_text_similarities_data(product_pairs):
     @return: Similarity scores for the product pairs
     """
     columns = ['name', 'short_description', 'long_description', 'specification']
-    column_similarities = []
+    similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
+    df_all_similarities = create_emtpy_dataframe(columns, similarity_names)
+
+    # all text types preprocessed as texts
     for column in columns:
         column1 = f'{column}1'
         column2 = f'{column}2'
         if column1 in product_pairs and column2 in product_pairs:
             columns_similarity = compute_similarity_of_texts(
-                column1,
-                column2,
+                product_pairs[column1],
+                product_pairs[column2],
                 id_detection=True,
                 color_detection=True,
                 brand_detection=True,
                 units_detection=True
             )
+            columns_similarity = pd.DataFrame(columns_similarity)
+            for similarity_name, similarity_value in columns_similarity.items():
+                df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
         else:
-            columns_similarity = len(product_pairs)*[{'id': 0, 'brand': 0, 'words': 0, 'cos': 0, 'descriptives': 0, 'units': 0}]
-        column_similarities.append({f'{column}': columns_similarity})
+            for similarity_name in similarity_names:
+                df_all_similarities[f'{column}_{similarity_name}'] = 0
 
+    # specification with units and values preprocessed as specification
     spec1 = 'specification1'
     spec2 = 'specification2'
+    df_all_similarities[f'specification_key_matches'] = 0
+    df_all_similarities[f'specification_key_value_matches'] = 0
     if spec1 in product_pairs and spec2 in product_pairs:
         specification_similarity = preprocess_specifications_and_compute_similarity(spec1, spec2, separator=': ')
-    else:
-        specification_similarity = len(product_pairs)*[[0, 0]]
-    column_similarities.append({'specification_similarity_special': specification_similarity})
+        specification_similarity = pd.DataFrame(specification_similarity)
+        df_all_similarities[f'specification_key_matches'] = specification_similarity.iloc[:, [0]].values
+        df_all_similarities[f'specification_key_value_matches'] = specification_similarity.iloc[:, [1]].values
+    return df_all_similarities
 
-    return column_similarities
+
+def create_emtpy_dataframe(text_types, similarity_names):
+    """
+    Create empty dataframe for text similarity results
+    @param text_types: names of compared types of the text
+    @param similarity_names: names of measured similarities
+    @return: empty dataframe with suitable column names for all measured text similarities
+    """
+    df_column_names = []
+    for text_type in text_types:
+        for similarity_name in similarity_names:
+            df_column_names.append(f'{text_type}_{similarity_name}')
+    df_all_similarities = pd.DataFrame(columns=df_column_names)
+    return df_all_similarities
 
 
 def preprocess_data(dataset_folder):

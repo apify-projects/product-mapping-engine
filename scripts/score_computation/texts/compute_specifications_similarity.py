@@ -3,6 +3,8 @@ from difflib import SequenceMatcher
 
 from scripts.preprocessing.texts.keywords_detection import UNIT_MARK
 from scripts.preprocessing.texts.specification_preprocessing import preprocess_specifications
+
+
 def preprocess_specifications_and_compute_similarity(dataset1, dataset2, separator):
     """
     Preprocess two specifications and compute their similarity
@@ -32,7 +34,8 @@ def compute_similarity_of_specifications(dataset1, dataset2):
                 number_similarity_deviation=0.1,
                 string_similarity_deviation=0.1
             )
-            similarity_scores.append([matching_keys / len(product1), matching_keys_and_values / len(product1)])
+            similarity_scores.append({'matching_keys': matching_keys / len(product1),
+                                      'matching_keys_values': matching_keys_and_values / len(product1)})
     return similarity_scores
 
 
