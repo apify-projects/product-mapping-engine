@@ -1,13 +1,12 @@
-name	plural	czech	shortcut	prefixes
+name	plural	czech	shortcut	prefixes	
 meter	meters	metr	m	p,n,μ,m,c,d,k
 gram	grams		g	m,c,k
 decigram	decigrams	dekagram	dg,dkg,dag	
-second	seconds	sekunda	s	p,n,μ,m
-second	seconds	vteřina	s
+second	seconds	sekunda,vteřina	s	p,n,μ,m
 minute	minutes	minuta	min	
 hour	hours	hodina	h,hr,hrs,hod	
 day	days	den	d	
-year	years	rok	ann, a.,yrs,y	
+year	years	rok	ann,a.,yrs,y	
 week	weeks	týden	wk,wks	
 month	months	měsíc	mo,mon	
 radian	radians		rad	
@@ -34,21 +33,19 @@ watt hour	watt hours	watt hodina	Wh	m,k,M,G
 amper hour	amper hours	ampér hodina	Ah,amp hr	m,k,M
 electron volt	electron volts	elektron volt	eV	m,k,M
 volt ampere	volt amperes	volt ampér	VA	
-horsepower		koňská síla,koní	 hp,k	
+horsepower		koní,koňská síla	 hp,k	
 degree Celsius	degrees Celsius	stupeň Celsia	°C,Cel 	
 degree Fahrenheit	degrees Fahrenheit	stupeň Fahrneita	°F,R	
 lumen	lumens		lm 	
 lux			lx	
 becquerel 	becquerels		Bq	
 degree	degrees	stupeň	°,deg	
-minute 	minutes	minuta	"	
-second 	seconds	vteřina	'	
 liter	liters	litr	l	m,c,d,h
 are	ares	ar	ar, m^2	
 tonne	tonnes	tuna	t	
 bar	bars		bar	
 inch	inches	palec	in,"	
-foot	feet	stopa	ft	
+foot	feet	stopa	ft,'	
 yard	yards		yd	
 mile	miles	míle	mi,mil	
 rod	rods		rd	
@@ -68,14 +65,31 @@ dram	drams		dr
 pennyweight	pennyweights		pwt	
 ton	tons		t	
 pound per inch	pounds per inch		PPI	
+square mile	square miles	čtvereční míle	sq mi,mi2	
+furlong	furlongs		fur	
+fathom	fathoms	sáh	fth	
+acre	acres	akr	ac,acre	
+square rod	square rods	čtverreční rod	sq rd,rd2	
+square yard	square yards	čtvereční yard	sq yd,yd2	
+square foot	square feet	čtvereční stopa	sq ft,ft2	
+square inch	square inches	čtvereční palec	sq in,in2	
+cubic yard	cubic yards	kubický yard	cu yd,yd3	
+cubic foot	cubic feet	kubická stopa	cu ft,ft3	
+cubic inch	cubic inches	kubický palec	cu in,in3	
+acre-foot	acre-feet		ac ft	
+board foot	board feet		bd ft	
+cord	cords		cd	
 calorie	calories	kalorie	cal	k
 baud	bauds		Bd	
 neper	nepers		Np, nep	
 bel	bels		b	
 decibel	decibels		db	
 pixel	pixels		px	M
-bit per second	bits per seconds	bit za sekundu,bit za vteřinu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
-byte per second	bytes per seconds	byte za sekundu,byte za vteřinu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+bit per second	bits per seconds	bit za sekundu	bps,bit/s,b/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+bit per second		bit za vteřinu	bps	
+byte per second	bytes per seconds	byte za sekundu	Bps,Byte/s,B/s	m,k,M,G,T,Ki,Mi,Gi,Ti
+byte per second		byte za vteřinu	Bps	
 bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
 byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
-standard atmosphere		atmosféra	ATM
+standard atmosphere		atmosféra	ATM	
+percent	percents	procento	%
