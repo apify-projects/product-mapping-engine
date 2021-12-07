@@ -196,7 +196,7 @@ def detect_id(word, next_word):
 
 def is_word_unit(word):
     """
-    Checks whether a word is an unit list
+    Checks whether a word is in the dictionary of unit names
     @param word: checked word
     @return: true if the word is in the dictionary of units
     """

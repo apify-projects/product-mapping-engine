@@ -1,11 +1,13 @@
 import json
 import os
+import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from scripts.preprocessing.images.image_preprocessing import create_output_directory
+from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
 from scripts.score_computation.texts.compute_specifications_similarity import \
     preprocess_specifications_and_compute_similarity
@@ -135,15 +137,15 @@ def create_image_similarities_data(
     img_dir = os.path.join(dataset_folder, 'images')
 
     dataset_prefixes = ['dataset1', 'dataset2']
-    # download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
-    # download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
+    download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
+    download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
     create_output_directory(img_source_dir)
-    # crop_images_contour_detection(img_dir, img_source_dir)
+    crop_images_contour_detection(img_dir, img_source_dir)
     hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
     script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                               "../preprocessing/images/image_hash_creator/main.js")
-    # subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
+    subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
     hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
     imaged_pairs_similarities = compute_distances(
@@ -163,7 +165,6 @@ def create_image_similarities_data(
     return image_similarities
 
 
-# TODO: udelat dataframe similariies a cpat to do nej
 def create_text_similarities_data(product_pairs):
     """
     Compute all the text-based similarities for the product pairs
@@ -195,15 +196,15 @@ def create_text_similarities_data(product_pairs):
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
 
     # specification with units and values preprocessed as specification
-    spec1 = 'specification1'
-    spec2 = 'specification2'
-    df_all_similarities[f'specification_key_matches'] = 0
-    df_all_similarities[f'specification_key_value_matches'] = 0
-    if spec1 in product_pairs and spec2 in product_pairs:
-        specification_similarity = preprocess_specifications_and_compute_similarity(spec1, spec2, separator=': ')
+    specification_column_name1 = 'specification1'
+    specification_column_name2 = 'specification2'
+    df_all_similarities['specification_key_matches'] = 0
+    df_all_similarities['specification_key_value_matches'] = 0
+    if specification_column_name1 in product_pairs and specification_column_name2 in product_pairs:
+        specification_similarity = preprocess_specifications_and_compute_similarity(specification_column_name1, specification_column_name2, separator=': ')
         specification_similarity = pd.DataFrame(specification_similarity)
-        df_all_similarities[f'specification_key_matches'] = specification_similarity.iloc[:, [0]].values
-        df_all_similarities[f'specification_key_value_matches'] = specification_similarity.iloc[:, [1]].values
+        df_all_similarities['specification_key_matches'] = specification_similarity.iloc[:, [0]].values
+        df_all_similarities['specification_key_value_matches'] = specification_similarity.iloc[:, [1]].values
     return df_all_similarities
 
 

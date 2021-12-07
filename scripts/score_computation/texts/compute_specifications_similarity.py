@@ -7,7 +7,7 @@ from scripts.preprocessing.texts.specification_preprocessing import preprocess_s
 
 def preprocess_specifications_and_compute_similarity(dataset1, dataset2, separator):
     """
-    Preprocess two specifications and compute their similarity
+    Preprocess two datasets of specifications and compute their similarity
     @param dataset1: first list of products specifications
     @param dataset2: second list of products specifications
     @param separator: separator, that should be used for separation of names and values in specification
