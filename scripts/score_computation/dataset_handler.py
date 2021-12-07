@@ -171,9 +171,12 @@ def create_text_similarities_data(product_pairs):
     @param product_pairs: product pairs data
     @return: Similarity scores for the product pairs
     """
-    columns = ['name', 'short_description', 'long_description', 'specification']
+    columns = ['name', 'short_description', 'long_description', 'specification', 'all_texts']
     similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
     df_all_similarities = create_emtpy_dataframe(columns, similarity_names)
+
+    text_columns = create_text_column_list(product_pairs)
+    product_pairs['all_texts'] = product_pairs[text_columns].agg(','.join, axis=1)
 
     # all text types preprocessed as texts
     for column in columns:
@@ -206,6 +209,22 @@ def create_text_similarities_data(product_pairs):
         df_all_similarities['specification_key_matches'] = specification_similarity.iloc[:, [0]].values
         df_all_similarities['specification_key_value_matches'] = specification_similarity.iloc[:, [1]].values
     return df_all_similarities
+
+
+def create_text_column_list(dataset):
+    """
+    Create list of text columns from dataset
+    @param dataset: Dataframe in which to find text columns
+    @return: list of text columns
+    """
+    columns = list(dataset.columns)
+    if 'match' in columns:
+        columns.remove('match')
+    if 'image1' in columns:
+        columns.remove('image1')
+    if 'image2' in columns:
+        columns.remove('image2')
+    return columns
 
 
 def create_emtpy_dataframe(text_types, similarity_names):
