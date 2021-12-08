@@ -175,8 +175,7 @@ def create_text_similarities_data(product_pairs):
     similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
     df_all_similarities = create_emtpy_dataframe(columns, similarity_names)
 
-    text_columns = create_text_column_list(product_pairs)
-    product_pairs['all_texts'] = product_pairs[text_columns].agg(','.join, axis=1)
+    product_pairs = add_all_texts_columns(product_pairs)
 
     # all text types preprocessed as texts
     for column in columns:
@@ -211,11 +210,11 @@ def create_text_similarities_data(product_pairs):
     return df_all_similarities
 
 
-def create_text_column_list(dataset):
+def add_all_texts_columns(dataset):
     """
-    Create list of text columns from dataset
-    @param dataset: Dataframe in which to find text columns
-    @return: list of text columns
+    Add to the dataset column containing all joined texts columns
+    @param dataset: dataframe in which to join text columns
+    @return: dataframe with additional two columns containing all texts for each product
     """
     columns = list(dataset.columns)
     if 'match' in columns:
@@ -224,7 +223,11 @@ def create_text_column_list(dataset):
         columns.remove('image1')
     if 'image2' in columns:
         columns.remove('image2')
-    return columns
+    columns1 = [x for x in columns if not '2' in x]
+    columns2 = [x for x in columns if not '1' in x]
+    dataset['all_texts1'] = dataset[columns1].agg(','.join, axis=1)
+    dataset['all_texts2'] = dataset[columns2].agg(','.join, axis=1)
+    return dataset
 
 
 def create_emtpy_dataframe(text_types, similarity_names):
