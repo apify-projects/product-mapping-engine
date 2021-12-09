@@ -21,7 +21,7 @@ def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url
 
 # Test TODO delete
 transform_pairs_dataset_to_json_lists_of_urls(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "sampled-data.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "urls1.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "urls2.json")
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/sampled_data.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/urls1.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/urls2.json")
 )
