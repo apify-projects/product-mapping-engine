@@ -29,7 +29,7 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
     dataset_to_upload = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/pairs_dataset.csv"))
-    labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
+    #labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
 
     dataset1_to_upload = dataset_to_upload[[
         "name1",
@@ -50,7 +50,7 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
         "url1": "url"
     })
     dataset1_to_upload['id'] = dataset1_to_upload['name']
-    dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
+    #dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
 
     dataset2_to_upload = dataset_to_upload[[
         "name2",
@@ -70,7 +70,6 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
         "price2": "price",
         "url2": "url"
     })
-    dataset2_to_upload['price'] = 1
     dataset2_to_upload['id'] = dataset2_to_upload['name']
     dataset2_client.push_items(dataset2_to_upload.to_dict('records'))
 
