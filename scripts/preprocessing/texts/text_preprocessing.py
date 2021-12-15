@@ -1,3 +1,4 @@
+import os
 import re
 
 import majka
@@ -10,7 +11,7 @@ def set_czech_lemmatizer():
     Set lemmatizer for Czech language
     @return: lemmatizer
     """
-    lemmatizer = majka.Majka('data/vocabularies/majka.w-lt')
+    lemmatizer = majka.Majka(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/majka.w-lt'))
     lemmatizer.flags |= majka.ADD_DIACRITICS  # find word forms with diacritics
     lemmatizer.flags |= majka.DISALLOW_LOWERCASE  # do not enable to find lowercase variants
     lemmatizer.flags |= majka.IGNORE_CASE  # ignore the word case whatsoever

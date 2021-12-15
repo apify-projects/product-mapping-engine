@@ -36,6 +36,7 @@ def compute_similarity_of_specifications(dataset1, dataset2):
             )
             similarity_scores.append({'matching_keys': matching_keys / len(product1),
                                       'matching_keys_values': matching_keys_and_values / len(product1)})
+
     return similarity_scores
 
 

@@ -173,15 +173,13 @@ def create_text_similarities_data(product_pairs):
     @param product_pairs: product pairs data
     @return: Similarity scores for the product pairs
     """
-    columns = ['name', 'short_description', 'long_description', 'specification', 'specification_text', 'all_texts']
+    columns = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
     similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
-    df_all_similarities = create_emtpy_dataframe(columns, similarity_names)
+    df_all_similarities = create_empty_dataframe(columns, similarity_names)
 
     product_pairs = parse_specifications_and_create_copies(product_pairs)
     product_pairs = add_all_texts_columns(product_pairs)
 
-    # all text types preprocessed as texts
-    columns.remove('specification')
     for column in columns:
         column1 = f'{column}1'
         column2 = f'{column}2'
@@ -254,7 +252,7 @@ def add_all_texts_columns(dataset):
     return dataset
 
 
-def create_emtpy_dataframe(text_types, similarity_names):
+def create_empty_dataframe(text_types, similarity_names):
     """
     Create empty dataframe for text similarity results
     @param text_types: names of compared types of the text

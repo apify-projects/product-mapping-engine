@@ -11,9 +11,11 @@ import pandas as pd
 
 from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from scripts.score_computation.dataset_handler import preprocess_data_without_saving
+from scripts.preprocessing.texts.text_preprocessing import preprocess_text
 
 
 def main(**kwargs):
+    preprocess_text()
     # Load dataset and train and save model
     load_data_and_train_model('data/extra_dataset/dataset', 'DecisionTree')
     # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
