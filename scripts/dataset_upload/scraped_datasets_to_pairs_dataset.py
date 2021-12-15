@@ -1,3 +1,5 @@
+import ast
+import json
 import os
 import pandas as pd
 import requests
@@ -118,12 +120,15 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     full_pairs_dataset = full_pairs_dataset.filter(regex=("(.*(1|2)$)|^match$"), axis=1)
     full_pairs_dataset = full_pairs_dataset[(full_pairs_dataset["price1"] != "") & (full_pairs_dataset["price2"] != "")]
     full_pairs_dataset.reset_index(inplace=True)
-    print(full_pairs_dataset["price1"])
-    print(full_pairs_dataset["price2"])
-    print(full_pairs_dataset)
-    print(full_pairs_dataset.columns)
-    #selected_columns_pairs_dataset = full_pairs_dataset
-    #selected_columns_pairs_dataset.to_csv(full_pairs_dataset_path, index=False)
+
+    full_pairs_dataset['specification1'] = full_pairs_dataset['specification1'].apply(
+        lambda specification: json.dumps(specification)
+    )
+
+    full_pairs_dataset['specification2'] = full_pairs_dataset['specification2'].apply(
+        lambda specification: json.dumps(specification)
+    )
+
     if not os.path.exists(IMAGE_DIRECTORY):
         os.makedirs(IMAGE_DIRECTORY)
 
@@ -133,7 +138,6 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         full_pairs_dataset["image1"][index] = download_images(index, 1, row)
         full_pairs_dataset["image2"][index] = download_images(index, 2, row)
 
-    print(full_pairs_dataset["image1"])
     full_pairs_dataset.to_csv(full_pairs_dataset_path, index=False)
 
 

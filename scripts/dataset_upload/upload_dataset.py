@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from slugify import slugify
 from apify_client import ApifyClient
+import numpy as np
 
 IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/images")
 
@@ -29,7 +30,10 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
     dataset_to_upload = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/pairs_dataset.csv"))
-    #labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
+    #dataset_to_upload['match'] = np.random.randint(0, 2, size=len(dataset_to_upload))
+    labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
+
+    raise "hell"
 
     dataset1_to_upload = dataset_to_upload[[
         "name1",
@@ -50,7 +54,7 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
         "url1": "url"
     })
     dataset1_to_upload['id'] = dataset1_to_upload['name']
-    #dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
+    dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
 
     dataset2_to_upload = dataset_to_upload[[
         "name2",

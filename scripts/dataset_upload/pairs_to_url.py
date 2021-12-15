@@ -9,7 +9,10 @@ def transform_pairs_dataset_to_json_lists_of_urls(pairs_dataset_path, url_json1_
     extract_unique_urls_and_save_them_to_json(pairs_dataset, 'matchUrl', url_json2_path)
 
 def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url_json_path):
-    urls_array = pairs_dataset[urls_attribute].dropna().unique()
+    urls_array = pd.Series(pairs_dataset[urls_attribute].dropna().unique())
+    urls_array = urls_array.apply(
+        lambda url: url if type(url) == str else url.strip()
+    )
     array_to_jsonify = []
     for url in urls_array:
         array_to_jsonify.append({
@@ -21,7 +24,7 @@ def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url
 
 # Test TODO delete
 transform_pairs_dataset_to_json_lists_of_urls(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/sampled_data.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/jirka_all_categories.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/urls1.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/urls2.json")
 )
