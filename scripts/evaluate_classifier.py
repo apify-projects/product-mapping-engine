@@ -7,7 +7,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 
-def setup_classifier(classifier_type, classifier_parameters_file = None):
+def setup_classifier(classifier_type, classifier_parameters_file=None):
     """
     Setup particular classifier
     @param classifier_type: type of classifier
@@ -131,10 +131,11 @@ def compute_prediction_accuracies(data, data_type):
     true_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 0)].shape[0]
     false_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 1)].shape[0]
 
-    accuracy = (data_count - mismatched_count) / data_count
-    recall = true_positive_count / actual_positive_count
-    specificity = true_negative_count / actual_negative_count
-    precision = true_positive_count / (true_positive_count + false_positive_count)
+    accuracy = (data_count - mismatched_count) / data_count if data_count != 0 else 0
+    recall = true_positive_count / actual_positive_count if actual_positive_count != 0 else 0
+    specificity = true_negative_count / actual_negative_count if actual_negative_count != 0 else 0
+    precision = true_positive_count / (
+            true_positive_count + false_positive_count) if true_positive_count + false_positive_count != 0 else 0
     conf_matrix = confusion_matrix(data['match'], data['predicted_match'])
 
     print(f'Classifier results for {data_type} data')
@@ -148,7 +149,8 @@ def compute_prediction_accuracies(data, data_type):
     print('----------------------------')
     print('\n\n')
 
-    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision, "confusion_matrix": conf_matrix}
+    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision,
+            "confusion_matrix": conf_matrix}
 
 
 def create_thresh(scores, intervals):

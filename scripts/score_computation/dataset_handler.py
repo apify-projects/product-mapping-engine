@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import subprocess
@@ -5,9 +6,10 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from scripts.preprocessing.images.image_preprocessing import create_output_directory
-from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection
+from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
+from scripts.preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
+    parse_specifications
+from scripts.preprocessing.texts.text_preprocessing import preprocess_text
 from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
 from scripts.score_computation.texts.compute_specifications_similarity import \
     preprocess_specifications_and_compute_similarity
@@ -171,20 +173,24 @@ def create_text_similarities_data(product_pairs):
     @param product_pairs: product pairs data
     @return: Similarity scores for the product pairs
     """
-    columns = ['name', 'short_description', 'long_description', 'specification', 'all_texts']
+    columns = ['name', 'short_description', 'long_description', 'specification', 'specification_text', 'all_texts']
     similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
     df_all_similarities = create_emtpy_dataframe(columns, similarity_names)
 
+    product_pairs = parse_specifications_and_create_copies(product_pairs)
     product_pairs = add_all_texts_columns(product_pairs)
 
     # all text types preprocessed as texts
+    columns.remove('specification')
     for column in columns:
         column1 = f'{column}1'
         column2 = f'{column}2'
         if column1 in product_pairs and column2 in product_pairs:
+            dataset1 = preprocess_text(product_pairs[column1].values)
+            dataset2 = preprocess_text(product_pairs[column2].values)
             columns_similarity = compute_similarity_of_texts(
-                product_pairs[column1],
-                product_pairs[column2],
+                dataset1,
+                dataset2,
                 id_detection=True,
                 color_detection=True,
                 brand_detection=True,
@@ -198,16 +204,34 @@ def create_text_similarities_data(product_pairs):
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
 
     # specification with units and values preprocessed as specification
-    specification_column_name1 = 'specification1'
-    specification_column_name2 = 'specification2'
     df_all_similarities['specification_key_matches'] = 0
     df_all_similarities['specification_key_value_matches'] = 0
-    if specification_column_name1 in product_pairs and specification_column_name2 in product_pairs:
-        specification_similarity = preprocess_specifications_and_compute_similarity(specification_column_name1, specification_column_name2, separator=': ')
+
+    if 'specification1' in product_pairs.columns and 'specification2' in product_pairs.columns:
+        specification_similarity = preprocess_specifications_and_compute_similarity(product_pairs['specification1'],
+                                                                                    product_pairs['specification2'])
         specification_similarity = pd.DataFrame(specification_similarity)
-        df_all_similarities['specification_key_matches'] = specification_similarity.iloc[:, [0]].values
-        df_all_similarities['specification_key_value_matches'] = specification_similarity.iloc[:, [1]].values
+        df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
+        df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
+
     return df_all_similarities
+
+
+def parse_specifications_and_create_copies(dataset):
+    """
+    Parse specification from json to dict and create copies of them converted to classical text
+    @param dataset: dataframe with products
+    @return: dataframe with products with parsed specifications and new columns of specifications converted to text
+    """
+    if 'specification1' in dataset.columns:
+        dataset['specification1'] = parse_specifications(dataset['specification1'])
+        dataset['specification_text1'] = convert_specifications_to_texts(
+            copy.deepcopy(dataset['specification1'].values))
+    if 'specification2' in dataset.columns:
+        dataset['specification2'] = parse_specifications(dataset['specification2'])
+        dataset['specification_text2'] = convert_specifications_to_texts(
+            copy.deepcopy(dataset['specification2'].values))
+    return dataset
 
 
 def add_all_texts_columns(dataset):
@@ -217,12 +241,12 @@ def add_all_texts_columns(dataset):
     @return: dataframe with additional two columns containing all texts for each product
     """
     columns = list(dataset.columns)
-    if 'match' in columns:
-        columns.remove('match')
-    if 'image1' in columns:
-        columns.remove('image1')
-    if 'image2' in columns:
-        columns.remove('image2')
+    columns_to_remove = ['match', 'image1', 'image2', 'price1', 'price2', 'url1', 'url2', 'index', 'specification1',
+                         'specification2']
+    for col in columns_to_remove:
+        if col in columns:
+            columns.remove(col)
+
     columns1 = [x for x in columns if not '2' in x]
     columns2 = [x for x in columns if not '1' in x]
     dataset['all_texts1'] = dataset[columns1].agg(','.join, axis=1)

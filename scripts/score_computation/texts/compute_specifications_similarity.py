@@ -5,17 +5,17 @@ from scripts.preprocessing.texts.keywords_detection import UNIT_MARK
 from scripts.preprocessing.texts.specification_preprocessing import preprocess_specifications
 
 
-def preprocess_specifications_and_compute_similarity(dataset1, dataset2, separator):
+def preprocess_specifications_and_compute_similarity(dataset1, dataset2):
     """
     Preprocess two datasets of specifications and compute their similarity
-    @param dataset1: first list of products specifications
-    @param dataset2: second list of products specifications
-    @param separator: separator, that should be used for separation of names and values in specification
+    @param dataset1: first list of list of key-value pairs of products specifications
+    @param dataset2: second list of list of key-value pairs of products specifications
     @return: similarity of specifications
     """
-    dataset1 = preprocess_specifications(dataset1, separator)
-    dataset2 = preprocess_specifications(dataset2, separator)
-    return compute_similarity_of_specifications(dataset1, dataset2)
+    dataset1 = preprocess_specifications(dataset1)
+    dataset2 = preprocess_specifications(dataset2)
+    similarity_score = compute_similarity_of_specifications(dataset1, dataset2)
+    return similarity_score
 
 
 def compute_similarity_of_specifications(dataset1, dataset2):
