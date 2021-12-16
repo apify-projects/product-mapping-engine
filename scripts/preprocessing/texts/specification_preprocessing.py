@@ -20,32 +20,6 @@ def convert_specifications_to_texts(dataset):
     return joined_dataset
 
 
-def preprocess_specifications_old(dataset):
-    """
-    Parse specifications for further similarity computations - separate parameter name and value
-    @param dataset: json of key-value pairs of products specifications
-    @return: list of dicts containing parsed and preprocessed products specifications
-    """
-    preprocessed_dataset = []
-
-    for product_specification in dataset:
-        product_specification = json.loads(product_specification)
-        specification_dict = {}
-        for item in product_specification:
-            item = [item['key'], item['value']]
-            item = preprocess_text(item)
-            text_detected = detect_ids_brands_colors_and_units(
-                [item[1]],
-                id_detection=False,
-                color_detection=False,
-                brand_detection=False,
-                units_detection=True
-            )
-            specification_dict[' '.join(item[0])] = ' '.join(text_detected[0])
-        preprocessed_dataset.append(specification_dict)
-    return preprocessed_dataset
-
-
 def preprocess_specifications(dataset):
     """
     Preprocess specifications for further similarity computations - separate parameter name and value
