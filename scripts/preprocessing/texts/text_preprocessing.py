@@ -3,7 +3,7 @@ import re
 
 import majka
 
-from scripts.preprocessing.texts.keywords_detection import COLOR_MARK
+from .keywords_detection import COLOR_MARK
 
 
 def set_czech_lemmatizer():

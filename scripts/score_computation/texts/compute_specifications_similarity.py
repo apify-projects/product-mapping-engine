@@ -1,8 +1,8 @@
 import re
 from difflib import SequenceMatcher
 
-from scripts.preprocessing.texts.keywords_detection import UNIT_MARK
-from scripts.preprocessing.texts.specification_preprocessing import preprocess_specifications
+from ...preprocessing.texts.keywords_detection import UNIT_MARK
+from ...preprocessing.texts.specification_preprocessing import preprocess_specifications
 
 
 def preprocess_specifications_and_compute_similarity(dataset1, dataset2):

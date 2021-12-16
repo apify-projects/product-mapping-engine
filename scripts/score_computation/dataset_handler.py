@@ -6,14 +6,14 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scripts.preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
-from scripts.preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
+from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
+from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications
-from scripts.preprocessing.texts.text_preprocessing import preprocess_text
-from scripts.score_computation.images.compute_hashes_similarity import create_hash_sets, compute_distances
-from scripts.score_computation.texts.compute_specifications_similarity import \
+from ..preprocessing.texts.text_preprocessing import preprocess_text
+from .images.compute_hashes_similarity import create_hash_sets, compute_distances
+from .texts.compute_specifications_similarity import \
     preprocess_specifications_and_compute_similarity
-from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
+from .texts.compute_texts_similarity import compute_similarity_of_texts
 
 
 def load_and_parse_data(input_file):

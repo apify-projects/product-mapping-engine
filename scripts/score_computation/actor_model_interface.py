@@ -9,9 +9,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 import pandas as pd
 
-from scripts.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from scripts.score_computation.dataset_handler import preprocess_data_without_saving
-from scripts.preprocessing.texts.text_preprocessing import preprocess_text
+from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
+from .dataset_handler import preprocess_data_without_saving
+from ..preprocessing.texts.text_preprocessing import preprocess_text
 
 
 def main(**kwargs):

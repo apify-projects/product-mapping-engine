@@ -1,8 +1,8 @@
 import json
 import re
 
-from scripts.preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
-from scripts.preprocessing.texts.text_preprocessing import preprocess_text
+from .keywords_detection import detect_ids_brands_colors_and_units
+from .text_preprocessing import preprocess_text
 
 
 def convert_specifications_to_texts(dataset):
