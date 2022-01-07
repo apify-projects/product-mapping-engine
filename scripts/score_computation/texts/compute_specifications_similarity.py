@@ -18,16 +18,20 @@ def preprocess_specifications_and_compute_similarity(dataset1, dataset2):
     return similarity_score
 
 
-def compute_similarity_of_specifications(dataset1, dataset2):
+def compute_similarity_of_specifications(dataset1, dataset2, product_pairs_idx):
     """
-    Compare two specifications and find common attributes with the same values
+    Compare each possible pairs of specifications and find common attributes with the same values
     @param dataset1: first dictionary of specification parameter names and values
     @param dataset2: second dictionary of specification parameter names and values
+    @param product_pairs_idx: indices of filtered possible matching pairs
     @return: ratio of common attributes with the same values
     """
     similarity_scores = []
-    for product1 in dataset1:
-        for product2 in dataset2:
+
+    for product_idx, corresponding_indices in product_pairs_idx.items():
+        product1 = dataset1.loc[[product_idx]].values[0]
+        for product2_idx in corresponding_indices:
+            product2 = dataset2.loc[[product2_idx]].values[0]
             similarities_dict = find_closest_keys(product1, product2, key_similarity_limit=0.9)
             matching_keys, matching_keys_and_values = compare_values_similarity(
                 similarities_dict,
