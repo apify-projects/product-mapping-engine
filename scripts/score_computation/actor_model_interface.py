@@ -8,10 +8,11 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 import pandas as pd
-
+import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from .dataset_handler import preprocess_data_without_saving
+from .dataset_handler import preprocess_data_without_saving, preprocess_textual_data, COLUMNS
 from ..preprocessing.texts.text_preprocessing import preprocess_text
+from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words
 
 
 def main(**kwargs):
@@ -44,11 +45,8 @@ def filter_products_with_no_similar_words(product, dataset):
     @return: dataset with products containing at least one same word as source product
     """
     data_subset = pd.DataFrame(columns=dataset.columns.tolist())
-    product_name_list = product['name'].split(' ')
     for idx, second_product in dataset.iterrows():
-        second_product_name_list = second_product['name'].split(' ')
-        o = set(product_name_list) & set(second_product_name_list)
-        if len(set(product_name_list) & set(second_product_name_list)) > 0:
+        if len(set(product['name']) & set(second_product['name'])) > 0:
             data_subset = data_subset.append(second_product)
     return data_subset
 
@@ -73,21 +71,33 @@ def load_model_create_dataset_and_predict_matches(
     """
     classifier = setup_classifier(classifier)
     classifier.load(key_value_store=model_key_value_store_client)
-    dataset1['price'] = pd.to_numeric(dataset1['price'])
-    dataset2['price'] = pd.to_numeric(dataset2['price'])
-    pairs_dataset_fragments = []
-    for idx, product in dataset1.iterrows():
-        data_subset = filter_products(product, dataset2)
-        pairs = create_dataset_for_predictions(product, data_subset)
-        pairs_dataset_fragments.append(pairs)
-
-    pairs_dataset = pd.concat(pairs_dataset_fragments, axis=0)
-    print(pairs_dataset.count())
 
     # preprocess data
-    preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(
+    dataset1_copy = copy.deepcopy(dataset1)
+    dataset2_copy = copy.deepcopy(dataset2)
+    dataset1_copy = preprocess_textual_data(dataset1_copy,
+                                  id_detection=False,
+                                  color_detection=False,
+                                  brand_detection=False,
+                                  units_detection=False)
+    dataset2_copy = preprocess_textual_data(dataset2_copy,
+                                  id_detection = False,
+                            color_detection = False,
+                            brand_detection = False,
+                            units_detection = False)
+    dataset1 = preprocess_textual_data(dataset1)
+    dataset2 = preprocess_textual_data(dataset2)
+
+    # create tf_idfs
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
+
+    # filter product pairs
+    pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2)
+
+    # preprocess data
+    preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words,
         dataset_folder='.',
-        dataset_dataframe=pairs_dataset,
+        dataset_dataframe=pairs_dataset_idx,
         dataset_images_kvs1=images_kvs1_client,
         dataset_images_kvs2=images_kvs2_client
     ))
@@ -103,6 +113,28 @@ def load_model_create_dataset_and_predict_matches(
     return predicted_matches
 
 
+def filter_possible_product_pairs(dataset1, dataset2):
+    """
+    Filter possible pairs of two datasets using price and similar words filter
+    @param dataset1: Source dataset of products
+    @param dataset2: Target dataset with products to be searched in for the same products
+    @return dict with key as indices of products from the first dataset and values as indices of filtered possible matching products from second dataset
+    """
+    dataset2_no_price_idx = dataset2.index[dataset2['price'] == 0].tolist()
+    idx_start = 0
+    idx_to = 0
+    pairs_dataset_idx = {}
+    for idx, product in dataset1.iterrows():
+        data_subset_idx, idx_start, idx_to = filter_products(product, dataset2, idx_start, idx_to)
+        if len(data_subset_idx) == 0:
+            print(f'No corresponding product for product "{product["name"]}" at index {idx}')
+        if len(dataset2_no_price_idx) != 0:
+            data_subset_idx = data_subset_idx + dataset2_no_price_idx
+        pairs_dataset_idx[idx] = data_subset_idx
+    pairs_dataset_idx = dict(sorted(pairs_dataset_idx.items()))
+    return pairs_dataset_idx
+
+
 def create_dataset_for_predictions(product, maybe_the_same_products):
     """
     Create one dataset for model to predict matches that will consist of following
@@ -112,29 +144,46 @@ def create_dataset_for_predictions(product, maybe_the_same_products):
     @return: one dataset for model to predict pairs
     """
     maybe_the_same_products = maybe_the_same_products.rename(columns=lambda s: s + '2')
-    final_dataset = pd.DataFrame()
+    final_dataset = pd.DataFrame(columns=product.index.values)
     for _ in range(0, len(maybe_the_same_products.index)):
         final_dataset = final_dataset.append(product, ignore_index=True)
-    final_dataset = final_dataset.rename(columns=lambda s: s + '1')
     final_dataset.reset_index(drop=True, inplace=True)
     maybe_the_same_products.reset_index(drop=True, inplace=True)
+    final_dataset = final_dataset.rename(columns=lambda s: s + '1')
     final_dataset = pd.concat([final_dataset, maybe_the_same_products], axis=1)
     return final_dataset
 
 
-def filter_products(product, dataset):
+def filter_products(product, dataset, idx_from, idx_to):
     """
     Filter products in dataset according to the price, category and word similarity to reduce number of comparisons
     @param product: given product for which we want to filter dataset
-    @param dataset: dataset of products to be filtered
+    @param dataset:  dataset of products to be filtered sorted according to the price
+    @param idx_from: starting index for searching for product with similar price in dataset
+    @param idx_to: ending index for searching for product with similar price in dataset
     @return: Filtered dataset of products that are possibly the same as given product
     """
-    data_filtered = dataset[
-        (dataset['price'] / 2 <= product['price']) & (product['price'] <= dataset['price'] * 2)]
-    if 'category' in dataset:
-        data_filtered = data_filtered[data_filtered['category'] != data_filtered['category']]
+    if 'price' not in product.index.values or 'price' not in dataset:
+        data_filtered = dataset
+    else:
+        last_price = dataset.iloc[idx_from]['price']
+        min_price = product['price'] / 2
+        while last_price < min_price and idx_from < len(dataset) - 1:
+            idx_from += 1
+            last_price = dataset.iloc[idx_from]['price']
+
+        last_price = dataset.iloc[idx_to]['price']
+        max_price = product['price'] * 2
+        while last_price <= max_price and idx_to < len(dataset) - 1:
+            idx_to += 1
+            last_price = dataset.iloc[idx_to]['price']
+        data_filtered = dataset.iloc[idx_from:idx_to]
+    if 'category' in product.index.values and 'category' in dataset:
+        data_filtered = data_filtered[
+            data_filtered['category'] == product['category'] or data_filtered['category'] == None]
+
     data_filtered = filter_products_with_no_similar_words(product, data_filtered)
-    return data_filtered
+    return data_filtered.index.values, idx_from, idx_to
 
 
 def load_data_and_train_model(

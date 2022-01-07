@@ -14,80 +14,66 @@ TOP_WORDS = 10
 FILTER_LIMIT = 0.5
 
 
-def compute_similarity_of_texts(dataset1, dataset2, id_detection, color_detection, brand_detection, units_detection):
+def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
     """
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
-    @param id_detection: True if id should be detected
-    @param color_detection: True if color should be detected
-    @param brand_detection: True if brand should be detected
-    @param units_detection: True if units should be detected
+    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @param tf_idfs: tf.idfs of all words from both datasets
+    @param descriptive_words: decsriptive words from both datasets
     @return: dataset of pair similarity scores
     """
 
-    dataset1 = detect_ids_brands_colors_and_units(
-        dataset1,
-        id_detection,
-        color_detection,
-        brand_detection,
-        units_detection
-    )
-    dataset2 = detect_ids_brands_colors_and_units(
-        dataset2,
-        id_detection,
-        color_detection,
-        brand_detection,
-        units_detection
-    )
-
-    dataset1_nomarkers = remove_markers(copy.deepcopy(dataset1))
-    dataset2_nomarkers = remove_markers(copy.deepcopy(dataset2))
-    tf_idfs = create_tf_idf(dataset1_nomarkers, dataset2_nomarkers)
-    descriptive_words = find_descriptive_words(
-        tf_idfs, filter_limit=FILTER_LIMIT, number_of_top_words=TOP_WORDS
-    )
     half_length = floor(len(descriptive_words) / 2)
     match_ratios_list = []
 
-    for x in range(len(dataset1)):
-        match_ratios = {}
-        # detect and compare ids
-        id1 = [word for word in dataset1[x] if ID_MARK in word]
-        id2 = [word for word in dataset2[x] if ID_MARK in word]
-        match_ratios['id'] = compute_matching_pairs(id1, id2)
+    for product_idx, corresponding_indices in product_pairs_idx.items():
+        product1 = dataset1.loc[[product_idx]].values[0]
+        product1_no_markers = remove_markers(copy.deepcopy(product1))
+        list1 = set(product1_no_markers)
+        bnd1 = [word for word in product1 if BRAND_MARK in word]
+        id1 = [word for word in product1 if ID_MARK in word]
 
-        # detect and compare brands
-        bnd1 = [word for word in dataset1[x] if BRAND_MARK in word]
-        bnd2 = [word for word in dataset2[x] if BRAND_MARK in word]
-        match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
+        for product2_idx in corresponding_indices:
+            product2 = dataset2.loc[[product2_idx]].values[0]
+            match_ratios = {}
 
-        # ratio of the similar words
-        list1 = set(dataset1_nomarkers[x])
-        intersection = list1.intersection(dataset2_nomarkers[x])
-        intersection_list = list(intersection)
-        match_ratios['words'] = compute_matching_pairs(dataset1_nomarkers[x], dataset2_nomarkers[x])
+            # detect and compare ids
+            id2 = [word for word in product2 if ID_MARK in word]
+            match_ratios['id'] = compute_matching_pairs(id1, id2)
 
-        # cosine similarity of vectors from tf-idf
-        cos_similarity = cosine_similarity([tf_idfs.iloc[x].values, tf_idfs.iloc[x + len(dataset1)].values])[0][1]
+            # detect and compare brands
+            bnd2 = [word for word in product2 if BRAND_MARK in word]
+            match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
 
-        # commpute number of similar words in both texts
-        descriptive_words_sim = compute_descriptive_words_similarity(
-            descriptive_words.iloc[x].values,
-            descriptive_words.iloc[half_length + x].values
-        ) / TOP_WORDS
+            # ratio of the similar words
+            product2_no_markers = remove_markers(copy.deepcopy(product2))
 
-        if dataset1[x] == "" or dataset2[x] == "":
-            match_ratios['cos'] = 0
-            match_ratios['descriptives'] = 0
-        else:
-            match_ratios['cos'] = 2 * cos_similarity - 1
-            match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
+            intersection = list1.intersection(product2_no_markers)
+            intersection_list = list(intersection)
+            match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
 
-        # compare ratio of corresponding units and values in both texts
-        match_ratios['units'] = compare_units_and_values(dataset1[x], dataset2[x])
+            # cosine similarity of vectors from tf-idf
+            cos_similarity = cosine_similarity([tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][1]
 
-        match_ratios_list.append(match_ratios)
+            # commpute number of similar words in both texts
+            descriptive_words_sim = compute_descriptive_words_similarity(
+                descriptive_words.iloc[product_idx].values,
+                descriptive_words.iloc[half_length + product_idx].values
+            ) / TOP_WORDS
+
+            if product1 == "" or product2 == "":
+                match_ratios['cos'] = 0
+                match_ratios['descriptives'] = 0
+            else:
+                match_ratios['cos'] = 2 * cos_similarity - 1
+                match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
+
+            # compare ratio of corresponding units and values in both texts
+            match_ratios['units'] = compare_units_and_values(product1, product2)
+
+            match_ratios_list.append(match_ratios)
     return match_ratios_list
 
 
@@ -182,6 +168,17 @@ def compute_tf_idf(dataset, print_stats=False):
         print(tf_idfs)
     return tf_idfs
 
+def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
+    tf_idfs = {}
+    descriptive_words = {}
+    for column in columns:
+        tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
+        descriptive_words_col = find_descriptive_words(
+            tf_idfs_col, filter_limit=FILTER_LIMIT, number_of_top_words=TOP_WORDS
+        )
+        tf_idfs[column] = tf_idfs_col
+        descriptive_words[column] = descriptive_words_col
+    return tf_idfs, descriptive_words
 
 def remove_markers(dataset):
     """
@@ -192,7 +189,8 @@ def remove_markers(dataset):
     for text in dataset:
         for j, word in enumerate(text):
             for m in MARKS:
-                text[j] = word.replace(m, '')
+                if m in word:
+                    text[j] = word.replace(m, '')
     return dataset
 
 
