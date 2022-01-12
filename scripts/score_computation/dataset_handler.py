@@ -10,8 +10,8 @@ import pandas as pd
 from .images.compute_hashes_similarity import create_hash_sets, compute_distances
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
-from .texts.compute_texts_similarity import compute_similarity_of_texts, detect_ids_brands_colors_and_units, \
-    create_tf_idfs_and_descriptive_words_pairs
+from .texts.compute_texts_similarity import compute_similarity_of_texts, create_tf_idfs_and_descriptive_words_pairs
+from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications, preprocess_specifications
@@ -140,6 +140,10 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
                                    ):
     """
     For each pair of products compute their image and name similarity without saving anything
+    @param dataset1: first dataframe with products
+    @param dataset2: second dataframe with products
+    @param tf_idfs: dictionary of tf.idfs for each text column in products
+    @param descriptive_words:  dictionary of descriptive words for each text column in products
     @param dataset_folder: folder containing data to be preprocessed
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored

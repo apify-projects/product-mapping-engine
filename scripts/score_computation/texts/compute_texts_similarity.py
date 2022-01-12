@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK
 
 MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
-TOP_WORDS = 10
+TOP_WORDS = 50
 FILTER_LIMIT = 0.5
 
 
