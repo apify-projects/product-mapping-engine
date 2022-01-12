@@ -6,8 +6,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK, \
-    detect_ids_brands_colors_and_units
+from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK
 
 MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
 TOP_WORDS = 10
@@ -55,7 +54,9 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
 
             # cosine similarity of vectors from tf-idf
-            cos_similarity = cosine_similarity([tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][1]
+            cos_similarity = \
+            cosine_similarity([tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
+                1]
 
             # commpute number of similar words in both texts
             descriptive_words_sim = compute_descriptive_words_similarity(
@@ -168,6 +169,24 @@ def compute_tf_idf(dataset, print_stats=False):
         print(tf_idfs)
     return tf_idfs
 
+
+def create_tf_idfs_and_descriptive_words_pairs(product_pairs, columns):
+    tf_idfs = {}
+    descriptive_words = {}
+
+    for column in columns:
+        column1 = f'{column}1'
+        column2 = f'{column}2'
+        if column1 in product_pairs and column2 in product_pairs:
+            tf_idfs_col = create_tf_idf(product_pairs[column1], product_pairs[column2])
+            descriptive_words_col = find_descriptive_words(
+                tf_idfs_col, filter_limit=FILTER_LIMIT, number_of_top_words=TOP_WORDS
+            )
+            tf_idfs[column] = tf_idfs_col
+            descriptive_words[column] = descriptive_words_col
+    return tf_idfs, descriptive_words
+
+
 def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
     tf_idfs = {}
     descriptive_words = {}
@@ -179,6 +198,7 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
         tf_idfs[column] = tf_idfs_col
         descriptive_words[column] = descriptive_words_col
     return tf_idfs, descriptive_words
+
 
 def remove_markers(dataset):
     """

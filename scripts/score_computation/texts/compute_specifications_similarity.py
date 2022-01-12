@@ -2,20 +2,6 @@ import re
 from difflib import SequenceMatcher
 
 from ...preprocessing.texts.keywords_detection import UNIT_MARK
-from ...preprocessing.texts.specification_preprocessing import preprocess_specifications
-
-
-def preprocess_specifications_and_compute_similarity(dataset1, dataset2):
-    """
-    Preprocess two datasets of specifications and compute their similarity
-    @param dataset1: first list of list of key-value pairs of products specifications
-    @param dataset2: second list of list of key-value pairs of products specifications
-    @return: similarity of specifications
-    """
-    dataset1 = preprocess_specifications(dataset1)
-    dataset2 = preprocess_specifications(dataset2)
-    similarity_score = compute_similarity_of_specifications(dataset1, dataset2)
-    return similarity_score
 
 
 def compute_similarity_of_specifications(dataset1, dataset2, product_pairs_idx):

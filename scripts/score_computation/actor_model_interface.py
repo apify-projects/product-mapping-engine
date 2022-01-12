@@ -10,7 +10,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 import pandas as pd
 import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from .dataset_handler import preprocess_data_without_saving, preprocess_textual_data, COLUMNS
+from .dataset_handler import preprocess_data_without_saving, preprocess_textual_data, COLUMNS, \
+    preprocess_data_before_training
 from ..preprocessing.texts.text_preprocessing import preprocess_text
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words
 
@@ -76,15 +77,15 @@ def load_model_create_dataset_and_predict_matches(
     dataset1_copy = copy.deepcopy(dataset1)
     dataset2_copy = copy.deepcopy(dataset2)
     dataset1_copy = preprocess_textual_data(dataset1_copy,
-                                  id_detection=False,
-                                  color_detection=False,
-                                  brand_detection=False,
-                                  units_detection=False)
+                                            id_detection=False,
+                                            color_detection=False,
+                                            brand_detection=False,
+                                            units_detection=False)
     dataset2_copy = preprocess_textual_data(dataset2_copy,
-                                  id_detection = False,
-                            color_detection = False,
-                            brand_detection = False,
-                            units_detection = False)
+                                            id_detection=False,
+                                            color_detection=False,
+                                            brand_detection=False,
+                                            units_detection=False)
     dataset1 = preprocess_textual_data(dataset1)
     dataset2 = preprocess_textual_data(dataset2)
 
@@ -96,18 +97,19 @@ def load_model_create_dataset_and_predict_matches(
 
     # preprocess data
     preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words,
-        dataset_folder='.',
-        dataset_dataframe=pairs_dataset_idx,
-        dataset_images_kvs1=images_kvs1_client,
-        dataset_images_kvs2=images_kvs2_client
-    ))
+                                                                     dataset_folder='.',
+                                                                     dataset_dataframe=pairs_dataset_idx,
+                                                                     dataset_images_kvs1=images_kvs1_client,
+                                                                     dataset_images_kvs2=images_kvs2_client
+                                                                     ))
 
     # TODO remove after speed testing
     print(preprocessed_pairs.count())
     print(preprocessed_pairs)
 
-    pairs_dataset['predicted_match'], pairs_dataset['predicted_scores'] = classifier.predict(preprocessed_pairs)
-    predicted_matches = pairs_dataset[pairs_dataset['predicted_match'] == 1][
+    preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
+        preprocessed_pairs)
+    predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
     ]
     return predicted_matches
@@ -204,7 +206,7 @@ def load_data_and_train_model(
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @return:
     """
-    data = preprocess_data_without_saving(
+    data = preprocess_data_before_training(
         dataset_folder=os.path.join(os.getcwd(), dataset_folder),
         dataset_dataframe=dataset_dataframe,
         dataset_images_kvs1=images_kvs_1_client,
