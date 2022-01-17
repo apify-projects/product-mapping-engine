@@ -2,11 +2,14 @@ import os
 import shutil
 import sys
 
+import numpy as np
+
 # DO NOT REMOVE
 # Adding the higher level directories to sys.path so that we can import from the other folders
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
+from multiprocessing import Pool
 import pandas as pd
 import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
@@ -38,7 +41,8 @@ def main(**kwargs):
     matching_pairs.to_csv(output_file, index=False)
 
 
-def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index, descriptive_words):
+def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
+                                          descriptive_words):
     """
     Filter products from the dataset of products with no same words and with low ratio of descriptive words
     @param product: product used as filter
@@ -50,7 +54,7 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
     """
     data_subset = pd.DataFrame(columns=dataset.columns.tolist())
     for idx, second_product in dataset.iterrows():
-        second_product_descriptive_words = descriptive_words.iloc[idx+dataset_start_index].values
+        second_product_descriptive_words = descriptive_words.iloc[idx + dataset_start_index].values
         descriptive_words_sim = compute_descriptive_words_similarity(
             product_descriptive_words,
             second_product_descriptive_words
@@ -58,6 +62,35 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
         if len(set(product['name']) & set(second_product['name'])) > 0 and descriptive_words_sim > 5:
             data_subset = data_subset.append(second_product)
     return data_subset
+
+
+def multi_run_wrapper(args):
+    """
+    Wrapper for passing more arguments to preprocess_textual_data in parallel way
+    @param args: Arguments of the function
+    @return: call the preprocess_textual_data in parallel way
+    """
+    return preprocess_textual_data(*args)
+
+
+def paralel_data_preprocessing(dataset, id_detection, color_detection, brand_detection, units_detection):
+    """
+    Preprocessing of all textual data in dataset in parallel way
+    @param dataset: dataset to be preprocessed
+    @param id_detection: True if id should be detected
+    @param color_detection: True if color should be detected
+    @param brand_detection: True if brand should be detected
+    @param units_detection: True if units should be detected
+    @return preprocessed dataset
+    """
+    pool = Pool()
+    dataset_parts = pool._processes
+    dataset_list = np.array_split(dataset, dataset_parts)
+    dataset_list_prepro = pool.map(multi_run_wrapper,
+                                   [(item, id_detection, color_detection, brand_detection, units_detection) for item in
+                                    dataset_list])
+    dataset_prepro = pd.concat(dataset_list_prepro)
+    return dataset_prepro
 
 
 def load_model_create_dataset_and_predict_matches(
@@ -84,18 +117,11 @@ def load_model_create_dataset_and_predict_matches(
     # preprocess data
     dataset1_copy = copy.deepcopy(dataset1)
     dataset2_copy = copy.deepcopy(dataset2)
-    dataset1_copy = preprocess_textual_data(dataset1_copy,
-                                            id_detection=False,
-                                            color_detection=False,
-                                            brand_detection=False,
-                                            units_detection=False)
-    dataset2_copy = preprocess_textual_data(dataset2_copy,
-                                            id_detection=False,
-                                            color_detection=False,
-                                            brand_detection=False,
-                                            units_detection=False)
-    dataset1 = preprocess_textual_data(dataset1)
-    dataset2 = preprocess_textual_data(dataset2)
+
+    dataset1_copy = paralel_data_preprocessing(dataset1_copy, False, False, False, False)
+    dataset2_copy = paralel_data_preprocessing(dataset2_copy, False, False, False, False)
+    dataset1 = paralel_data_preprocessing(dataset1, True, True, True, True)
+    dataset2 = paralel_data_preprocessing(dataset2, True, True, True, True)
 
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
@@ -137,7 +163,9 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words):
     pairs_dataset_idx = {}
     dataset_start_index = len(dataset1)
     for idx, product in dataset1.iterrows():
-        data_subset_idx, idx_start, idx_to = filter_products(product, descriptive_words['all_texts'].iloc[idx].values, dataset2, idx_start, idx_to, dataset_start_index, descriptive_words)
+        data_subset_idx, idx_start, idx_to = filter_products(product, descriptive_words['all_texts'].iloc[idx].values,
+                                                             dataset2, idx_start, idx_to, dataset_start_index,
+                                                             descriptive_words)
         if len(data_subset_idx) == 0:
             print(f'No corresponding product for product "{product["name"]}" at index {idx}')
         if len(dataset2_no_price_idx) != 0:
@@ -166,7 +194,8 @@ def create_dataset_for_predictions(product, maybe_the_same_products):
     return final_dataset
 
 
-def filter_products(product, product_descriptive_words,  dataset, idx_from, idx_to, dataset_start_index, descriptive_words):
+def filter_products(product, product_descriptive_words, dataset, idx_from, idx_to, dataset_start_index,
+                    descriptive_words):
     """
     Filter products in dataset according to the price, category and word similarity to reduce number of comparisons
     @param product: given product for which we want to filter dataset
@@ -197,7 +226,8 @@ def filter_products(product, product_descriptive_words,  dataset, idx_from, idx_
         data_filtered = data_filtered[
             data_filtered['category'] == product['category'] or data_filtered['category'] == None]
 
-    data_filtered = filter_products_with_no_similar_words(product, product_descriptive_words, data_filtered, dataset_start_index, descriptive_words['all_texts'])
+    data_filtered = filter_products_with_no_similar_words(product, product_descriptive_words, data_filtered,
+                                                          dataset_start_index, descriptive_words['all_texts'])
     return data_filtered.index.values, idx_from, idx_to
 
 
