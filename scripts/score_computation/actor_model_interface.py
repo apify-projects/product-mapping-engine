@@ -1,3 +1,4 @@
+import bisect
 import os
 import shutil
 import sys
@@ -64,7 +65,7 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
     return data_subset
 
 
-def multi_run_wrapper(args):
+def multi_run_text_prepro_wrapper(args):
     """
     Wrapper for passing more arguments to preprocess_textual_data in parallel way
     @param args: Arguments of the function
@@ -73,9 +74,11 @@ def multi_run_wrapper(args):
     return preprocess_textual_data(*args)
 
 
-def paralel_data_preprocessing(dataset, id_detection, color_detection, brand_detection, units_detection):
+def paralel_data_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection, units_detection):
     """
     Preprocessing of all textual data in dataset in parallel way
+    @param pool: parallelising object
+    @param num_cpu: number of processes
     @param dataset: dataset to be preprocessed
     @param id_detection: True if id should be detected
     @param color_detection: True if color should be detected
@@ -83,10 +86,8 @@ def paralel_data_preprocessing(dataset, id_detection, color_detection, brand_det
     @param units_detection: True if units should be detected
     @return preprocessed dataset
     """
-    pool = Pool()
-    dataset_parts = pool._processes
-    dataset_list = np.array_split(dataset, dataset_parts)
-    dataset_list_prepro = pool.map(multi_run_wrapper,
+    dataset_list = np.array_split(dataset, num_cpu)
+    dataset_list_prepro = pool.map(multi_run_text_prepro_wrapper,
                                    [(item, id_detection, color_detection, brand_detection, units_detection) for item in
                                     dataset_list])
     dataset_prepro = pd.concat(dataset_list_prepro)
@@ -114,20 +115,24 @@ def load_model_create_dataset_and_predict_matches(
     classifier = setup_classifier(classifier)
     classifier.load(key_value_store=model_key_value_store_client)
 
+    # setup parallelising stuff
+    pool = Pool()
+    num_cpu = os.cpu_count()
+
     # preprocess data
     dataset1_copy = copy.deepcopy(dataset1)
     dataset2_copy = copy.deepcopy(dataset2)
 
-    dataset1_copy = paralel_data_preprocessing(dataset1_copy, False, False, False, False)
-    dataset2_copy = paralel_data_preprocessing(dataset2_copy, False, False, False, False)
-    dataset1 = paralel_data_preprocessing(dataset1, True, True, True, True)
-    dataset2 = paralel_data_preprocessing(dataset2, True, True, True, True)
+    dataset1_copy = paralel_data_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+    dataset2_copy = paralel_data_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1 = paralel_data_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
+    dataset2 = paralel_data_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
 
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
 
     # filter product pairs
-    pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words)
+    pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
 
     # preprocess data
     preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words,
@@ -149,7 +154,16 @@ def load_model_create_dataset_and_predict_matches(
     return predicted_matches
 
 
-def filter_possible_product_pairs(dataset1, dataset2, descriptive_words):
+def multi_run_filter_wrapper(args):
+    """
+    Wrapper for passing more arguments to filter_possible_product_pairs_parallelly in parallel way
+    @param args: Arguments of the function
+    @return: call the filter function in parallel way
+    """
+    return filter_possible_product_pairs_parallelly(*args)
+
+
+def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu):
     """
     Filter possible pairs of two datasets using price similar words and descriptive words filter
     @param dataset1: Source dataset of products
@@ -158,10 +172,32 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words):
     @return dict with key as indices of products from the first dataset and values as indices of filtered possible matching products from second dataset
     """
     dataset2_no_price_idx = dataset2.index[dataset2['price'] == 0].tolist()
-    idx_start = 0
-    idx_to = 0
-    pairs_dataset_idx = {}
+    dataset1 = dataset1.sort_values(by=['price'])
+    dataset2 = dataset2.sort_values(by=['price'])
     dataset_start_index = len(dataset1)
+
+    dataset_list = np.array_split(dataset1, num_cpu)
+    filtered_indices_dicts = pool.map(multi_run_filter_wrapper,
+                                      [(dataset_subset, dataset2, dataset2_no_price_idx, dataset_start_index,
+                                        descriptive_words) for dataset_subset in dataset_list])
+    pairs_dataset_idx = {}
+    for filtered_dict in filtered_indices_dicts:
+        pairs_dataset_idx.update(filtered_dict)
+    return pairs_dataset_idx
+
+
+def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_idx, dataset_start_index,
+                                             descriptive_words):
+    product = dataset1.iloc[0, :]
+    idx_start, idx_to = 0, 0
+
+    if 'price' in product.index.values and 'price' in dataset2:
+        idx_start = bisect.bisect_left(dataset2['price'].values, product['price'] / 2)
+        idx_to = bisect.bisect(dataset2['price'].values, product['price'] * 2)
+        if idx_to == len(dataset2):
+            idx_to -= 1
+
+    pairs_dataset_idx = {}
     for idx, product in dataset1.iterrows():
         data_subset_idx, idx_start, idx_to = filter_products(product, descriptive_words['all_texts'].iloc[idx].values,
                                                              dataset2, idx_start, idx_to, dataset_start_index,
@@ -171,7 +207,6 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words):
         if len(dataset2_no_price_idx) != 0:
             data_subset_idx = data_subset_idx + dataset2_no_price_idx
         pairs_dataset_idx[idx] = data_subset_idx
-    pairs_dataset_idx = dict(sorted(pairs_dataset_idx.items()))
     return pairs_dataset_idx
 
 
