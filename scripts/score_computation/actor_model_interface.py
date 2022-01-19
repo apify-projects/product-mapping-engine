@@ -1,10 +1,9 @@
-import bisect
 import os
 import shutil
 import sys
 
 import numpy as np
-
+import bisect
 # DO NOT REMOVE
 # Adding the higher level directories to sys.path so that we can import from the other folders
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
@@ -15,7 +14,7 @@ import pandas as pd
 import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from .dataset_handler import preprocess_data_without_saving, preprocess_textual_data, COLUMNS, \
-    preprocess_data_before_training
+    create_text_similarities_data, create_image_similarities_data
 from ..preprocessing.texts.text_preprocessing import preprocess_text
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
 
@@ -135,7 +134,7 @@ def load_model_create_dataset_and_predict_matches(
     pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
 
     # preprocess data
-    preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words,
+    preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
                                                                      dataset_folder='.',
                                                                      dataset_dataframe=pairs_dataset_idx,
                                                                      dataset_images_kvs1=images_kvs1_client,
@@ -178,12 +177,14 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
 
     dataset_list = np.array_split(dataset1, num_cpu)
     filtered_indices_dicts = pool.map(multi_run_filter_wrapper,
-                                      [(dataset_subset, dataset2, dataset2_no_price_idx, dataset_start_index,
-                                        descriptive_words) for dataset_subset in dataset_list])
+                                     [(dataset_subset, dataset2, dataset2_no_price_idx, dataset_start_index,
+                                       descriptive_words) for dataset_subset in dataset_list])
     pairs_dataset_idx = {}
     for filtered_dict in filtered_indices_dicts:
         pairs_dataset_idx.update(filtered_dict)
     return pairs_dataset_idx
+
+
 
 
 def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_idx, dataset_start_index,
@@ -195,7 +196,7 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
         idx_start = bisect.bisect_left(dataset2['price'].values, product['price'] / 2)
         idx_to = bisect.bisect(dataset2['price'].values, product['price'] * 2)
         if idx_to == len(dataset2):
-            idx_to -= 1
+            idx_to -=1
 
     pairs_dataset_idx = {}
     for idx, product in dataset1.iterrows():
@@ -208,6 +209,7 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
             data_subset_idx = data_subset_idx + dataset2_no_price_idx
         pairs_dataset_idx[idx] = data_subset_idx
     return pairs_dataset_idx
+
 
 
 def create_dataset_for_predictions(product, maybe_the_same_products):
@@ -297,6 +299,63 @@ def load_data_and_train_model(
     classifier.save(key_value_store=output_key_value_store_client)
     return train_stats, test_stats
 
+def preprocess_data_before_training(
+        dataset_folder='',
+        dataset_dataframe=None,
+        dataset_images_kvs1=None,
+        dataset_images_kvs2=None
+):
+    """
+    For each pair of products compute their image and name similarity without saving anything
+    @param dataset_folder: folder containing data to be preprocessed
+    @param dataset_dataframe: dataframe of pairs to be compared
+    @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
+    @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
+    @return: preprocessed data
+    """
+    # setup parallelising stuff
+    pool = Pool()
+    num_cpu = os.cpu_count()
+
+    product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
+        os.path.join(dataset_folder, "product_pairs.csv"))
+
+    product_pairs1 = product_pairs.filter(regex='1')
+    product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
+    product_pairs2 = product_pairs.filter(regex='2')
+    product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
+
+    dataset1_copy = copy.deepcopy(product_pairs1)
+    dataset2_copy = copy.deepcopy(product_pairs2)
+
+    dataset1_copy = paralel_data_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+    dataset2_copy = paralel_data_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1 = paralel_data_preprocessing(pool, num_cpu, product_pairs1, True, True, True, True)
+    dataset2 = paralel_data_preprocessing(pool, num_cpu, product_pairs2, True, True, True, True)
+
+    # create tf_idfs
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
+    product_pairs_idx = {}
+    for i in range(0, len(dataset1)):
+        product_pairs_idx[i] = [i]
+    name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
+                                                      pool, num_cpu)
+
+    image_similarities = [0] * len(product_pairs)
+    image_similarities = create_image_similarities_data(
+        product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(orient='records'),
+        dataset_folder=dataset_folder,
+        dataset_images_kvs1=dataset_images_kvs1,
+        dataset_images_kvs2=dataset_images_kvs2
+    )
+    name_similarities = pd.DataFrame(name_similarities)
+    image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
+    dataframes_to_concat = [name_similarities, image_similarities]
+
+    if 'match' in product_pairs.columns:
+        dataframes_to_concat.append(product_pairs['match'])
+
+    return pd.concat(dataframes_to_concat, axis=1)
 
 def load_model_and_predict_matches(
         dataset_folder,
