@@ -1,3 +1,4 @@
+import base64
 import copy
 import json
 import os
@@ -121,11 +122,18 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
     name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words, pool, num_cpu)
-    # TODO: nasledujici metodu opravit, aby zpracovala jen ty produkty, ktere  prosly filtrem a tvori mozny par
-    # TODO: ty jsou ulozeny jako slovnik v product_pairs_idx, kde klic je idx produktu z prvniho datasetu a values jsou idxs moznych paru z druheho
+    pairs = []
+    for source_id, target_ids in product_pairs_idx.items():
+        for target_id in target_ids:
+            pairs.append({
+                'id1': dataset1['id'][source_id],
+                'image1': dataset1['image'][source_id],
+                'id2': dataset2['id'][target_id],
+                'image2': dataset2['image'][target_id],
+            })
+
     image_similarities = create_image_similarities_data(
-        dataset1[['id', 'image']].to_dict(orient='records'), dataset2[['id', 'image']].to_dict(orient='records'),
-        product_pairs_idx,
+        pairs,
         dataset_folder=dataset_folder,
         dataset_images_kvs1=dataset_images_kvs1,
         dataset_images_kvs2=dataset_images_kvs2
@@ -156,11 +164,11 @@ def download_images_from_kvs(
         if not os.path.exists(img_dir):
             os.makedirs(img_dir)
 
-        for item in dataset_images_kvs.list_keys()['items']:
-            image_name = item['key']
-            image_data = dataset_images_kvs.get_record(image_name)['value']
-            with open(os.path.join(img_dir, prefix + '_' + image_name), 'wb') as image_file:
-                image_file.write(image_data)
+        for chunk_record in dataset_images_kvs.list_keys()['items']:
+            chunk = json.loads(dataset_images_kvs.get_record(chunk_record['key'])['value'])
+            for image_name, image_data in chunk.items():
+                with open(os.path.join(img_dir, prefix + '_' + image_name), 'wb') as image_file:
+                    image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
 
 
 def create_image_similarities_data(

@@ -133,6 +133,16 @@ def load_model_create_dataset_and_predict_matches(
     # filter product pairs
     pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
 
+    pair_identifications = []
+    for source_id, target_ids in pairs_dataset_idx.items():
+        for target_id in target_ids:
+            pair_identifications.append({
+                'id1': dataset1['id'][source_id],
+                'name1': dataset1['name'][source_id],
+                'id2': dataset2['id'][target_id],
+                'name2': dataset2['name'][target_id],
+            })
+
     # preprocess data
     preprocessed_pairs = pd.DataFrame(preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
                                                                      dataset_folder='.',
@@ -141,12 +151,9 @@ def load_model_create_dataset_and_predict_matches(
                                                                      dataset_images_kvs2=images_kvs2_client
                                                                      ))
 
-    # TODO remove after speed testing
-    print(preprocessed_pairs.count())
-    print(preprocessed_pairs)
-
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
+    preprocessed_pairs = pd.concat([pd.DataFrame(pair_identifications), preprocessed_pairs], axis=1)
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
     ]
