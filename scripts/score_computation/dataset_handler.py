@@ -3,7 +3,7 @@ import copy
 import json
 import os
 import subprocess
-
+from itertools import islice
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -133,7 +133,7 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
                 'image2': dataset2['image'][target_id],
             })
 
-    image_similarities = create_image_similarities_data(
+    image_similarities = create_image_similarities_data(pool, num_cpu,
         pairs,
         dataset_folder=dataset_folder,
         dataset_images_kvs1=dataset_images_kvs1,
@@ -172,7 +172,24 @@ def download_images_from_kvs(
                     image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
 
 
-def create_image_similarities_data(
+def multi_run_create_images_hash_wrapper(args):
+    """
+    Wrapper for passing more arguments to create_hash_sets in parallel way
+    @param args: Arguments of the function
+    @return: call the create_hash_sets in parallel way
+    """
+    return create_hash_sets(*args)
+
+def multi_run_compute_distances_wrapper(args):
+    """
+    Wrapper for passing more arguments to compute_distances in parallel way
+    @param args: Arguments of the function
+    @return: call the compute_distances in parallel way
+    """
+    return compute_distances(*args)
+
+
+def create_image_similarities_data(pool, num_cpu,
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
@@ -197,20 +214,25 @@ def create_image_similarities_data(
     download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
     create_output_directory(img_source_dir)
+
+    #TODO: here parallelly
     crop_images_contour_detection(img_dir, img_source_dir)
     hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
     script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                               "../preprocessing/images/image_hash_creator/main.js")
     subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
     data = load_and_parse_data(hashes_dir)
-    hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
-    imaged_pairs_similarities = compute_distances(
-        hashes,
-        names,
-        metric='binary',
-        filter_dist=True,
-        thresh=0.9
-    )
+
+    # TODO: here parallelly - DONE
+    pair_ids_and_counts_dataframe_parts = np.array_split(pair_ids_and_counts_dataframe, num_cpu)
+    hashes_names_list = pool.map(multi_run_create_images_hash_wrapper,
+                                        [(data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
+
+    # TODO: here parallelly - DONE
+    imaged_pairs_similarities_list = pool.map(multi_run_compute_distances_wrapper,
+                                              [(item[0], item[1], 'binary', True, 0.9) for item in hashes_names_list])
+    imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
+
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []
@@ -221,13 +243,19 @@ def create_image_similarities_data(
     return image_similarities
 
 
-from itertools import islice
 
 
-def chunks(data, size):
-    it = iter(data)
-    for i in range(0, len(data), size):
-        yield {k: data[k] for k in islice(it, size)}
+
+def chunks(dictionary, dict_num):
+    """
+    Split dictionary into several same parts
+    @param dictionary: dictionary to be split
+    @param dict_num: number or parts
+    @return: list of dict_num dictionaries of the same size
+    """
+    it = iter(dictionary)
+    for i in range(0, len(dictionary), dict_num):
+        yield {k: dictionary[k] for k in islice(it, dict_num)}
 
 
 def multi_run_text_similarities_wrapper(args):
@@ -283,7 +311,7 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
     @param tf_idfs: tf.idfs of all words from both datasets
     @return: dataset of pair similarity scores
     """
-    df_all_similarities = pd.DataFrame()
+    df_all_similarities = create_empty_dataframe(product_pairs_idx)
     for column in COLUMNS:
         if column in dataset1 and column in dataset2:
             columns_similarity = compute_similarity_of_texts(dataset1[column], dataset2[column], product_pairs_idx,
@@ -292,10 +320,6 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
                                                              )
 
             columns_similarity = pd.DataFrame(columns_similarity)
-            df_all_similarities['index1'] = columns_similarity['index1']
-            df_all_similarities['index2'] = columns_similarity['index2']
-            columns_similarity = columns_similarity.drop('index1', 1)
-            columns_similarity = columns_similarity.drop('index2', 1)
             for similarity_name, similarity_value in columns_similarity.items():
                 df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
         else:
