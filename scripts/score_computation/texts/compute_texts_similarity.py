@@ -73,8 +73,10 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
 
             # compare ratio of corresponding units and values in both texts
             match_ratios['units'] = compare_units_and_values(product1, product2)
-
+            match_ratios['index1'] =product_idx
+            match_ratios['index2'] =product2_idx
             match_ratios_list.append(match_ratios)
+
     return match_ratios_list
 
 

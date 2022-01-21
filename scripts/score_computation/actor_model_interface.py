@@ -192,8 +192,6 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     return pairs_dataset_idx
 
 
-
-
 def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_idx, dataset_start_index,
                                              descriptive_words):
     product = dataset1.iloc[0, :]
