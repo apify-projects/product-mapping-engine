@@ -74,7 +74,7 @@ def multi_run_text_prepro_wrapper(args):
     return preprocess_textual_data(*args)
 
 
-def paralel_data_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection, units_detection):
+def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection, units_detection):
     """
     Preprocessing of all textual data in dataset in parallel way
     @param pool: parallelising object
@@ -123,10 +123,10 @@ def load_model_create_dataset_and_predict_matches(
     dataset1_copy = copy.deepcopy(dataset1)
     dataset2_copy = copy.deepcopy(dataset2)
 
-    dataset1_copy = paralel_data_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-    dataset2_copy = paralel_data_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-    dataset1 = paralel_data_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
-    dataset2 = paralel_data_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
+    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
+    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
 
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
@@ -298,7 +298,7 @@ def load_data_and_train_model(
         dataset_images_kvs1=images_kvs_1_client,
         dataset_images_kvs2=images_kvs_2_client
     )
-    # data.to_csv('data.csv', index=False)
+
     classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, data)
     train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
@@ -320,6 +320,8 @@ def preprocess_data_before_training(
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
     @return: preprocessed data
     """
+    print("Text preprocessing started")
+
     # setup parallelising stuff
     pool = Pool()
     num_cpu = os.cpu_count()
@@ -335,30 +337,39 @@ def preprocess_data_before_training(
     dataset1_copy = copy.deepcopy(product_pairs1)
     dataset2_copy = copy.deepcopy(product_pairs2)
 
-    dataset1_copy = paralel_data_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-    dataset2_copy = paralel_data_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-    dataset1 = paralel_data_preprocessing(pool, num_cpu, product_pairs1, True, True, True, True)
-    dataset2 = paralel_data_preprocessing(pool, num_cpu, product_pairs2, True, True, True, True)
+    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1 = parallel_text_preprocessing(pool, num_cpu, product_pairs1, True, True, True, True)
+    dataset2 = parallel_text_preprocessing(pool, num_cpu, product_pairs2, True, True, True, True)
 
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
     product_pairs_idx = {}
     for i in range(0, len(dataset1)):
         product_pairs_idx[i] = [i]
-    name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
+
+    print("Text preprocessing finished")
+
+    print("Text similarities computation started")
+    text_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                                       pool, num_cpu)
+    print("Text similarities computation finished")
 
     image_similarities = [0] * len(product_pairs)
-    image_similarities = create_image_similarities_data(pool, num_cpu,
+    image_similarities = create_image_similarities_data(
+                                                        pool,
+                                                        num_cpu,
                                                         product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
                                                             orient='records'),
                                                         dataset_folder=dataset_folder,
                                                         dataset_images_kvs1=dataset_images_kvs1,
                                                         dataset_images_kvs2=dataset_images_kvs2
                                                         )
-    name_similarities = pd.DataFrame(name_similarities)
+    text_similarities = pd.DataFrame(text_similarities)
+    print(text_similarities)
     image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
-    dataframes_to_concat = [name_similarities, image_similarities]
+    print(image_similarities)
+    dataframes_to_concat = [text_similarities, image_similarities]
 
     if 'match' in product_pairs.columns:
         dataframes_to_concat.append(product_pairs['match'])

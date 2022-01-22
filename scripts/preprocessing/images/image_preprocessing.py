@@ -3,6 +3,7 @@ import os
 import shutil
 import cv2
 import numpy as np
+import subprocess
 from PIL import Image
 
 
@@ -50,15 +51,16 @@ def crop_images_simple(input_folder, output_folder):
             cv2.imwrite(output_path, cropped)
 
 
-def crop_images_contour_detection(input_folder, output_folder):
+def crop_images_contour_detection(input_folder, filenames, output_folder):
     """
     Crop images using contour objects detection
     @param input_folder: folder with input images
+    @param filenames: filenames of the images to be cropped
     @param output_folder: folder to store output images
     @return:
     """
     max_object = True
-    for filename in os.listdir(input_folder):
+    for filename in filenames:
         if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
@@ -85,8 +87,6 @@ def crop_images_contour_detection(input_folder, output_folder):
             dilate = cv2.dilate(canny, kernel, iterations=1)
 
             # finding contours
-            # TODO make sure we have the same version for this
-            #(_, contours, _) = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contours, _ = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if max_object:
@@ -106,6 +106,14 @@ def crop_images_contour_detection(input_folder, output_folder):
                 cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
                 cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
 
+def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, script_dir):
+    index = str(index)
+    cropped_img_dir = os.path.join(dataset_folder, 'images_cropped_{}'.format(index))
+    create_output_directory(cropped_img_dir)
+    crop_images_contour_detection(img_dir, assigned_filenames, cropped_img_dir)
+    hashes_path = os.path.join(dataset_folder, 'hashes_cropped_{}.json'.format(index))
+    subprocess.call(f'node {script_dir} {cropped_img_dir} {hashes_path}', shell=True)
+    return hashes_path
 
 def create_output_directory(output_folder):
     """

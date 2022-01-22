@@ -2,7 +2,6 @@ import base64
 import copy
 import json
 import os
-import subprocess
 from itertools import islice
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +11,8 @@ from .images.compute_hashes_similarity import create_hash_sets, compute_distance
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
-from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
+from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory, \
+    compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications, preprocess_specifications
@@ -22,19 +22,22 @@ COLUMNS = ['name', 'short_description', 'long_description', 'specification_text'
 SIMILARITY_NAMES = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
 
 
-def load_and_parse_data(input_file):
+def load_and_parse_data(input_files):
     """
     Load input file and split name and hash into dictionary
-    @param input_file: file with hashes and names
+    @param input_files: files with hashes and names
     @return: dictionary with name and has value of the image
     """
     data = {}
-    with open(input_file) as json_file:
-        loaded_data = json.load(json_file)
 
-    for d in loaded_data:
-        dsplit = d.split(';')
-        data[dsplit[0]] = dsplit[1]
+    for input_file in input_files:
+        with open(input_file) as json_file:
+            loaded_data = json.load(json_file)
+
+        for d in loaded_data:
+            dsplit = d.split(';')
+            data[dsplit[0]] = dsplit[1]
+
     return data
 
 
@@ -172,6 +175,14 @@ def download_images_from_kvs(
                     image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
 
 
+def multi_run_compute_image_hashes(args):
+    """
+    Wrapper for passing more arguments to create_hash_sets in parallel way
+    @param args: Arguments of the function
+    @return: call the create_hash_sets in parallel way
+    """
+    return compute_image_hashes(*args)
+
 def multi_run_create_images_hash_wrapper(args):
     """
     Wrapper for passing more arguments to create_hash_sets in parallel way
@@ -189,7 +200,9 @@ def multi_run_compute_distances_wrapper(args):
     return compute_distances(*args)
 
 
-def create_image_similarities_data(pool, num_cpu,
+def create_image_similarities_data(
+        pool,
+        num_cpu,
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
@@ -206,32 +219,41 @@ def create_image_similarities_data(pool, num_cpu,
     if dataset_folder == '':
         dataset_folder = '.'
 
-    img_source_dir = os.path.join(dataset_folder, 'images_cropped')
     img_dir = os.path.join(dataset_folder, 'images')
+
+    print("Image download started")
 
     dataset_prefixes = ['dataset1', 'dataset2']
     download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
     download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
-    create_output_directory(img_source_dir)
+    print("Image download finished")
 
-    #TODO: here parallelly
-    crop_images_contour_detection(img_dir, img_source_dir)
-    hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
+    print("Image preprocessing started")
     script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                               "../preprocessing/images/image_hash_creator/main.js")
-    subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
-    data = load_and_parse_data(hashes_dir)
+    image_filenames = os.listdir(img_dir)
+    image_filenames_chunks = np.array_split(image_filenames, num_cpu)
+    hash_files = pool.map(
+        multi_run_compute_image_hashes,
+        [
+            (index, dataset_folder, img_dir, image_filenames_chunk, script_dir)
+            for index, image_filenames_chunk in enumerate(image_filenames_chunks)
+        ]
+    )
 
-    # TODO: here parallelly - DONE
+    data = load_and_parse_data(hash_files)
+
     pair_ids_and_counts_dataframe_parts = np.array_split(pair_ids_and_counts_dataframe, num_cpu)
     hashes_names_list = pool.map(multi_run_create_images_hash_wrapper,
                                         [(data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
+    print("Image preprocessing finished")
 
-    # TODO: here parallelly - DONE
+    print("Image similarities computation started")
     imaged_pairs_similarities_list = pool.map(multi_run_compute_distances_wrapper,
                                               [(item[0], item[1], 'binary', True, 0.9) for item in hashes_names_list])
     imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
+    print("Image similarities computation finished")
 
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
@@ -283,7 +305,8 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
                                         [(dataset1, dataset2, descriptive_words,
                                           product_pairs_idx_part, tf_idfs) for product_pairs_idx_part in
                                          chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))])
-    df_all_similarities = pd.concat(df_all_similarities_list)
+    df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
+
     # for each column compute the similarity of product pairs selected after filtering
 
     # specification comparison with units and values preprocessed as specification
