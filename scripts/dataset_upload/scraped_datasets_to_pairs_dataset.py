@@ -113,8 +113,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
 
     pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='source_url', right_on='url1')
     full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='target_url', right_on='url2')
-    full_pairs_dataset = full_pairs_dataset.rename(
-        columns = { "match_status": "match" }
+    full_pairs_dataset["match"] = full_pairs_dataset["match_type"].apply(
+        lambda match_type: 1 if match_type == "match" else 0
     )
     full_pairs_dataset = full_pairs_dataset.filter(regex=("(.*(1|2)$)|^match$"), axis=1)
     full_pairs_dataset = full_pairs_dataset[(full_pairs_dataset["price1"] != "") & (full_pairs_dataset["price2"] != "")]
@@ -140,11 +140,20 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     full_pairs_dataset.to_csv(full_pairs_dataset_path, index=False)
     print(full_pairs_dataset.shape)
 
-
+'''
 transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "Hotovo - Televize - Karolína Bečvářová.xlsx - Sheet1.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_televize.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_televize.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize_images"),
+)
+'''
+
+transform_scraped_datasets_to_full_pairs_dataset(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "aggregated.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_aggregated.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_aggregated.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
 )

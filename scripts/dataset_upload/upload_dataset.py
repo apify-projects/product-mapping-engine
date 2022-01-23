@@ -2,7 +2,9 @@ import base64
 import json
 import os
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from slugify import slugify
+
 from apify_client import ApifyClient
 
 def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
@@ -27,10 +29,7 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
     images_kvs1_client = client.key_value_store(images_kvs1_id)
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
-    dataset_to_upload = pd.read_csv(pairs_dataset_path)
-    labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
-
-    dataset1_to_upload = dataset_to_upload[[
+    dataset1_columns = [
         "name1",
         "short_description1",
         "long_description1",
@@ -38,7 +37,29 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
         "image1",
         "price1",
         "url1"
-    ]]
+    ]
+    dataset2_columns = [
+        "name2",
+        "short_description2",
+        "long_description2",
+        "specification2",
+        "image2",
+        "price2",
+        "url2"
+    ]
+    columns_to_upload = dataset1_columns + dataset2_columns + ["match"]
+
+    dataset_to_upload = pd.read_csv(pairs_dataset_path)
+    dataset_to_upload = dataset_to_upload[columns_to_upload]
+    print(dataset_to_upload)
+    dataset_to_upload["long_description2"] = dataset_to_upload["long_description2"].fillna("")
+
+    to_upload_labeled, to_upload_unlabeled = train_test_split(dataset_to_upload, test_size=0.2)
+    to_upload_labeled1, to_upload_labeled2 = train_test_split(to_upload_labeled, test_size=0.5)
+    labeled_dataset_client.push_items(to_upload_labeled1.to_dict('records'))
+    labeled_dataset_client.push_items(to_upload_labeled2.to_dict('records'))
+
+    dataset1_to_upload = to_upload_unlabeled[dataset1_columns]
     dataset1_to_upload = dataset1_to_upload.rename(columns={
         "name1": "name",
         "short_description1": "short_description",
@@ -51,15 +72,7 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
     dataset1_to_upload['id'] = dataset1_to_upload['name']
     dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
 
-    dataset2_to_upload = dataset_to_upload[[
-        "name2",
-        "short_description2",
-        "long_description2",
-        "specification2",
-        "image2",
-        "price2",
-        "url2"
-    ]]
+    dataset2_to_upload = to_upload_unlabeled[dataset2_columns]
     dataset2_to_upload = dataset2_to_upload.rename(columns={
         "name2": "name",
         "short_description2": "short_description",
@@ -73,8 +86,8 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
     dataset2_client.push_items(dataset2_to_upload.to_dict('records'))
 
     datasets = [
-        dataset1_client.list_items().items,
-        dataset2_client.list_items().items
+        dataset_to_upload[dataset1_columns].to_dict('records'),
+        dataset_to_upload[dataset2_columns].to_dict('records'),
     ]
 
     images_kvs_clients = [
@@ -87,10 +100,11 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
         chunks = 0
         collected_images = {}
         for item in datasets[e]:
-            for f in range(1, item['image'] + 1):
+            for f in range(1, item['image{}'.format(e+1)] + 1):
                 with open(os.path.join(images_path, "pair_{}_product_{}_image_{}".format(counter, e+1, f)), mode='rb') as image:
-                    print(slugify(item['id'] + '_image_{}'.format(f-1)))
-                    collected_images[slugify(item['id'] + '_image_{}'.format(f-1))] = str(base64.b64encode(image.read()), 'utf-8')
+                    # TODO switch names for ids
+                    print(slugify(item['name{}'.format(e+1)] + '_image_{}'.format(f-1)))
+                    collected_images[slugify(item['name{}'.format(e+1)] + '_image_{}'.format(f-1))] = str(base64.b64encode(image.read()), 'utf-8')
 
 
             print('Item {} uploaded'.format(counter))
@@ -108,7 +122,7 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
             images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
 
 save_dataset_for_executor(
-    "televize",
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize_images"),
+    "aggregated",
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
 )
