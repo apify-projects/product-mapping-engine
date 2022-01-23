@@ -39,11 +39,14 @@ def find_closest_keys(dictionary1, dictionary2, key_similarity_limit):
     @return: dictionary with keys and values from first dictionary supplemented by corresponding values for the same parameter names from the second dictionary
     """
     similarities_dict = {}
-    for key1, value1 in dictionary1.items():
-        similarities_dict[key1] = [value1, None]
-        most_similar_key2 = max(dictionary2.keys(), key=lambda key2: SequenceMatcher(None, key1, key2).ratio())
-        if SequenceMatcher(None, key1, most_similar_key2).ratio() >= key_similarity_limit:
-            similarities_dict[key1] = [value1, dictionary2[most_similar_key2]]
+
+    if dictionary2:
+        for key1, value1 in dictionary1.items():
+            similarities_dict[key1] = [value1, None]
+            most_similar_key2 = max(dictionary2.keys(), key=lambda key2: SequenceMatcher(None, key1, key2).ratio())
+            if SequenceMatcher(None, key1, most_similar_key2).ratio() >= key_similarity_limit:
+                similarities_dict[key1] = [value1, dictionary2[most_similar_key2]]
+
     return similarities_dict
 
 
