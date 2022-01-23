@@ -5,7 +5,7 @@ import pandas as pd
 import requests
 import imghdr
 
-IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/images")
+IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/images")
 
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
@@ -142,8 +142,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
 
 
 transform_scraped_datasets_to_full_pairs_dataset(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/sampled_data.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/scraped_alza.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/scraped_mall.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/pairs_dataset.csv")
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/sampled_data.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/scraped_alza.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/scraped_mall.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/pairs_dataset.csv")
 )

@@ -5,7 +5,7 @@ from slugify import slugify
 from apify_client import ApifyClient
 import numpy as np
 
-IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/images")
+IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/images")
 
 def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, images_kvs1_id, images_kvs2_id):
     client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
@@ -22,14 +22,14 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
     images_kvs2_id = client.key_value_stores().get_or_create(name='pmtest2-image-kvs2')['id']
     print(f"Images KVS 2 = {images_kvs2_id}")
 
-    # Prepare storages and read data
+    # Prepare storages and read old_data
     dataset1_client = client.dataset(dataset1_id)
     dataset2_client = client.dataset(dataset2_id)
     labeled_dataset_client = client.dataset(labeled_dataset_id)
     images_kvs1_client = client.key_value_store(images_kvs1_id)
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
-    dataset_to_upload = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/pairs_dataset.csv"))
+    dataset_to_upload = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/pairs_dataset.csv"))
     #dataset_to_upload['match'] = np.random.randint(0, 2, size=len(dataset_to_upload))
     labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
 
