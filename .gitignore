@@ -6,3 +6,4 @@ data/wdc_dataset/dataset/*
 **/__pycache__/*
 *.pdf
 *.csv
+.idea/*

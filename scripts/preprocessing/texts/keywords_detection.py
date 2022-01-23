@@ -168,10 +168,11 @@ def is_param(word):
     return False
 
 
-def detect_id(word):
+def detect_id(word, next_word):
     """
     Check whether the word is not an id (whether it is a valid word)
     @param word: the word to be checked
+    @param next_word: the word following detected word in the text
     @return: word with marker if it is an id, otherwise the original word
     """
     # check whether is capslock ad whether is not too short
@@ -180,7 +181,7 @@ def detect_id(word):
             word_sub) < ID_LEN or is_in_vocabulary(word):
         return word
 
-    if word_sub.isnumeric():
+    if word_sub.isnumeric() and is_word_unit(next_word):
         word = word.replace("(", "").replace(")", "")
         return ID_MARK + word
     elif word_sub.isalpha():
@@ -191,6 +192,15 @@ def detect_id(word):
         if not is_param(word):
             return ID_MARK + word
     return word
+
+
+def is_word_unit(word):
+    """
+    Checks whether a word is in the dictionary of unit names
+    @param word: checked word
+    @return: true if the word is in the dictionary of units
+    """
+    return word in UNITS_DICT.keys()
 
 
 def detect_color(word):
@@ -242,9 +252,13 @@ UNITS_DICT = create_unit_dict()
 UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
 
 
-def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=True,
-                                       brand_detection=True,
-                                       units_detection=True):
+def detect_ids_brands_colors_and_units(
+        data,
+        id_detection=True,
+        color_detection=True,
+        brand_detection=True,
+        units_detection=True
+):
     """
     Detect ids, colors, brands and units in texts
     @param data: List of texts that each consists of list of words
@@ -260,16 +274,19 @@ def detect_ids_brands_colors_and_units(data, id_detection=True, color_detection=
         detected_word_list = []
         is_first = True
         previous = ''
-        for word in word_list:
+        for i, word in enumerate(word_list):
             if color_detection:
                 word = detect_color(word)
             if brand_detection and not word.startswith(COLOR_MARK):
                 word = detect_brand(word, is_first, first_likelihood[word])
-            if id_detection:
-                word = detect_id(word)
             if units_detection and not is_first:
                 new_value, word = detect_units(word, previous)
                 detected_word_list[len(detected_word_list) - 1] = str(new_value)
+            if id_detection:
+                next_word = ''
+                if i < len(word_list) - 1:
+                    next_word = word_list[i + 1]
+                word = detect_id(word, next_word)
             detected_word_list.append(word)
             is_first = False
             previous = word
@@ -311,7 +328,7 @@ def convert_units_to_basic_form(dataset):
     for product in dataset:
         converted_product = []
         for unit in product:
-            if unit[0].lower() in UNITS_DICT.keys():
+            if is_word_unit(unit[0].lower()):
                 name, value = convert_unit_and_value_to_basic_form(unit[0].lower(), unit[1])
                 converted_product.append([name.lower(), value])
             else:
@@ -352,7 +369,7 @@ def detect_units(word, previous_word):
     @param previous_word: previous word needed for detection
     @return: word with marker if it is an unit, otherwise the original word
     """
-    if word.lower() in UNITS_DICT.keys() and previous_word.replace('.', '', 1).isnumeric():
+    if is_word_unit(word.lower()) and previous_word.replace('.', '', 1).isnumeric():
         new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(), float(previous_word))
         new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
         return new_value, UNIT_MARK + new_word

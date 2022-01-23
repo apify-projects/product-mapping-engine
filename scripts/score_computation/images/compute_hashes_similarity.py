@@ -141,4 +141,4 @@ def create_hash_sets(
 
         pair_index += 1
 
-    return hashes, names
+    return [hashes, names]
