@@ -59,11 +59,15 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
     @param output_folder: folder to store output images
     @return:
     """
-    max_object = True
     for filename in filenames:
         if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
+
+            # resizing the images to max 1024 width to increase speed and preserve memory
+            resize_ratio = 1024 / image.shape[1]
+            if resize_ratio < 1:
+                image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
 
             # add white border around image
             color = [255, 255, 255]
@@ -89,22 +93,21 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
             # finding contours
             contours, _ = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            if max_object:
-                # select max object in the picture
-                maxy, maxx, maxw, maxh = 0, 0, 0, 0
-                maxarea = 0
-                for i, c in enumerate(contours):
-                    x, y, w, h = cv2.boundingRect(c)
-                    cropped = image[y:y + h, x:x + w]
-                    # cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
-                    # cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
-                    if w * h > maxarea:
-                        maxy, maxx, maxw, maxh = y, x, w, h
-                        maxarea = w * h
+            # select max object in the picture
+            maxy, maxx, maxw, maxh = 0, 0, 0, 0
+            maxarea = 0
+            for i, c in enumerate(contours):
+                x, y, w, h = cv2.boundingRect(c)
+                cropped = image[y:y + h, x:x + w]
+                # cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
+                # cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+                if w * h > maxarea:
+                    maxy, maxx, maxw, maxh = y, x, w, h
+                    maxarea = w * h
 
-                # crop image to the biggest found object
-                cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
-                cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+            # crop image to the biggest found object
+            cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
+            cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
 
 def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, script_dir):
     index = str(index)
