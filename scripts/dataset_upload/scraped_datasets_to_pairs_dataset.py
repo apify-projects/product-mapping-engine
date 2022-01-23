@@ -5,12 +5,10 @@ import pandas as pd
 import requests
 import imghdr
 
-IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/images")
-
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
 
-def download_images(pair_index, product_index, pair):
+def download_images(images_path, pair_index, product_index, pair):
     downloaded_images = 0
     for potential_url in pair["image{}".format(product_index)]:
         if is_url(potential_url):
@@ -26,7 +24,7 @@ def download_images(pair_index, product_index, pair):
                     continue
 
                 image_file_path = os.path.join(
-                    IMAGE_DIRECTORY,
+                    images_path,
                     'pair_{}_product_{}_image_{}'.format(pair_index, product_index, downloaded_images + 1)
                 )
                 with open(image_file_path, 'wb') as image_file:
@@ -41,7 +39,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     url_pairs_dataset_path,
     scraped_dataset1_path,
     scraped_dataset2_path,
-    full_pairs_dataset_path
+    full_pairs_dataset_path,
+    images_path
 ):
     '''
     Alza:
@@ -112,8 +111,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     )
     scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace("[^0-9]", "", regex=True)
 
-    pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='itemUrl', right_on='url1')
-    full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='matchUrl', right_on='url2')
+    pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='source_url', right_on='url1')
+    full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='target_url', right_on='url2')
     full_pairs_dataset = full_pairs_dataset.rename(
         columns = { "match_status": "match" }
     )
@@ -129,21 +128,23 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         lambda specification: json.dumps(specification)
     )
 
-    if not os.path.exists(IMAGE_DIRECTORY):
-        os.makedirs(IMAGE_DIRECTORY)
+    if not os.path.exists(images_path):
+        os.makedirs(images_path)
 
     for index, row in full_pairs_dataset.iterrows():
         print(row)
         print(index)
-        full_pairs_dataset["image1"][index] = download_images(index, 1, row)
-        full_pairs_dataset["image2"][index] = download_images(index, 2, row)
+        full_pairs_dataset["image1"][index] = download_images(images_path, index, 1, row)
+        full_pairs_dataset["image2"][index] = download_images(images_path, index, 2, row)
 
     full_pairs_dataset.to_csv(full_pairs_dataset_path, index=False)
+    print(full_pairs_dataset.shape)
 
 
 transform_scraped_datasets_to_full_pairs_dataset(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/sampled_data.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/scraped_alza.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/scraped_mall.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/pairs_dataset.csv")
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "Hotovo - Televize - Karolína Bečvářová.xlsx - Sheet1.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_televize.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_televize.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize_images"),
 )

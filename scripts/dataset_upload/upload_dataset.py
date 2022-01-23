@@ -1,25 +1,23 @@
+import base64
 import json
 import os
 import pandas as pd
 from slugify import slugify
 from apify_client import ApifyClient
-import numpy as np
 
-IMAGE_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/images")
-
-def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, images_kvs1_id, images_kvs2_id):
+def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
     client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
 
-    dataset1_id = client.datasets().get_or_create(name='pmtest2-dataset1')['id']
+    dataset1_id = client.datasets().get_or_create(name=pm_run_name+'-dataset1')['id']
     print(f"Dataset1 = {dataset1_id}")
-    dataset2_id = client.datasets().get_or_create(name='pmtest2-dataset2')['id']
+    dataset2_id = client.datasets().get_or_create(name=pm_run_name+'-dataset2')['id']
     print(f"Dataset2 = {dataset2_id}")
-    labeled_dataset_id = client.datasets().get_or_create(name='pmtest2-datasetl')['id']
+    labeled_dataset_id = client.datasets().get_or_create(name=pm_run_name+'-datasetl')['id']
     print(f"Labeled dataset = {labeled_dataset_id}")
 
-    images_kvs1_id = client.key_value_stores().get_or_create(name='pmtest2-image-kvs1')['id']
+    images_kvs1_id = client.key_value_stores().get_or_create(name=pm_run_name+'-image-kvs1')['id']
     print(f"Images KVS 1 = {images_kvs1_id}")
-    images_kvs2_id = client.key_value_stores().get_or_create(name='pmtest2-image-kvs2')['id']
+    images_kvs2_id = client.key_value_stores().get_or_create(name=pm_run_name+'-image-kvs2')['id']
     print(f"Images KVS 2 = {images_kvs2_id}")
 
     # Prepare storages and read old_data
@@ -29,11 +27,8 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
     images_kvs1_client = client.key_value_store(images_kvs1_id)
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
-    dataset_to_upload = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "old_data/pairs_dataset.csv"))
-    #dataset_to_upload['match'] = np.random.randint(0, 2, size=len(dataset_to_upload))
+    dataset_to_upload = pd.read_csv(pairs_dataset_path)
     labeled_dataset_client.push_items(dataset_to_upload.to_dict('records'))
-
-    raise "hell"
 
     dataset1_to_upload = dataset_to_upload[[
         "name1",
@@ -89,14 +84,31 @@ def save_dataset_for_executor(labeled_dataset_id, dataset1_id, dataset2_id, imag
 
     for e in range(2):
         counter = 0
+        chunks = 0
+        collected_images = {}
         for item in datasets[e]:
             for f in range(1, item['image'] + 1):
-                with open(os.path.join(IMAGE_DIRECTORY, "pair_{}_product_{}_image_{}".format(counter, e+1, f)), mode='rb') as image:
+                with open(os.path.join(images_path, "pair_{}_product_{}_image_{}".format(counter, e+1, f)), mode='rb') as image:
                     print(slugify(item['id'] + '_image_{}'.format(f-1)))
-                    images_kvs_clients[e].set_record(slugify(item['id'] + '_image_{}'.format(f-1)), image.read())
+                    collected_images[slugify(item['id'] + '_image_{}'.format(f-1))] = str(base64.b64encode(image.read()), 'utf-8')
+
 
             print('Item {} uploaded'.format(counter))
             counter += 1
 
+            if counter % 1000 == 0:
+                chunks += 1
+                print("images_chunk_{}".format(chunks))
+                images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
+                collected_images = {}
 
-save_dataset_for_executor("", "", "", "", "")
+        if counter % 1000 != 0:
+            chunks += 1
+            print("images_chunk_{}".format(chunks))
+            images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
+
+save_dataset_for_executor(
+    "televize",
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "televize_images"),
+)
