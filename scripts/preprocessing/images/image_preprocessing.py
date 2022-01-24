@@ -65,7 +65,9 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
             image = cv2.imread(input_path)
 
             # resizing the images to max 1024 width to increase speed and preserve memory
-            resize_ratio = 1024 / image.shape[1]
+            width_resize_ratio = 1024 / image.shape[1]
+            height_resize_ratio = 1024 / image.shape[0]
+            resize_ratio = min(width_resize_ratio, height_resize_ratio)
             if resize_ratio < 1:
                 image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
 
