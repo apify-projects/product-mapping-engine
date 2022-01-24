@@ -115,6 +115,8 @@ def load_model_create_dataset_and_predict_matches(
     classifier = setup_classifier(classifier)
     classifier.load(key_value_store=model_key_value_store_client)
 
+    print("Text preprocessing started")
+
     # setup parallelising stuff
     pool = Pool()
     num_cpu = os.cpu_count()
@@ -131,8 +133,11 @@ def load_model_create_dataset_and_predict_matches(
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
 
+    print("Text preprocessing finished")
+
     # filter product pairs
     pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
+    print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
 
     pair_identifications = []
     for source_id, target_ids in pairs_dataset_idx.items():

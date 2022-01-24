@@ -124,8 +124,13 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
     """
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
+
+    print("Text similarities computation started")
     name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                                       pool, num_cpu)
+
+    print("Text similarities computation finished")
+
     pairs = []
     for source_id, target_ids in product_pairs_idx.items():
         for target_id in target_ids:
