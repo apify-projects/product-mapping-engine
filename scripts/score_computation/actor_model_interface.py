@@ -285,7 +285,10 @@ def load_data_and_train_model(
         dataset_dataframe=None,
         images_kvs_1_client=None,
         images_kvs_2_client=None,
-        output_key_value_store_client=None
+        output_key_value_store_client=None,
+        task_id = "basic",
+        is_on_platform = False,
+        save_similarities = True
 ):
     """
     Load dataset and train and save model
@@ -297,16 +300,25 @@ def load_data_and_train_model(
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @return:
     """
-    data = preprocess_data_before_training(
-        dataset_folder=os.path.join(os.getcwd(), dataset_folder),
-        dataset_dataframe=dataset_dataframe,
-        dataset_images_kvs1=images_kvs_1_client,
-        dataset_images_kvs2=images_kvs_2_client
-    )
+    similarities_file_path = "similarities_{}.csv".format(task_id)
+    similarities_file_exists = os.path.exists(similarities_file_path)
+
+    if save_similarities and similarities_file_exists:
+        similarities = pd.read_csv(similarities_file_path)
+    else:
+        similarities = preprocess_data_before_training(
+            dataset_folder=os.path.join(os.getcwd(), dataset_folder),
+            dataset_dataframe=dataset_dataframe,
+            dataset_images_kvs1=images_kvs_1_client,
+            dataset_images_kvs2=images_kvs_2_client
+        )
+
+        if not is_on_platform and save_similarities:
+            similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
-    train_data, test_data = train_classifier(classifier, data)
-    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=False)
+    train_data, test_data = train_classifier(classifier, similarities)
+    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
     return train_stats, test_stats
 

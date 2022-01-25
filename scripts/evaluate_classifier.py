@@ -60,9 +60,9 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats)
         out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
         out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
     if plot_and_print_stats:
-        plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
+        plot_train_test_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
                  classifier.name)
-        classifier.print_feature_importances()
+        #classifier.print_feature_importances()
     return train_stats, test_stats
 
 
