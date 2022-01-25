@@ -99,8 +99,11 @@ def load_model_create_dataset_and_predict_matches(
         dataset2,
         images_kvs1_client,
         images_kvs2_client,
-        classifier,
-        model_key_value_store_client=None
+        classifier_type,
+        model_key_value_store_client=None,
+        task_id="basic",
+        is_on_platform=False,
+        save_preprocessed_pairs=True
 ):
     """
     For each product in first dataset find same products in the second dataset
@@ -108,59 +111,71 @@ def load_model_create_dataset_and_predict_matches(
     @param dataset2: Target dataset with products to be searched in for the same products
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @param classifier: Classifier used for product matching
+    @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @return: List of same products for every given product
     """
-    classifier = setup_classifier(classifier)
+    classifier = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
+    pair_identifications_file_path = "pair_identifications_{}.csv".format(task_id)
+    preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
+    preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
-    print("Text preprocessing started")
+    if save_preprocessed_pairs and preprocessed_pairs_file_exists:
+        preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
+        pair_identifications = pd.read_csv(pair_identifications_file_path)
+    else:
+        print("Text preprocessing started")
 
-    # setup parallelising stuff
-    pool = Pool()
-    num_cpu = os.cpu_count()
+        # setup parallelising stuff
+        pool = Pool()
+        num_cpu = os.cpu_count()
 
-    # preprocess data
-    dataset1_copy = copy.deepcopy(dataset1)
-    dataset2_copy = copy.deepcopy(dataset2)
+        # preprocess data
+        dataset1_copy = copy.deepcopy(dataset1)
+        dataset2_copy = copy.deepcopy(dataset2)
 
-    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
-    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
+        dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+        dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+        dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
+        dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
 
-    # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
+        # create tf_idfs
+        tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
 
-    print("Text preprocessing finished")
+        print("Text preprocessing finished")
 
-    # filter product pairs
-    pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
-    print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
+        # filter product pairs
+        pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
+        print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
 
-    pair_identifications = []
-    for source_id, target_ids in pairs_dataset_idx.items():
-        for target_id in target_ids:
-            pair_identifications.append({
-                'id1': dataset1['id'][source_id],
-                'name1': dataset1['name'][source_id],
-                'id2': dataset2['id'][target_id],
-                'name2': dataset2['name'][target_id],
-            })
+        pair_identifications = []
+        for source_id, target_ids in pairs_dataset_idx.items():
+            for target_id in target_ids:
+                pair_identifications.append({
+                    'id1': dataset1['id'][source_id],
+                    'name1': dataset1['name'][source_id],
+                    'id2': dataset2['id'][target_id],
+                    'name2': dataset2['name'][target_id],
+                })
+        pair_identifications = pd.DataFrame(pair_identifications)
 
-    # preprocess data
-    preprocessed_pairs = pd.DataFrame(
-        preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
-                                       dataset_folder='.',
-                                       dataset_dataframe=pairs_dataset_idx,
-                                       dataset_images_kvs1=images_kvs1_client,
-                                       dataset_images_kvs2=images_kvs2_client
-                                       ))
+        # preprocess data
+        preprocessed_pairs = pd.DataFrame(
+            preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                           dataset_folder='.',
+                                           dataset_dataframe=pairs_dataset_idx,
+                                           dataset_images_kvs1=images_kvs1_client,
+                                           dataset_images_kvs2=images_kvs2_client
+                                           ))
+
+        if not is_on_platform and save_preprocessed_pairs:
+            preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
+            pair_identifications.to_csv(pair_identifications_file_path)
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
-    preprocessed_pairs = pd.concat([pd.DataFrame(pair_identifications), preprocessed_pairs], axis=1)
+    preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
     ]
