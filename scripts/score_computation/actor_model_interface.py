@@ -176,10 +176,30 @@ def load_model_create_dataset_and_predict_matches(
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
     preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
+    if not is_on_platform:
+        evaluate_executor_results(classifier, preprocessed_pairs)
+
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
     ]
     return predicted_matches
+
+
+def evaluate_executor_results(classifier, preprocessed_pairs):
+    """
+    Evaluate results of executors predictions and filtering
+    @param classifier: classifier used for predicting pairs
+    @param preprocessed_pairs: dataframe with predicted and filtered pairs
+    """
+    labeled_dataset = pd.read_csv('labeled_dataset.csv')
+    matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
+    predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
+    merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+    merged_data['match'] = merged_data['match'].fillna(0)
+    merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
+    merged_data['predicted_match'] = merged_data['predicted_match'].fillna(0)
+    stats = evaluate_classifier(classifier, merged_data, merged_data, True)
+    print(stats)
 
 
 def multi_run_filter_wrapper(args):
