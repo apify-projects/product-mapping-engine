@@ -59,6 +59,8 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
     labeled_dataset_client.push_items(to_upload_labeled1.to_dict('records'))
     labeled_dataset_client.push_items(to_upload_labeled2.to_dict('records'))
 
+    to_upload_unlabeled.to_csv("aggregated_with_resized_images_unlabeled_data.csv")
+
     dataset1_to_upload = to_upload_unlabeled[dataset1_columns]
     dataset1_to_upload = dataset1_to_upload.rename(columns={
         "name1": "name",
@@ -101,7 +103,7 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
         collected_images = {}
         for item in datasets[e]:
             for f in range(1, item['image{}'.format(e+1)] + 1):
-                with open(os.path.join(images_path, "pair_{}_product_{}_image_{}".format(counter, e+1, f)), mode='rb') as image:
+                with open(os.path.join(images_path, "pair_{}_product_{}_image_{}.jpg".format(counter, e+1, f)), mode='rb') as image:
                     # TODO switch names for ids
                     print(slugify(item['name{}'.format(e+1)] + '_image_{}'.format(f-1)))
                     collected_images[slugify(item['name{}'.format(e+1)] + '_image_{}'.format(f-1))] = str(base64.b64encode(image.read()), 'utf-8')
@@ -122,7 +124,7 @@ def save_dataset_for_executor(pm_run_name, pairs_dataset_path, images_path):
             images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
 
 save_dataset_for_executor(
-    "aggregated",
+    "aggregated-with-resized-images",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
 )

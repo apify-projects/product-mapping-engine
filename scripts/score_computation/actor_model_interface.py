@@ -60,8 +60,10 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
             product_descriptive_words,
             second_product_descriptive_words
         )
-        if len(set(product['name']) & set(second_product['name'])) > 0 and descriptive_words_sim > 5:
+
+        if len(set(product['name']) & set(second_product['name'])) > 0 and descriptive_words_sim > 0:
             data_subset = data_subset.append(second_product)
+
     return data_subset
 
 
@@ -173,11 +175,12 @@ def load_model_create_dataset_and_predict_matches(
             preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
             pair_identifications.to_csv(pair_identifications_file_path)
 
+
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
     preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
     if not is_on_platform:
-        evaluate_executor_results(classifier, preprocessed_pairs)
+        evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
@@ -185,16 +188,26 @@ def load_model_create_dataset_and_predict_matches(
     return predicted_matches
 
 
-def evaluate_executor_results(classifier, preprocessed_pairs):
+def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     """
     Evaluate results of executors predictions and filtering
     @param classifier: classifier used for predicting pairs
     @param preprocessed_pairs: dataframe with predicted and filtered pairs
     """
-    labeled_dataset = pd.read_csv('labeled_dataset.csv')
-    matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
+    labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
+    #TODO fix in data and delete
+    labeled_dataset["id1"] = labeled_dataset["name1"]
+    labeled_dataset["id2"] = labeled_dataset["name2"]
+
+    matching_pairs = labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
     merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+
+    print("Original matching pairs: {}".format(matching_pairs[matching_pairs['match'] == 1].shape))
+    print("Predicted matching pairs: {}".format(merged_data[merged_data['match'] == 1].shape))
+    matching_pairs[matching_pairs['match'] == 1][["id1", "id2"]].to_csv("predicted.csv")
+    merged_data[merged_data['match'] == 1].to_csv("merged.csv")
+
     merged_data['match'] = merged_data['match'].fillna(0)
     merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
     merged_data['predicted_match'] = merged_data['predicted_match'].fillna(0)

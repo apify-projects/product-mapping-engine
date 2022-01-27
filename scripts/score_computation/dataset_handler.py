@@ -229,6 +229,7 @@ def create_image_similarities_data(
     print("Image download started")
 
     dataset_prefixes = ['dataset1', 'dataset2']
+
     download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
     download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 

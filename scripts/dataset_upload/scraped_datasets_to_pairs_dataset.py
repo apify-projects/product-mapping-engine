@@ -1,5 +1,6 @@
-import ast
+import cv2
 import json
+import numpy as np
 import os
 import pandas as pd
 import requests
@@ -25,11 +26,19 @@ def download_images(images_path, pair_index, product_index, pair):
 
                 image_file_path = os.path.join(
                     images_path,
-                    'pair_{}_product_{}_image_{}'.format(pair_index, product_index, downloaded_images + 1)
+                    'pair_{}_product_{}_image_{}.jpg'.format(pair_index, product_index, downloaded_images + 1)
                 )
-                with open(image_file_path, 'wb') as image_file:
-                    image_file.write(response.content)
 
+                image = cv2.imdecode(np.asarray(bytearray(response.content), dtype="uint8"), cv2.IMREAD_COLOR)
+
+                # resizing the images to max 1024 width to increase speed and preserve memory
+                width_resize_ratio = 1024 / image.shape[1]
+                height_resize_ratio = 1024 / image.shape[0]
+                resize_ratio = min(width_resize_ratio, height_resize_ratio)
+                if resize_ratio < 1:
+                    image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
+
+                cv2.imwrite(image_file_path, image)
                 downloaded_images += 1
 
     return downloaded_images

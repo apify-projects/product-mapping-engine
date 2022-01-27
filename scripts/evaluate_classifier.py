@@ -2,6 +2,7 @@ import json
 
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -25,7 +26,6 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
         classifier_parameters = json.loads(classifier_parameters_json)
     classifier = classifier_class(classifier_parameters)
     return classifier
-
 
 def train_classifier(classifier, data):
     """
