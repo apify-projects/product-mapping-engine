@@ -76,7 +76,8 @@ def multi_run_text_prepro_wrapper(args):
     return preprocess_textual_data(*args)
 
 
-def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection, units_detection):
+def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection,
+                                units_detection):
     """
     Preprocessing of all textual data in dataset in parallel way
     @param pool: parallelising object
@@ -175,7 +176,6 @@ def load_model_create_dataset_and_predict_matches(
             preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
             pair_identifications.to_csv(pair_identifications_file_path)
 
-
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
     preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
@@ -195,7 +195,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     @param preprocessed_pairs: dataframe with predicted and filtered pairs
     """
     labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
-    #TODO fix in data and delete
+    # TODO fix in data and delete
     labeled_dataset["id1"] = labeled_dataset["name1"]
     labeled_dataset["id2"] = labeled_dataset["name2"]
 
@@ -334,9 +334,9 @@ def load_data_and_train_model(
         images_kvs_1_client=None,
         images_kvs_2_client=None,
         output_key_value_store_client=None,
-        task_id = "basic",
-        is_on_platform = False,
-        save_similarities = True
+        task_id="basic",
+        is_on_platform=False,
+        save_similarities=True
 ):
     """
     Load dataset and train and save model
@@ -366,10 +366,30 @@ def load_data_and_train_model(
 
     classifier = setup_classifier(classifier_type)
     train_data, test_data = train_classifier(classifier, similarities)
-    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats=not is_on_platform)
+    if not is_on_platform:
+        train_data[['index1', 'predicted_match', 'predicted_scores']].to_csv('train_data.csv', index=False)
+        test_data[['index1', 'predicted_match', 'predicted_scores']].to_csv('test_data.csv', index=False)
+    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data,
+                                                  plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
     return train_stats, test_stats
 
+def filter_and_save_fp_and_fn(original_dataset):
+    """
+    Filter and save FP and FN from predicted matches
+    @param original_dataset: dataframe with original data
+    @return:
+    """
+    original_dataset['index'] = original_dataset.index
+    train_data = pd.read_csv('train_data.csv')
+    test_data = pd.read_csv('test_data.csv')
+    train_test_data = pd.concat([train_data, test_data])
+    predicted_pairs = train_test_data.join(original_dataset, on='index1', how='left')
+    joined_datasets = predicted_pairs.drop(['index1', 'index'], 1)
+    fn_train = joined_datasets[(joined_datasets['match'] == 1) & (joined_datasets['predicted_match'] == 0)]
+    fp_train = joined_datasets[(joined_datasets['match'] == 0) & (joined_datasets['predicted_match'] == 1)]
+    fn_train.to_csv(f'fn_dataset.csv', index=False)
+    fp_train.to_csv(f'fp_dataset.csv', index=False)
 
 def preprocess_data_before_training(
         dataset_folder='',
@@ -422,14 +442,14 @@ def preprocess_data_before_training(
 
     image_similarities = [0] * len(product_pairs)
     image_similarities = create_image_similarities_data(
-                                                        pool,
-                                                        num_cpu,
-                                                        product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
-                                                            orient='records'),
-                                                        dataset_folder=dataset_folder,
-                                                        dataset_images_kvs1=dataset_images_kvs1,
-                                                        dataset_images_kvs2=dataset_images_kvs2
-                                                        )
+        pool,
+        num_cpu,
+        product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
+            orient='records'),
+        dataset_folder=dataset_folder,
+        dataset_images_kvs1=dataset_images_kvs1,
+        dataset_images_kvs2=dataset_images_kvs2
+    )
     text_similarities = pd.DataFrame(text_similarities)
     print(text_similarities)
     image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
