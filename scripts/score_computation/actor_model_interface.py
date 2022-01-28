@@ -359,6 +359,7 @@ def load_data_and_train_model(
         similarities = pd.read_csv(similarities_file_path)
     else:
         similarities = preprocess_data_before_training(
+            is_on_platform,
             dataset_folder=os.path.join(os.getcwd(), dataset_folder),
             dataset_dataframe=dataset_dataframe,
             dataset_images_kvs1=images_kvs_1_client,
@@ -376,6 +377,7 @@ def load_data_and_train_model(
 
 
 def preprocess_data_before_training(
+        is_on_platform,
         dataset_folder='',
         dataset_dataframe=None,
         dataset_images_kvs1=None,
@@ -428,6 +430,7 @@ def preprocess_data_before_training(
     image_similarities = create_image_similarities_data(
                                                         pool,
                                                         num_cpu,
+                                                        is_on_platform,
                                                         product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
                                                             orient='records'),
                                                         dataset_folder=dataset_folder,
