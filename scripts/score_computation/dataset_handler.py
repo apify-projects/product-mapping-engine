@@ -103,6 +103,7 @@ def preprocess_textual_data(dataset,
 
 
 def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                   is_on_platform,
                                    dataset_folder='',
                                    dataset_dataframe=None,
                                    dataset_images_kvs1=None,
@@ -116,6 +117,7 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
     @param descriptive_words:  dictionary of descriptive words for each text column in products
     @param pool: parallelising object
     @param num_cpu: number of processes
+    @param is_on_platform: True if this is running on the platform
     @param dataset_folder: folder containing data to be preprocessed
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
@@ -141,7 +143,7 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
                 'image2': dataset2['image'][target_id],
             })
 
-    image_similarities = create_image_similarities_data(pool, num_cpu,
+    image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
         pairs,
         dataset_folder=dataset_folder,
         dataset_images_kvs1=dataset_images_kvs1,
@@ -208,6 +210,7 @@ def multi_run_compute_distances_wrapper(args):
 def create_image_similarities_data(
         pool,
         num_cpu,
+        is_on_platform,
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
@@ -215,6 +218,7 @@ def create_image_similarities_data(
 ):
     """
     Compute images similarities and create dataset with hash similarity
+    @param is_on_platform: True if this is running on the platform
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
@@ -225,34 +229,44 @@ def create_image_similarities_data(
         dataset_folder = '.'
 
     img_dir = os.path.join(dataset_folder, 'images')
-
-    print("Image download started")
+    hashes_file_path = os.path.join(dataset_folder, 'precomputed_hashes.json')
 
     dataset_prefixes = ['dataset1', 'dataset2']
 
-    download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
-    download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
+    # TODO remove
+    is_on_platform = True
+    if is_on_platform and os.path.exists(hashes_file_path):
+        with open(hashes_file_path, 'r') as hashes_file:
+            hashes_data = json.load(hashes_file)
+    else:
+        print("Image download started")
 
-    print("Image download finished")
+        download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
+        download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
-    print("Image preprocessing started")
-    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                              "../preprocessing/images/image_hash_creator/main.js")
-    image_filenames = os.listdir(img_dir)
-    image_filenames_chunks = np.array_split(image_filenames, num_cpu)
-    hash_files = pool.map(
-        multi_run_compute_image_hashes,
-        [
-            (index, dataset_folder, img_dir, image_filenames_chunk, script_dir)
-            for index, image_filenames_chunk in enumerate(image_filenames_chunks)
-        ]
-    )
+        print("Image download finished")
 
-    data = load_and_parse_data(hash_files)
+        print("Image preprocessing started")
+        script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                  "../preprocessing/images/image_hash_creator/main.js")
+        image_filenames = os.listdir(img_dir)
+        image_filenames_chunks = np.array_split(image_filenames, num_cpu)
+        hash_files = pool.map(
+            multi_run_compute_image_hashes,
+            [
+                (index, dataset_folder, img_dir, image_filenames_chunk, script_dir)
+                for index, image_filenames_chunk in enumerate(image_filenames_chunks)
+            ]
+        )
+
+        hashes_data = load_and_parse_data(hash_files)
+        if is_on_platform:
+            with open(hashes_file_path, 'w') as hashes_file:
+                json.dump(hashes_data, hashes_file)
 
     pair_ids_and_counts_dataframe_parts = np.array_split(pair_ids_and_counts_dataframe, num_cpu)
     hashes_names_list = pool.map(multi_run_create_images_hash_wrapper,
-                                        [(data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
+                                        [(hashes_data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
     print("Image preprocessing finished")
 
     print("Image similarities computation started")
@@ -269,9 +283,6 @@ def create_image_similarities_data(
     for index, similarity in imaged_pairs_similarities:
         image_similarities[index] = similarity
     return image_similarities
-
-
-
 
 
 def chunks(dictionary, dict_num):
