@@ -116,6 +116,9 @@ def load_model_create_dataset_and_predict_matches(
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
+    @param task_id: identifier of the current product mapping task
+    @param is_on_platform: True if this is running on the platform
+    @param save_preprocessed_pairs: True if the preprocessed pairs should be saved locally for future runs
     @return: List of same products for every given product
     """
     classifier = setup_classifier(classifier_type)
@@ -166,6 +169,7 @@ def load_model_create_dataset_and_predict_matches(
         # preprocess data
         preprocessed_pairs = pd.DataFrame(
             preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                           is_on_platform,
                                            dataset_folder='.',
                                            dataset_dataframe=pairs_dataset_idx,
                                            dataset_images_kvs1=images_kvs1_client,
@@ -183,7 +187,7 @@ def load_model_create_dataset_and_predict_matches(
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
-        ['name1', 'id1', 'name2', 'id2', 'predicted_scores']
+        ['id1', 'id2', 'predicted_scores']
     ]
     return predicted_matches
 
@@ -199,19 +203,19 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     labeled_dataset["id1"] = labeled_dataset["name1"]
     labeled_dataset["id2"] = labeled_dataset["name2"]
 
-    matching_pairs = labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2']]
+    matching_pairs = labeled_dataset[['id1', 'id2', 'url1', 'url2', 'match', 'price1', 'price2']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
     merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+    merged_data = merged_data.drop_duplicates(subset=['url1', 'url2'])
+    merged_data = merged_data[merged_data['url1'].notna()]
 
-    print("Original matching pairs: {}".format(matching_pairs[matching_pairs['match'] == 1].shape))
-    print("Predicted matching pairs: {}".format(merged_data[merged_data['match'] == 1].shape))
     matching_pairs[matching_pairs['match'] == 1][["id1", "id2"]].to_csv("predicted.csv")
-    merged_data[merged_data['match'] == 1].to_csv("merged.csv")
+    merged_data[merged_data['predicted_match'] == 1].to_csv("merged.csv")
 
     merged_data['match'] = merged_data['match'].fillna(0)
     merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
     merged_data['predicted_match'] = merged_data['predicted_match'].fillna(0)
-    stats = evaluate_classifier(classifier, merged_data, merged_data, True)
+    stats = evaluate_classifier(classifier, merged_data, merged_data, True, False)
     print(stats)
 
 
@@ -253,8 +257,8 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
     idx_start, idx_to = 0, 0
 
     if 'price' in product.index.values and 'price' in dataset2:
-        idx_start = bisect.bisect_left(dataset2['price'].values, product['price'] / 2)
-        idx_to = bisect.bisect(dataset2['price'].values, product['price'] * 2)
+        idx_start = bisect.bisect_left(dataset2['price'].values, 0.67 * product['price'])
+        idx_to = bisect.bisect(dataset2['price'].values, product['price'] * 1.33)
         if idx_to == len(dataset2):
             idx_to -= 1
 
@@ -355,6 +359,7 @@ def load_data_and_train_model(
         similarities = pd.read_csv(similarities_file_path)
     else:
         similarities = preprocess_data_before_training(
+            is_on_platform,
             dataset_folder=os.path.join(os.getcwd(), dataset_folder),
             dataset_dataframe=dataset_dataframe,
             dataset_images_kvs1=images_kvs_1_client,
@@ -365,14 +370,11 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
-    train_data, test_data = train_classifier(classifier, similarities)
-    if not is_on_platform:
-        train_data[['index1', 'predicted_match', 'predicted_scores']].to_csv('train_data.csv', index=False)
-        test_data[['index1', 'predicted_match', 'predicted_scores']].to_csv('test_data.csv', index=False)
-    train_stats, test_stats = evaluate_classifier(classifier, train_data, test_data,
-                                                  plot_and_print_stats=not is_on_platform)
+    for e in range(1):
+        train_stats, test_stats = train_classifier(classifier, similarities, plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
     return train_stats, test_stats
+
 
 def filter_and_save_fp_and_fn(original_dataset):
     """
@@ -391,7 +393,9 @@ def filter_and_save_fp_and_fn(original_dataset):
     fn_train.to_csv(f'fn_dataset.csv', index=False)
     fp_train.to_csv(f'fp_dataset.csv', index=False)
 
+
 def preprocess_data_before_training(
+        is_on_platform,
         dataset_folder='',
         dataset_dataframe=None,
         dataset_images_kvs1=None,
@@ -444,6 +448,7 @@ def preprocess_data_before_training(
     image_similarities = create_image_similarities_data(
         pool,
         num_cpu,
+        is_on_platform,
         product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
             orient='records'),
         dataset_folder=dataset_folder,

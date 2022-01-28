@@ -53,8 +53,11 @@ class Classifier:
     def print_feature_importances(self):
         pass
 
+    def set_threshold(self, threshold):
+        self.weights['threshold'] = threshold
+
     def save(self, path='results/models', key_value_store=None):
-        # TODO save PCA locally
+        # TODO save PCA and weights locally
         if key_value_store is None:
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -63,16 +66,18 @@ class Classifier:
             pickle.dump(self.model, open(os.path.join(path, filename), 'wb'))
         else:
             key_value_store.set_record('model', pickle.dumps(self.model))
+            key_value_store.set_record('weights', pickle.dumps(self.weights))
             if self.use_pca:
                 key_value_store.set_record('pca', pickle.dumps(self.pca))
 
     def load(self, path='results/models', key_value_store=None):
-        #TODO load PCA locally
+        # TODO load PCA and weights locally
         if key_value_store is None:
             filename = f'{self.name}.sav'
             self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
         else:
             self.model = pickle.loads(key_value_store.get_record('model')['value'])
+            self.weights = pickle.loads(key_value_store.get_record('weights')['value'])
             if self.use_pca:
                 self.pca = pickle.loads(key_value_store.get_record('pca')['value'])
 
@@ -89,11 +94,8 @@ class Classifier:
         auxiliary_columns = ["index1", "index2"]
         if "match" in data:
             auxiliary_columns.append("match")
-            print(auxiliary_columns)
         data_auxiliary_columns = data[auxiliary_columns]
         data = data.drop(columns=auxiliary_columns)
-
-        print(data.columns)
 
         if train_pca:
             self.pca = PCA(n_components=principal_component_count)
