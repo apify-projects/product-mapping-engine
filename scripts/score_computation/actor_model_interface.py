@@ -93,7 +93,7 @@ def load_model_create_dataset_and_predict_matches(
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
-    @param task_id: identifier of the current product mapping task
+    @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
     @param save_preprocessed_pairs: True if the preprocessed pairs should be saved locally for future runs
     @return: List of same products for every given product
@@ -174,11 +174,13 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     Evaluate results of executors predictions and filtering
     @param classifier: classifier used for predicting pairs
     @param preprocessed_pairs: dataframe with predicted and filtered pairs
+    @param task_id: unique identification of the currently evaluated Product Mapping task
     """
     labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
-    # TODO fix in data and delete
-    labeled_dataset["id1"] = labeled_dataset["name1"]
-    labeled_dataset["id2"] = labeled_dataset["name2"]
+
+    # TODO remove after uploading fixed dataset
+    labeled_dataset['id1'] = labeled_dataset['name1']
+    labeled_dataset['id2'] = labeled_dataset['name2']
 
     matching_pairs = labeled_dataset[['id1', 'id2', 'url1', 'url2', 'match', 'price1', 'price2']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
@@ -330,12 +332,15 @@ def load_data_and_train_model(
 ):
     """
     Load dataset and train and save model
-    @param dataset_folder: (optional) folder containing data
     @param classifier_type: classifier type
+    @param dataset_folder: (optional) folder containing data
     @param dataset_dataframe: dataframe of pairs to be compared
     @param images_kvs_1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs_2_client: key-value-store client where the images for the target dataset are stored
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
+    @param task_id: unique identification of the current Product Mapping task
+    @param is_on_platform: True if this is running on the platform
+    @param save_similarities: Save similarities after preprocessing to make sure they don't need to be computed again
     @return:
     """
     similarities_file_path = "similarities_{}.csv".format(task_id)
@@ -356,9 +361,9 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
-    for e in range(1):
-        train_stats, test_stats = train_classifier(classifier, similarities, plot_and_print_stats=not is_on_platform)
+    train_stats, test_stats = train_classifier(classifier, similarities, plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
+
     return train_stats, test_stats
 
 

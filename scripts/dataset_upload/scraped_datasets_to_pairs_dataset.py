@@ -6,10 +6,20 @@ import pandas as pd
 import requests
 import imghdr
 
+from ..run_configuration import RESIZE_WIDTH, RESIZE_HEIGHT
+
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
 
 def download_images(images_path, pair_index, product_index, pair):
+    """
+    Download images for a product from pair of products from the dataset
+    @param images_path: what folder to save the images to
+    @param pair_index: index of the pair
+    @param product_index: either 1 or 2, specifying which product from the pair should images be downloaded for
+    @param pair: pair of products from the dataset
+    @return: the amount of images that have been downloaded
+    """
     downloaded_images = 0
     for potential_url in pair["image{}".format(product_index)]:
         if is_url(potential_url):
@@ -31,9 +41,9 @@ def download_images(images_path, pair_index, product_index, pair):
 
                 image = cv2.imdecode(np.asarray(bytearray(response.content), dtype="uint8"), cv2.IMREAD_COLOR)
 
-                # resizing the images to max 1024 width to increase speed and preserve memory
-                width_resize_ratio = 1024 / image.shape[1]
-                height_resize_ratio = 1024 / image.shape[0]
+                # decreasing the size of the images when needed to increase speed and preserve memory
+                width_resize_ratio = RESIZE_WIDTH / image.shape[1]
+                height_resize_ratio = RESIZE_HEIGHT / image.shape[0]
                 resize_ratio = min(width_resize_ratio, height_resize_ratio)
                 if resize_ratio < 1:
                     image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
@@ -51,27 +61,15 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     full_pairs_dataset_path,
     images_path
 ):
-    '''
-    Alza:
-    name = name
-    short_description = shortDescription
-    long_description = longDescription
-    specification = parameters
-    images = images
-    price = price
-    url = url
-    '''
-
-    '''
-    Mall:
-    name = name
-    short_description = shortDescription
-    long_description = longDescription
-    specification = params
-    images = images
-    price = price
-    url = url
-    '''
+    """
+    Uses scraped data to construct a labeled dataset than can be uploaded to the platform
+    @param url_pairs_dataset_path: pairs of product URLs along with information about their match status
+    @param scraped_dataset1_path: scraped source dataset
+    @param scraped_dataset2_path: scraped target dataset
+    @param full_pairs_dataset_path: path to save the completed dataset to
+    @param images_path: what folder to save the images to
+    @return:
+    """
     url_pairs_dataset = pd.read_csv(url_pairs_dataset_path)
 
     scraped_dataset1 = pd.read_json(scraped_dataset1_path)
@@ -96,6 +94,7 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         }
     )
     scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace("[^0-9]", "", regex=True)
+    scraped_dataset1["id1"] = scraped_dataset1["url1"]
 
     scraped_dataset2 = pd.read_json(scraped_dataset2_path)
     scraped_dataset2 = scraped_dataset2[["name", "shortDescription", "longDescription", "params", "images", "price", "url"]]
@@ -119,6 +118,7 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         }
     )
     scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace("[^0-9]", "", regex=True)
+    scraped_dataset2["id2"] = scraped_dataset2["url2"]
 
     pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='source_url', right_on='url1')
     full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='target_url', right_on='url2')

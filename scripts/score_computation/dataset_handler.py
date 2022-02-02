@@ -32,8 +32,8 @@ def load_and_parse_data(input_files):
         with open(input_file) as json_file:
             loaded_data = json.load(json_file)
 
-        for d in loaded_data:
-            dsplit = d.split(';')
+        for image_name_and_hash_pair in loaded_data:
+            dsplit = image_name_and_hash_pair.split(';')
             data[dsplit[0]] = dsplit[1]
 
     return data
@@ -214,6 +214,8 @@ def create_image_similarities_data(
 ):
     """
     Compute images similarities and create dataset with hash similarity
+    @param pool: pool of Python processes (from the multiprocessing library)
+    @param num_cpu: the amount of processes the CPU can handle at once
     @param is_on_platform: True if this is running on the platform
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
@@ -229,8 +231,6 @@ def create_image_similarities_data(
 
     dataset_prefixes = ['dataset1', 'dataset2']
 
-    # TODO remove
-    is_on_platform = True
     if is_on_platform and os.path.exists(hashes_file_path):
         with open(hashes_file_path, 'r') as hashes_file:
             hashes_data = json.load(hashes_file)

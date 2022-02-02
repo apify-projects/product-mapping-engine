@@ -21,11 +21,6 @@ class Classifier:
     def __init__(self, weights, use_pca=False):
         self.weights = weights
         self.use_pca = use_pca
-
-        # TODO arbitrarily chosen, fix this
-        if 'threshold' not in self.weights:
-            self.weights['threshold'] = 0.75
-
         self.model = None
         self.name = None
         self.pca = None
@@ -37,15 +32,18 @@ class Classifier:
         inputs = data.drop(columns=['match'])
         self.model.fit(inputs, target)
 
-    def predict(self, data):
+    def predict(self, data, predict_outputs=True):
         if self.use_pca:
             data = self.perform_pca(data, False)
         if 'match' in data.columns:
             data = data.drop(columns=['match'])
         scores = self.model.predict_proba(data)
         scores = [s[1] for s in scores]
-        outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
-        return outputs, scores
+        if predict_outputs:
+            outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
+            return outputs, scores
+        else:
+            return scores
 
     def render_roc(self, true_labels, pred_labels_list, threshs, print_stats):
         plot_train_test_roc(true_labels, pred_labels_list, threshs, print_stats)
@@ -57,13 +55,18 @@ class Classifier:
         self.weights['threshold'] = threshold
 
     def save(self, path='results/models', key_value_store=None):
-        # TODO save PCA and weights locally
         if key_value_store is None:
             if not os.path.exists(path):
                 os.makedirs(path)
 
-            filename = f'{self.name}.sav'
-            pickle.dump(self.model, open(os.path.join(path, filename), 'wb'))
+            model_filename = f'{self.name}_model.sav'
+            weights_filename = f'{self.name}_weights.sav'
+
+            pickle.dump(self.model, open(os.path.join(path, model_filename), 'wb'))
+            pickle.dump(self.weights, open(os.path.join(path, weights_filename), 'wb'))
+            if self.use_pca:
+                pca_filename = f'{self.name}_pca.sav'
+                pickle.dump(self.pca, open(os.path.join(path, pca_filename), 'wb'))
         else:
             key_value_store.set_record('model', pickle.dumps(self.model))
             key_value_store.set_record('weights', pickle.dumps(self.weights))
@@ -71,10 +74,14 @@ class Classifier:
                 key_value_store.set_record('pca', pickle.dumps(self.pca))
 
     def load(self, path='results/models', key_value_store=None):
-        # TODO load PCA and weights locally
         if key_value_store is None:
-            filename = f'{self.name}.sav'
-            self.model = pickle.load(open(os.path.join(path, filename), 'rb'))
+            model_filename = f'{self.name}_model.sav'
+            weights_filename = f'{self.name}_weights.sav'
+            self.model = pickle.load(open(os.path.join(path, model_filename), 'rb'))
+            self.weights = pickle.load(open(os.path.join(path, weights_filename), 'rb'))
+            if self.use_pca:
+                pca_filename = f'{self.name}_pca.sav'
+                self.pca = pickle.load(open(os.path.join(path, pca_filename), 'rb'))
         else:
             self.model = pickle.loads(key_value_store.get_record('model')['value'])
             self.weights = pickle.loads(key_value_store.get_record('weights')['value'])
@@ -114,10 +121,13 @@ class LinearRegressionClassifier(Classifier):
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def predict(self, data):
+    def predict(self, data, predict_outputs=True):
         scores = self.model.predict(data.drop(columns=['match']))
-        outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
-        return outputs, scores
+        if predict_outputs:
+            outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
+            return outputs, scores
+        else:
+            return scores
 
     def print_feature_importances(self):
         print(f'Feature importances for {self.name} \n {self.model.coef_}')
