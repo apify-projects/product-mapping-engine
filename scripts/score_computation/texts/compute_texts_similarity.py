@@ -6,11 +6,9 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK
+from ...run_configuration import MARKS, BRAND_MARK, ID_MARK, UNIT_MARK, TOP_WORDS, FILTER_LIMIT
 
-MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
-TOP_WORDS = 50
-FILTER_LIMIT = 0.5
+
 
 
 def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
@@ -170,24 +168,15 @@ def compute_tf_idf(dataset, print_stats=False):
     return tf_idfs
 
 
-def create_tf_idfs_and_descriptive_words_pairs(product_pairs, columns):
-    tf_idfs = {}
-    descriptive_words = {}
-
-    for column in columns:
-        column1 = f'{column}1'
-        column2 = f'{column}2'
-        if column1 in product_pairs and column2 in product_pairs:
-            tf_idfs_col = create_tf_idf(product_pairs[column1], product_pairs[column2])
-            descriptive_words_col = find_descriptive_words(
-                tf_idfs_col, filter_limit=FILTER_LIMIT, number_of_top_words=TOP_WORDS
-            )
-            tf_idfs[column] = tf_idfs_col
-            descriptive_words[column] = descriptive_words_col
-    return tf_idfs, descriptive_words
-
 
 def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
+    """
+    Create tf.idfs and descriptive words for each column in the dataset
+    @param dataset1: first dataframe in which create tf.idfs and descriptive words
+    @param dataset2: second dataframe in which create tf.idfs and descriptive words
+    @param columns: list of columns to create tf.idfs and descriptive words in
+    @return: dict with tf.idfs and descriptive words for each column
+    """
     tf_idfs = {}
     descriptive_words = {}
     for column in columns:

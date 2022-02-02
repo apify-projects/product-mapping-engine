@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import subprocess
 from PIL import Image
-
+from ...run_configuration import RESIZE_WIDTH, RESIZE_HEIGHT
 
 def unify_image_size(input_folder, output_folder, width, height):
     """
@@ -64,9 +64,9 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
 
-            # resizing the images to max 1024 width to increase speed and preserve memory
-            width_resize_ratio = 1024 / image.shape[1]
-            height_resize_ratio = 1024 / image.shape[0]
+            # resizing the images to max height and width to increase speed and preserve memory
+            width_resize_ratio = RESIZE_WIDTH / image.shape[1]
+            height_resize_ratio = RESIZE_HEIGHT / image.shape[0]
             resize_ratio = min(width_resize_ratio, height_resize_ratio)
             if resize_ratio < 1:
                 image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)

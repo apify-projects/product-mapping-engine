@@ -11,15 +11,13 @@ from .images.compute_hashes_similarity import create_hash_sets, compute_distance
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
-from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory, \
-    compute_image_hashes
+from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications, preprocess_specifications
 from ..preprocessing.texts.text_preprocessing import preprocess_text
+from ..run_configuration import COLUMNS, SIMILARITY_NAMES
 
-COLUMNS = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
-SIMILARITY_NAMES = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
 
 
 def load_and_parse_data(input_files):
@@ -50,7 +48,7 @@ def save_to_csv(data_list, output_file, column_names=None):
     @return:
     """
     data_dataframe = pd.DataFrame(data_list, columns=column_names)
-    data_dataframe.fillna(0, inplCOLUMNSace=True)
+    data_dataframe.fillna(0, inplace=True)
     data_dataframe.to_csv(output_file, index=False)
 
 
@@ -102,15 +100,15 @@ def preprocess_textual_data(dataset,
     return dataset
 
 
-def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
-                                   is_on_platform,
-                                   dataset_folder='',
-                                   dataset_dataframe=None,
-                                   dataset_images_kvs1=None,
-                                   dataset_images_kvs2=None
-                                   ):
+def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                       is_on_platform,
+                                       dataset_folder='',
+                                       dataset_dataframe=None,
+                                       dataset_images_kvs1=None,
+                                       dataset_images_kvs2=None
+                                       ):
     """
-    For each pair of products compute their image and name similarity without saving anything
+    For each pair of products compute their image and name similarity
     @param dataset1: first dataframe with products
     @param dataset2: second dataframe with products
     @param tf_idfs: dictionary of tf.idfs for each text column in products
@@ -152,8 +150,6 @@ def preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_word
     name_similarities = pd.DataFrame(name_similarities)
     image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
     dataframes_to_concat = [name_similarities, image_similarities]
-    # if 'match' in product_pairs.columns:
-    #    dataframes_to_concat.append(product_pairs['match'])
 
     return pd.concat(dataframes_to_concat, axis=1)
 

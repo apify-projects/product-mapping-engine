@@ -112,7 +112,7 @@ def create_hash_sets(
     @param data: input dict of image name and hash value
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_prefixes: prefixes of images identifying them as parts of a specific dataset
-    @return: list of hashes and list on names of images
+    @return: list of hashes and list on names of images (returns as a list for easier further multithread parallel processing)
     """
     hashes = []
     names = []

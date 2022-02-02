@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
+from run_configuration import TEST_SIZE, NUMBER_OF_THRESHS, MAX_FP_RATE
 
 
 def setup_classifier(classifier_type, classifier_parameters_file=None):
@@ -20,7 +21,6 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
     classifier_parameters = {}
     if classifier_parameters_file is not None:
         classifier_parameters_path = classifier_parameters_file
-        classifier_parameters_json = '{}'
         with open(classifier_parameters_path, 'r') as classifier_parameters_file:
             classifier_parameters_json = classifier_parameters_file.read()
         classifier_parameters = json.loads(classifier_parameters_json)
@@ -36,7 +36,7 @@ def train_classifier(classifier, data, plot_and_print_stats=False):
     @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @return: train and test datasets with predictions
     """
-    train_data, test_data = train_test_split(data, test_size=0.25)
+    train_data, test_data = train_test_split(data, test_size=TEST_SIZE)
     classifier.fit(train_data)
     train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
     test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
@@ -65,7 +65,7 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats,
     @param test_data: testing data to evaluate classifier
     @return: train and test accuracy, recall, specificity, precision
     """
-    threshs = create_thresh(train_data['predicted_scores'], 100)
+    threshs = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHS)
     out_train = []
     out_test = []
     for t in threshs:
@@ -78,7 +78,7 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats,
         optimal_threshold = threshs[0]
         for x in range(len(threshs)):
             optimal_threshold = threshs[x]
-            if fprs_train[x] <= 0.05:
+            if fprs_train[x] <= MAX_FP_RATE:
                 break
 
         classifier.set_threshold(optimal_threshold)

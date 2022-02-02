@@ -14,33 +14,10 @@ from multiprocessing import Pool
 import pandas as pd
 import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from .dataset_handler import preprocess_data_without_saving, preprocess_textual_data, COLUMNS, \
+from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data,\
     create_text_similarities_data, create_image_similarities_data
-from ..preprocessing.texts.text_preprocessing import preprocess_text
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
-
-
-def main(**kwargs):
-    preprocess_text()
-    # Load dataset and train and save model
-    load_data_and_train_model('data/extra_dataset/dataset', 'DecisionTree')
-    # matching_pairs = load_model_and_predict_matches('data/wdc_dataset/dataset/preprocessed', 'DecisionTree')
-
-    # Load datasets and model and fund matching pairs
-    dataset1 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/amazon.csv')
-    dataset2 = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/dataset/extra.csv')
-    results_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/extra_dataset/results')
-    if os.path.exists(results_directory):
-        shutil.rmtree(results_directory)
-    os.mkdir(results_directory)
-    output_file = os.path.join(results_directory, 'matching_pairs.csv')
-    matching_pairs = load_model_create_dataset_and_predict_matches(
-        pd.read_csv(dataset1),
-        pd.read_csv(dataset2),
-        'DecisionTree'
-    )
-    matching_pairs.to_csv(output_file, index=False)
-
+from ..run_configuration import COLUMNS
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
                                           descriptive_words):
@@ -82,7 +59,7 @@ def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_dete
     Preprocessing of all textual data in dataset in parallel way
     @param pool: parallelising object
     @param num_cpu: number of processes
-    @param dataset: dataset to be preprocessed
+    @param dataset: dataframe to be preprocessed
     @param id_detection: True if id should be detected
     @param color_detection: True if color should be detected
     @param brand_detection: True if brand should be detected
@@ -168,13 +145,13 @@ def load_model_create_dataset_and_predict_matches(
 
         # preprocess data
         preprocessed_pairs = pd.DataFrame(
-            preprocess_data_without_saving(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
-                                           is_on_platform,
-                                           dataset_folder='.',
-                                           dataset_dataframe=pairs_dataset_idx,
-                                           dataset_images_kvs1=images_kvs1_client,
-                                           dataset_images_kvs2=images_kvs2_client
-                                           ))
+            create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                               is_on_platform,
+                                               dataset_folder='.',
+                                               dataset_dataframe=pairs_dataset_idx,
+                                               dataset_images_kvs1=images_kvs1_client,
+                                               dataset_images_kvs2=images_kvs2_client
+                                               ))
 
         if not is_on_platform and save_preprocessed_pairs:
             preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
@@ -253,6 +230,15 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
 
 def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_idx, dataset_start_index,
                                              descriptive_words):
+    """
+    Filter possible pairs of two datasets using price similar words and descriptive words filter in parallel way
+    @param dataset_start_index: starting index to index the products from second dataset in descriptive words
+    @param dataset2_no_price_idx: indices of the products from second dataset without specified prices
+    @param dataset1: Source dataset of products
+    @param dataset2: Target dataset with products to be searched in for the same products
+    @param descriptive_words: dictionary of descriptive words for each text column in products
+    @return dict with key as indices of products from the first dataset and values as indices of filtered possible matching products from second dataset
+    """
     product = dataset1.iloc[0, :]
     idx_start, idx_to = 0, 0
 
@@ -481,10 +467,6 @@ def load_model_and_predict_matches(
     """
     classifier = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
-    data = preprocess_data_without_saving(os.path.join(os.getcwd(), dataset_folder))
+    data = create_image_and_text_similarities(os.path.join(os.getcwd(), dataset_folder))
     data['predicted_match'], data['predicted_scores'] = classifier.predict(data)
     return data[data['predicted_match'] == 1]
-
-
-if __name__ == "__main__":
-    main()

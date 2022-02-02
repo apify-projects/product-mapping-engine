@@ -6,11 +6,8 @@ import time
 import pandas as pd
 import requests
 
-ID_LEN = 5
-ID_MARK = '#id#'
-BRAND_MARK = '#bnd#'
-COLOR_MARK = '#col#'
-UNIT_MARK = '#unit#'
+from ...run_configuration import ID_LEN,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
+
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
@@ -25,7 +22,7 @@ PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/
 UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER,
                                              '../../../data/vocabularies/unit_conversion_us-eu.tsv')
 
-SIZE_UNITS = ['XXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+
 
 
 def load_colors():
