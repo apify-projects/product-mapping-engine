@@ -6,7 +6,7 @@ import time
 import pandas as pd
 import requests
 
-from ...run_configuration import ID_LEN,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
+from ...configuration import ID_LEN,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
 
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))

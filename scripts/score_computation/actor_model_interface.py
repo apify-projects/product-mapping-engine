@@ -1,6 +1,5 @@
 import bisect
 import os
-import shutil
 import sys
 
 import numpy as np
@@ -14,10 +13,10 @@ from multiprocessing import Pool
 import pandas as pd
 import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
-from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data,\
-    create_text_similarities_data, create_image_similarities_data
+from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
-from ..run_configuration import COLUMNS
+from ..configuration import COLUMNS
+
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
                                           descriptive_words):
@@ -108,58 +107,17 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
         pair_identifications = pd.read_csv(pair_identifications_file_path)
     else:
-        print("Text preprocessing started")
-
-        # setup parallelising stuff
-        pool = Pool()
-        num_cpu = os.cpu_count()
-
-        # preprocess data
-        dataset1_copy = copy.deepcopy(dataset1)
-        dataset2_copy = copy.deepcopy(dataset2)
-
-        dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-        dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-        dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
-        dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
-
-        # create tf_idfs
-        tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
-
-        print("Text preprocessing finished")
-
-        # filter product pairs
-        pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
-        print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
-
-        pair_identifications = []
-        for source_id, target_ids in pairs_dataset_idx.items():
-            for target_id in target_ids:
-                pair_identifications.append({
-                    'id1': dataset1['id'][source_id],
-                    'name1': dataset1['name'][source_id],
-                    'id2': dataset2['id'][target_id],
-                    'name2': dataset2['name'][target_id],
-                })
-        pair_identifications = pd.DataFrame(pair_identifications)
-
-        # preprocess data
-        preprocessed_pairs = pd.DataFrame(
-            create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
-                                               is_on_platform,
-                                               dataset_folder='.',
-                                               dataset_dataframe=pairs_dataset_idx,
-                                               dataset_images_kvs1=images_kvs1_client,
-                                               dataset_images_kvs2=images_kvs2_client
-                                               ))
-
-        if not is_on_platform and save_preprocessed_pairs:
-            preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
-            pair_identifications.to_csv(pair_identifications_file_path)
+        pair_identifications, preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
+                                                                               images_kvs2_client, is_on_platform,
+                                                                               filter_data=True)
+    if not is_on_platform and save_preprocessed_pairs:
+        preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
+        pair_identifications.to_csv(pair_identifications_file_path)
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs)
     preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
+
     if not is_on_platform:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
@@ -167,6 +125,59 @@ def load_model_create_dataset_and_predict_matches(
         ['id1', 'id2', 'predicted_scores']
     ]
     return predicted_matches
+
+
+def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client, is_on_platform,
+                                filter_data):
+    """
+    Preprocess data, eventually filter data pairs and compute similarities
+    @param dataset1: Source dataframe of products
+    @param dataset2: Target dataframe with products to be searched in for the same products
+    @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
+    @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
+    @param is_on_platform: True if this is running on the platform
+    @param filter_data: True whether filtering during similarity computations should be performed
+    @return: dataframe with image and text similarities
+    """
+    # setup parallelising stuff
+    pool = Pool()
+    num_cpu = os.cpu_count()
+
+    # preprocess data
+    print("Text preprocessing started")
+    dataset1_copy = copy.deepcopy(dataset1)
+    dataset2_copy = copy.deepcopy(dataset2)
+    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
+    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
+    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
+    # create tf_idfs
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
+    print("Text preprocessing finished")
+
+    if filter_data:
+        # filter product pairs
+        print("Filtering started")
+        pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
+        print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
+        print("Filtering ended")
+    else:
+        pairs_dataset_idx = {}
+        for i in range(0, len(dataset1)):
+            pairs_dataset_idx[i] = [i]
+
+    # create image and text similarities
+    print("Similarities creation started")
+    image_and_text_similarities = create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words,
+                                                                     pool, num_cpu,
+                                                                     is_on_platform,
+                                                                     dataset_folder='.',
+                                                                     dataset_dataframe=pairs_dataset_idx,
+                                                                     dataset_images_kvs1=images_kvs1_client,
+                                                                     dataset_images_kvs2=images_kvs2_client
+                                                                     )
+    print("Similarities creation ended")
+    return image_and_text_similarities
 
 
 def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
@@ -323,8 +334,8 @@ def load_data_and_train_model(
         classifier_type,
         dataset_folder='',
         dataset_dataframe=None,
-        images_kvs_1_client=None,
-        images_kvs_2_client=None,
+        images_kvs1_client=None,
+        images_kvs2_client=None,
         output_key_value_store_client=None,
         task_id="basic",
         is_on_platform=False,
@@ -335,8 +346,8 @@ def load_data_and_train_model(
     @param classifier_type: classifier type
     @param dataset_folder: (optional) folder containing data
     @param dataset_dataframe: dataframe of pairs to be compared
-    @param images_kvs_1_client: key-value-store client where the images for the source dataset are stored
-    @param images_kvs_2_client: key-value-store client where the images for the target dataset are stored
+    @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
+    @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
@@ -349,14 +360,22 @@ def load_data_and_train_model(
     if save_similarities and similarities_file_exists:
         similarities = pd.read_csv(similarities_file_path)
     else:
-        similarities = preprocess_data_before_training(
-            is_on_platform,
-            dataset_folder=os.path.join(os.getcwd(), dataset_folder),
-            dataset_dataframe=dataset_dataframe,
-            dataset_images_kvs1=images_kvs_1_client,
-            dataset_images_kvs2=images_kvs_2_client
-        )
+        product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
+            os.path.join(dataset_folder, "product_pairs.csv"))
 
+        product_pairs1 = product_pairs.filter(regex='1')
+        product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
+        product_pairs2 = product_pairs.filter(regex='2')
+        product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
+
+        similarities_to_concat = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
+                                                             images_kvs2_client, is_on_platform,
+                                                             filter_data=False)
+
+        if 'match' in product_pairs.columns:
+            similarities_to_concat.append(product_pairs['match'])
+
+        similarities = pd.concat(similarities_to_concat, axis=1)
         if not is_on_platform and save_similarities:
             similarities.to_csv(similarities_file_path, index=False)
 
@@ -389,22 +408,17 @@ def preprocess_data_before_training(
         is_on_platform,
         dataset_folder='',
         dataset_dataframe=None,
-        dataset_images_kvs1=None,
-        dataset_images_kvs2=None
+        images_kvs1_client=None,
+        images_kvs2_client=None
 ):
     """
     For each pair of products compute their image and name similarity without saving anything
     @param dataset_folder: folder containing data to be preprocessed
     @param dataset_dataframe: dataframe of pairs to be compared
-    @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
-    @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
+    @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
+    @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @return: preprocessed data
     """
-    print("Text preprocessing started")
-
-    # setup parallelising stuff
-    pool = Pool()
-    num_cpu = os.cpu_count()
 
     product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
@@ -414,43 +428,9 @@ def preprocess_data_before_training(
     product_pairs2 = product_pairs.filter(regex='2')
     product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
 
-    dataset1_copy = copy.deepcopy(product_pairs1)
-    dataset2_copy = copy.deepcopy(product_pairs2)
-
-    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-    dataset1 = parallel_text_preprocessing(pool, num_cpu, product_pairs1, True, True, True, True)
-    dataset2 = parallel_text_preprocessing(pool, num_cpu, product_pairs2, True, True, True, True)
-
-    # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
-    product_pairs_idx = {}
-    for i in range(0, len(dataset1)):
-        product_pairs_idx[i] = [i]
-
-    print("Text preprocessing finished")
-
-    print("Text similarities computation started")
-    text_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
-                                                      pool, num_cpu)
-    print("Text similarities computation finished")
-
-    image_similarities = [0] * len(product_pairs)
-    image_similarities = create_image_similarities_data(
-        pool,
-        num_cpu,
-        is_on_platform,
-        product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(
-            orient='records'),
-        dataset_folder=dataset_folder,
-        dataset_images_kvs1=dataset_images_kvs1,
-        dataset_images_kvs2=dataset_images_kvs2
-    )
-    text_similarities = pd.DataFrame(text_similarities)
-    print(text_similarities)
-    image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
-    print(image_similarities)
-    dataframes_to_concat = [text_similarities, image_similarities]
+    dataframes_to_concat = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
+                                                       images_kvs2_client, is_on_platform,
+                                                       filter_data=False)
 
     if 'match' in product_pairs.columns:
         dataframes_to_concat.append(product_pairs['match'])

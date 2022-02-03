@@ -3,6 +3,7 @@ import copy
 import json
 import os
 from itertools import islice
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,13 +12,12 @@ from .images.compute_hashes_similarity import create_hash_sets, compute_distance
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
+from ..configuration import COLUMNS, SIMILARITY_NAMES
 from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications, preprocess_specifications
 from ..preprocessing.texts.text_preprocessing import preprocess_text
-from ..run_configuration import COLUMNS, SIMILARITY_NAMES
-
 
 
 def load_and_parse_data(input_files):
@@ -120,7 +120,7 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
-    @return: preprocessed data
+    @return: list of dataframes with image and text similarities
     """
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
@@ -131,10 +131,10 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
 
     print("Text similarities computation finished")
 
-    pairs = []
+    pair_identifications = []
     for source_id, target_ids in product_pairs_idx.items():
         for target_id in target_ids:
-            pairs.append({
+            pair_identifications.append({
                 'id1': dataset1['id'][source_id],
                 'image1': dataset1['image'][source_id],
                 'id2': dataset2['id'][target_id],
@@ -142,16 +142,14 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
             })
 
     image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
-        pairs,
-        dataset_folder=dataset_folder,
-        dataset_images_kvs1=dataset_images_kvs1,
-        dataset_images_kvs2=dataset_images_kvs2
-    )
+                                                        pair_identifications,
+                                                        dataset_folder=dataset_folder,
+                                                        dataset_images_kvs1=dataset_images_kvs1,
+                                                        dataset_images_kvs2=dataset_images_kvs2
+                                                        )
     name_similarities = pd.DataFrame(name_similarities)
     image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
-    dataframes_to_concat = [name_similarities, image_similarities]
-
-    return pd.concat(dataframes_to_concat, axis=1)
+    return [name_similarities, image_similarities]
 
 
 def download_images_from_kvs(
@@ -186,6 +184,7 @@ def multi_run_compute_image_hashes(args):
     """
     return compute_image_hashes(*args)
 
+
 def multi_run_create_images_hash_wrapper(args):
     """
     Wrapper for passing more arguments to create_hash_sets in parallel way
@@ -193,6 +192,7 @@ def multi_run_create_images_hash_wrapper(args):
     @return: call the create_hash_sets in parallel way
     """
     return create_hash_sets(*args)
+
 
 def multi_run_compute_distances_wrapper(args):
     """
@@ -262,7 +262,8 @@ def create_image_similarities_data(
 
     pair_ids_and_counts_dataframe_parts = np.array_split(pair_ids_and_counts_dataframe, num_cpu)
     hashes_names_list = pool.map(multi_run_create_images_hash_wrapper,
-                                        [(hashes_data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
+                                 [(hashes_data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for
+                                  pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
     print("Image preprocessing finished")
 
     print("Image similarities computation started")
@@ -270,7 +271,6 @@ def create_image_similarities_data(
                                               [(item[0], item[1], 'binary', True, 0.9) for item in hashes_names_list])
     imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
     print("Image similarities computation finished")
-
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []

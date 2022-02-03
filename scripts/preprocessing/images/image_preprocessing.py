@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import subprocess
 from PIL import Image
-from ...run_configuration import RESIZE_WIDTH, RESIZE_HEIGHT
+from ...configuration import RESIZE_WIDTH, RESIZE_HEIGHT
 
 def unify_image_size(input_folder, output_folder, width, height):
     """

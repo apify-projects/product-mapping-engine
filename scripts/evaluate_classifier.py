@@ -1,12 +1,13 @@
 import json
+from math import ceil
 
 import numpy as np
 from matplotlib import pyplot as plt
-from math import ceil
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
-from run_configuration import TEST_SIZE, NUMBER_OF_THRESHS, NUMBER_OF_THRESHS_FOR_AUC, MAX_FP_RATE
+
+from configuration import TEST_SIZE, NUMBER_OF_THRESHS, NUMBER_OF_THRESHS_FOR_AUC, MAX_FP_RATE
 
 
 def setup_classifier(classifier_type, classifier_parameters_file=None):
@@ -199,12 +200,12 @@ def create_thresh(scores, intervals):
 
 
 def plot_train_test_roc(
-    tprs_train,
-    fprs_train,
-    true_test_labels,
-    pred_test_labels_list,
-    threshs,
-    classifier
+        tprs_train,
+        fprs_train,
+        true_test_labels,
+        pred_test_labels_list,
+        threshs,
+        classifier
 ):
     """
     Plot roc curve
