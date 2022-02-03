@@ -404,40 +404,6 @@ def filter_and_save_fp_and_fn(original_dataset):
     fp_train.to_csv(f'fp_dataset.csv', index=False)
 
 
-def preprocess_data_before_training(
-        is_on_platform,
-        dataset_folder='',
-        dataset_dataframe=None,
-        images_kvs1_client=None,
-        images_kvs2_client=None
-):
-    """
-    For each pair of products compute their image and name similarity without saving anything
-    @param dataset_folder: folder containing data to be preprocessed
-    @param dataset_dataframe: dataframe of pairs to be compared
-    @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
-    @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @return: preprocessed data
-    """
-
-    product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
-        os.path.join(dataset_folder, "product_pairs.csv"))
-
-    product_pairs1 = product_pairs.filter(regex='1')
-    product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
-    product_pairs2 = product_pairs.filter(regex='2')
-    product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-
-    dataframes_to_concat = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
-                                                       images_kvs2_client, is_on_platform,
-                                                       filter_data=False)
-
-    if 'match' in product_pairs.columns:
-        dataframes_to_concat.append(product_pairs['match'])
-
-    return pd.concat(dataframes_to_concat, axis=1)
-
-
 def load_model_and_predict_matches(
         dataset_folder,
         classifier_type,
