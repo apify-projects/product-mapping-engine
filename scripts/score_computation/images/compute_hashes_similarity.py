@@ -1,8 +1,6 @@
 from slugify import slugify
 
-NAME_CHAR_SUBSET = 6
-BIT_GROUPS = 4
-HEX_GROUPS = 1
+from ...configuration import HEX_GROUPS_FOR_IMAGE_HASHES
 
 
 def hex_to_dec(hex_val):
@@ -11,7 +9,7 @@ def hex_to_dec(hex_val):
     @param hex_val: hex value of the hash
     @return: decimal value of the hash
     """
-    fourths = [hex_val[i:i + HEX_GROUPS] for i in range(0, len(hex_val), HEX_GROUPS)]
+    fourths = [hex_val[i:i + HEX_GROUPS_FOR_IMAGE_HASHES] for i in range(0, len(hex_val), HEX_GROUPS_FOR_IMAGE_HASHES)]
     return [int(f, 16) for f in fourths]
 
 
@@ -112,7 +110,7 @@ def create_hash_sets(
     @param data: input dict of image name and hash value
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_prefixes: prefixes of images identifying them as parts of a specific dataset
-    @return: list of hashes and list on names of images
+    @return: list of hashes and list on names of images (returns as a list for easier further multithread parallel processing)
     """
     hashes = []
     names = []
@@ -141,4 +139,4 @@ def create_hash_sets(
 
         pair_index += 1
 
-    return hashes, names
+    return [hashes, names]

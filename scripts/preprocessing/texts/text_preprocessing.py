@@ -4,7 +4,7 @@ import re
 import majka
 
 from .keywords_detection import COLOR_MARK
-
+from ...configuration import LOWER_CASE_TEXT, TEXT_LEMMATIZER
 
 def set_czech_lemmatizer():
     """
@@ -57,7 +57,7 @@ def remove_useless_spaces_and_characters(text):
     return text
 
 
-def preprocess_text(data, lower_case_text=True, lemmatizer=None):
+def preprocess_text(data, lower_case_text=LOWER_CASE_TEXT, lemmatizer=TEXT_LEMMATIZER):
     """
     Lowercase and split units and values in dataset
     @param data: list of texts to preprocess

@@ -1,34 +1,41 @@
+import base64
 import copy
 import json
 import os
-import subprocess
+from itertools import islice
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ..preprocessing.images.image_preprocessing import crop_images_contour_detection, create_output_directory
-from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
-    parse_specifications
-from ..preprocessing.texts.text_preprocessing import preprocess_text
+
 from .images.compute_hashes_similarity import create_hash_sets, compute_distances
 from .texts.compute_specifications_similarity import \
-    preprocess_specifications_and_compute_similarity
+    compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
+from ..configuration import COLUMNS, SIMILARITY_NAMES, IMAGE_FILTERING, IMAGE_FILTERING_THRESH
+from ..preprocessing.images.image_preprocessing import compute_image_hashes
+from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
+from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
+    parse_specifications, preprocess_specifications
+from ..preprocessing.texts.text_preprocessing import preprocess_text
 
 
-def load_and_parse_data(input_file):
+def load_and_parse_data(input_files):
     """
     Load input file and split name and hash into dictionary
-    @param input_file: file with hashes and names
+    @param input_files: files with hashes and names
     @return: dictionary with name and has value of the image
     """
     data = {}
-    with open(input_file) as json_file:
-        loaded_data = json.load(json_file)
 
-    for d in loaded_data:
-        dsplit = d.split(';')
-        data[dsplit[0]] = dsplit[1]
+    for input_file in input_files:
+        with open(input_file) as json_file:
+            loaded_data = json.load(json_file)
+
+        for image_name_and_hash_pair in loaded_data:
+            dsplit = image_name_and_hash_pair.split(';')
+            data[dsplit[0]] = dsplit[1]
+
     return data
 
 
@@ -60,38 +67,89 @@ def load_file(name_file):
     return names
 
 
-def preprocess_data_without_saving(
-        dataset_folder='',
-        dataset_dataframe=None,
-        dataset_images_kvs1=None,
-        dataset_images_kvs2=None
-):
+def preprocess_textual_data(dataset,
+                            id_detection=True,
+                            color_detection=True,
+                            brand_detection=True,
+                            units_detection=True):
     """
-    For each pair of products compute their image and name similarity without saving anything
+    Preprocessing of all textual data in dataset column by column
+    @param dataset: dataset to be preprocessed
+    @param id_detection: True if id should be detected
+    @param color_detection: True if color should be detected
+    @param brand_detection: True if brand should be detected
+    @param units_detection: True if units should be detected
+    @return preprocessed dataset
+    """
+    dataset['price'] = pd.to_numeric(dataset['price'])
+    dataset = dataset.sort_values(by=['price'])
+    dataset = parse_specifications_and_create_copies(dataset, 'specification')
+    dataset = add_all_texts_columns(dataset)
+    for column in COLUMNS:
+        if column in dataset:
+            dataset[column] = preprocess_text(dataset[column].values)
+            dataset[column] = detect_ids_brands_colors_and_units(
+                dataset[column],
+                id_detection,
+                color_detection,
+                brand_detection,
+                units_detection
+            )
+    if 'specification' in dataset.columns:
+        dataset['specification'] = preprocess_specifications(dataset['specification'])
+    return dataset
+
+
+def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+                                       is_on_platform,
+                                       dataset_folder='',
+                                       dataset_dataframe=None,
+                                       dataset_images_kvs1=None,
+                                       dataset_images_kvs2=None
+                                       ):
+    """
+    For each pair of products compute their image and name similarity
+    @param dataset1: first dataframe with products
+    @param dataset2: second dataframe with products
+    @param tf_idfs: dictionary of tf.idfs for each text column in products
+    @param descriptive_words:  dictionary of descriptive words for each text column in products
+    @param pool: parallelising object
+    @param num_cpu: number of processes
+    @param is_on_platform: True if this is running on the platform
     @param dataset_folder: folder containing data to be preprocessed
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
-    @return: preprocessed data
+    @return: list of dataframes with image and text similarities
     """
-    product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
+    product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
-    name_similarities = create_text_similarities_data(product_pairs)
 
-    image_similarities = [0] * len(product_pairs)
-    image_similarities = create_image_similarities_data(
-        product_pairs[['id1', 'image1', 'id2', 'image2']].to_dict(orient='records'),
-        dataset_folder=dataset_folder,
-        dataset_images_kvs1=dataset_images_kvs1,
-        dataset_images_kvs2=dataset_images_kvs2
-    )
+    print("Text similarities computation started")
+    name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
+                                                      pool, num_cpu)
+
+    print("Text similarities computation finished")
+
+    pair_identifications = []
+    for source_id, target_ids in product_pairs_idx.items():
+        for target_id in target_ids:
+            pair_identifications.append({
+                'id1': dataset1['id'][source_id],
+                'image1': dataset1['image'][source_id],
+                'id2': dataset2['id'][target_id],
+                'image2': dataset2['image'][target_id],
+            })
+
+    image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
+                                                        pair_identifications,
+                                                        dataset_folder=dataset_folder,
+                                                        dataset_images_kvs1=dataset_images_kvs1,
+                                                        dataset_images_kvs2=dataset_images_kvs2
+                                                        )
     name_similarities = pd.DataFrame(name_similarities)
     image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
-    dataframes_to_concat = [name_similarities, image_similarities]
-    if 'match' in product_pairs.columns:
-        dataframes_to_concat.append(product_pairs['match'])
-
-    return pd.concat(dataframes_to_concat, axis=1)
+    return [name_similarities, image_similarities]
 
 
 def download_images_from_kvs(
@@ -111,14 +169,44 @@ def download_images_from_kvs(
         if not os.path.exists(img_dir):
             os.makedirs(img_dir)
 
-        for item in dataset_images_kvs.list_keys()['items']:
-            image_name = item['key']
-            image_data = dataset_images_kvs.get_record(image_name)['value']
-            with open(os.path.join(img_dir, prefix + '_' + image_name), 'wb') as image_file:
-                image_file.write(image_data)
+        for chunk_record in dataset_images_kvs.list_keys()['items']:
+            chunk = json.loads(dataset_images_kvs.get_record(chunk_record['key'])['value'])
+            for image_name, image_data in chunk.items():
+                with open(os.path.join(img_dir, prefix + '_' + image_name), 'wb') as image_file:
+                    image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
+
+
+def multi_run_compute_image_hashes(args):
+    """
+    Wrapper for passing more arguments to create_hash_sets in parallel way
+    @param args: Arguments of the function
+    @return: call the create_hash_sets in parallel way
+    """
+    return compute_image_hashes(*args)
+
+
+def multi_run_create_images_hash_wrapper(args):
+    """
+    Wrapper for passing more arguments to create_hash_sets in parallel way
+    @param args: Arguments of the function
+    @return: call the create_hash_sets in parallel way
+    """
+    return create_hash_sets(*args)
+
+
+def multi_run_compute_distances_wrapper(args):
+    """
+    Wrapper for passing more arguments to compute_distances in parallel way
+    @param args: Arguments of the function
+    @return: call the compute_distances in parallel way
+    """
+    return compute_distances(*args)
 
 
 def create_image_similarities_data(
+        pool,
+        num_cpu,
+        is_on_platform,
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
@@ -126,6 +214,9 @@ def create_image_similarities_data(
 ):
     """
     Compute images similarities and create dataset with hash similarity
+    @param pool: pool of Python processes (from the multiprocessing library)
+    @param num_cpu: the amount of processes the CPU can handle at once
+    @param is_on_platform: True if this is running on the platform
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
@@ -135,28 +226,51 @@ def create_image_similarities_data(
     if dataset_folder == '':
         dataset_folder = '.'
 
-    img_source_dir = os.path.join(dataset_folder, 'images_cropped')
     img_dir = os.path.join(dataset_folder, 'images')
+    hashes_file_path = os.path.join(dataset_folder, 'precomputed_hashes.json')
 
     dataset_prefixes = ['dataset1', 'dataset2']
-    download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
-    download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
-    create_output_directory(img_source_dir)
-    crop_images_contour_detection(img_dir, img_source_dir)
-    hashes_dir = os.path.join(dataset_folder, "hashes_cropped.json")
-    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                              "../preprocessing/images/image_hash_creator/main.js")
-    subprocess.call(f'node {script_dir} {img_source_dir} {hashes_dir}', shell=True)
-    data = load_and_parse_data(hashes_dir)
-    hashes, names = create_hash_sets(data, pair_ids_and_counts_dataframe, dataset_prefixes)
-    imaged_pairs_similarities = compute_distances(
-        hashes,
-        names,
-        metric='binary',
-        filter_dist=True,
-        thresh=0.9
-    )
+    if is_on_platform and os.path.exists(hashes_file_path):
+        with open(hashes_file_path, 'r') as hashes_file:
+            hashes_data = json.load(hashes_file)
+    else:
+        print("Image download started")
+
+        download_images_from_kvs(img_dir, dataset_images_kvs1, dataset_prefixes[0])
+        download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
+
+        print("Image download finished")
+
+        print("Image preprocessing started")
+        script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                  "../preprocessing/images/image_hash_creator/main.js")
+        image_filenames = os.listdir(img_dir)
+        image_filenames_chunks = np.array_split(image_filenames, num_cpu)
+        hash_files = pool.map(
+            multi_run_compute_image_hashes,
+            [
+                (index, dataset_folder, img_dir, image_filenames_chunk, script_dir)
+                for index, image_filenames_chunk in enumerate(image_filenames_chunks)
+            ]
+        )
+
+        hashes_data = load_and_parse_data(hash_files)
+        if is_on_platform:
+            with open(hashes_file_path, 'w') as hashes_file:
+                json.dump(hashes_data, hashes_file)
+
+    pair_ids_and_counts_dataframe_parts = np.array_split(pair_ids_and_counts_dataframe, num_cpu)
+    hashes_names_list = pool.map(multi_run_create_images_hash_wrapper,
+                                 [(hashes_data, pair_ids_and_counts_dataframe_part, dataset_prefixes) for
+                                  pair_ids_and_counts_dataframe_part in pair_ids_and_counts_dataframe_parts])
+    print("Image preprocessing finished")
+
+    print("Image similarities computation started")
+    imaged_pairs_similarities_list = pool.map(multi_run_compute_distances_wrapper,
+                                              [(item[0], item[1], 'binary', IMAGE_FILTERING, IMAGE_FILTERING_THRESH) for item in hashes_names_list])
+    imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
+    print("Image similarities computation finished")
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []
@@ -167,47 +281,54 @@ def create_image_similarities_data(
     return image_similarities
 
 
-def create_text_similarities_data(product_pairs):
+def chunks(dictionary, dict_num):
+    """
+    Split dictionary into several same parts
+    @param dictionary: dictionary to be split
+    @param dict_num: number or parts
+    @return: list of dict_num dictionaries of the same size
+    """
+    it = iter(dictionary)
+    for i in range(0, len(dictionary), dict_num):
+        yield {k: dictionary[k] for k in islice(it, dict_num)}
+
+
+def multi_run_text_similarities_wrapper(args):
+    """
+    Wrapper for passing more arguments to compute_similarity_of_texts in parallel way
+    @param args: Arguments of the function
+    @return: call the compute_similarity_of_texts in parallel way
+    """
+    return compute_text_similarities_parallely(*args)
+
+
+def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words, pool, num_cpu):
     """
     Compute all the text-based similarities for the product pairs
-    @param product_pairs: product pairs data
+    @param dataset1: first dataset of all products
+    @param dataset2: second dataset of all products
+    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @param tf_idfs: tf.idfs of all words from both datasets
+    @param descriptive_words: decsriptive words from both datasets
+    @param pool: parallelising object
+    @param num_cpu: number of processes
     @return: Similarity scores for the product pairs
     """
-    columns = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
-    similarity_names = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
-    df_all_similarities = create_empty_dataframe(columns, similarity_names)
+    df_all_similarities_list = pool.map(multi_run_text_similarities_wrapper,
+                                        [(dataset1, dataset2, descriptive_words,
+                                          product_pairs_idx_part, tf_idfs) for product_pairs_idx_part in
+                                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))])
+    df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
 
-    product_pairs = parse_specifications_and_create_copies(product_pairs)
-    product_pairs = add_all_texts_columns(product_pairs)
+    # for each column compute the similarity of product pairs selected after filtering
 
-    for column in columns:
-        column1 = f'{column}1'
-        column2 = f'{column}2'
-        if column1 in product_pairs and column2 in product_pairs:
-            dataset1 = preprocess_text(product_pairs[column1].values)
-            dataset2 = preprocess_text(product_pairs[column2].values)
-            columns_similarity = compute_similarity_of_texts(
-                dataset1,
-                dataset2,
-                id_detection=True,
-                color_detection=True,
-                brand_detection=True,
-                units_detection=True
-            )
-            columns_similarity = pd.DataFrame(columns_similarity)
-            for similarity_name, similarity_value in columns_similarity.items():
-                df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
-        else:
-            for similarity_name in similarity_names:
-                df_all_similarities[f'{column}_{similarity_name}'] = 0
-
-    # specification with units and values preprocessed as specification
+    # specification comparison with units and values preprocessed as specification
     df_all_similarities['specification_key_matches'] = 0
     df_all_similarities['specification_key_value_matches'] = 0
 
-    if 'specification1' in product_pairs.columns and 'specification2' in product_pairs.columns:
-        specification_similarity = preprocess_specifications_and_compute_similarity(product_pairs['specification1'],
-                                                                                    product_pairs['specification2'])
+    if 'specification' in dataset1.columns and 'specification' in dataset2.columns:
+        specification_similarity = compute_similarity_of_specifications(dataset1['specification'],
+                                                                        dataset2['specification'], product_pairs_idx)
         specification_similarity = pd.DataFrame(specification_similarity)
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
@@ -215,24 +336,68 @@ def create_text_similarities_data(product_pairs):
     return df_all_similarities
 
 
-def parse_specifications_and_create_copies(dataset):
+def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
+                                        product_pairs_idx, tf_idfs):
+    """
+    Compute similarity score of each pair in both datasets parallelly for each column
+    @param dataset1: first list of texts where each is list of words
+    @param dataset2: second list of texts where each is list of words
+    @param descriptive_words: decsriptive words from both datasets
+    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @param tf_idfs: tf.idfs of all words from both datasets
+    @return: dataset of pair similarity scores
+    """
+    df_all_similarities = create_empty_dataframe(product_pairs_idx)
+    for column in COLUMNS:
+        if column in dataset1 and column in dataset2:
+            columns_similarity = compute_similarity_of_texts(dataset1[column], dataset2[column], product_pairs_idx,
+                                                             tf_idfs[column],
+                                                             descriptive_words[column]
+                                                             )
+
+            columns_similarity = pd.DataFrame(columns_similarity)
+            for similarity_name, similarity_value in columns_similarity.items():
+                df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
+        else:
+            for similarity_name in SIMILARITY_NAMES:
+                df_all_similarities[f'{column}_{similarity_name}'] = 0
+    return df_all_similarities
+
+
+def parse_specifications_and_create_copies(dataset, specification_name):
     """
     Parse specification from json to dict and create copies of them converted to classical text
     @param dataset: dataframe with products
+    @param specification_name: name of the specification column
     @return: dataframe with products with parsed specifications and new columns of specifications converted to text
     """
-    if 'specification1' in dataset.columns:
-        dataset['specification1'] = parse_specifications(dataset['specification1'])
-        dataset['specification_text1'] = convert_specifications_to_texts(
-            copy.deepcopy(dataset['specification1'].values))
-    if 'specification2' in dataset.columns:
-        dataset['specification2'] = parse_specifications(dataset['specification2'])
-        dataset['specification_text2'] = convert_specifications_to_texts(
-            copy.deepcopy(dataset['specification2'].values))
+    if specification_name in dataset.columns:
+        dataset[specification_name] = parse_specifications(dataset[specification_name])
+        specification_name_text = f'{specification_name}_text'
+        if specification_name[-1] in ['1', '2']:
+            specification_name_text = f'{specification_name[:-1]}_text{specification_name[-1]}'
+
+        dataset[specification_name_text] = convert_specifications_to_texts(
+            copy.deepcopy(dataset[specification_name].values))
     return dataset
 
 
 def add_all_texts_columns(dataset):
+    """
+    Add to the dataset column containing all joined texts columns
+    @param dataset: dataframe in which to join text columns
+    @return: dataframe with additional two columns containing all texts for each product
+    """
+    columns = list(dataset.columns)
+    columns_to_remove = ['match', 'image', 'price', 'url', 'index', 'specification']
+    for col in columns_to_remove:
+        if col in columns:
+            columns.remove(col)
+    dataset['all_texts'] = dataset[columns].agg(','.join, axis=1)
+    return dataset
+
+
+def add_all_texts_columns_pairs(dataset):
     """
     Add to the dataset column containing all joined texts columns
     @param dataset: dataframe in which to join text columns
@@ -252,53 +417,36 @@ def add_all_texts_columns(dataset):
     return dataset
 
 
-def create_empty_dataframe(text_types, similarity_names):
+def create_empty_dataframe(product_pairs_idx):
     """
-    Create empty dataframe for text similarity results
-    @param text_types: names of compared types of the text
-    @param similarity_names: names of measured similarities
+    Create empty dataframe for text similarity results with indices of possible pairs after filtration
+    @param product_pairs_idx: indices of filtered possible matching pairs
     @return: empty dataframe with suitable column names for all measured text similarities
     """
+    idxs_array = []
+    for idx1, idxs2 in product_pairs_idx.items():
+        for idx2 in idxs2:
+            idxs_array.append([idx1, idx2])
+    df_column_names = pd.DataFrame(idxs_array,
+                                   columns=['index1',
+                                            'index2'])
+
+    return df_column_names
+
+
+def create_empty_dataframe_for_training(text_types, similarity_names):
+    """
+        Create empty dataframe for text similarity results
+        @param text_types: names of compared types of the text
+        @param similarity_names: names of measured similarities
+        @return: empty dataframe with suitable column names for all measured text similarities
+        """
     df_column_names = []
     for text_type in text_types:
         for similarity_name in similarity_names:
             df_column_names.append(f'{text_type}_{similarity_name}')
     df_all_similarities = pd.DataFrame(columns=df_column_names)
     return df_all_similarities
-
-
-def preprocess_data(dataset_folder):
-    """
-    For each pair of products compute their image and name similarity
-    @param dataset_folder: folder containing data to be preprocessed
-    @return: preprocessed data
-    """
-    name_similarities_path = os.path.join(dataset_folder, "name_similarities.csv")
-    image_similarities_path = os.path.join(dataset_folder, "image_similarities.csv")
-
-    name_similarities_exist = os.path.isfile(name_similarities_path)
-    image_similarities_exist = os.path.isfile(image_similarities_path)
-
-    product_pairs = pd.read_csv(os.path.join(dataset_folder, "product_pairs.csv"))
-    total_count = 0
-    imaged_count = 0
-    for pair in product_pairs.itertuples():
-        total_count += 1
-        if pair.image1 > 0 and pair.image2 > 0:
-            imaged_count += 1
-
-    if not name_similarities_exist or not image_similarities_exist:
-        if not name_similarities_exist:
-            name_similarities_list = create_text_similarities_data(product_pairs)
-            save_to_csv(name_similarities_list, os.path.join(dataset_folder, "name_similarities.csv"))
-
-        if not image_similarities_exist:
-            image_similarities = create_image_similarities_data(total_count, dataset_folder)
-            save_to_csv(image_similarities, os.path.join(dataset_folder, "image_similarities.csv"))
-
-    name_similarities = pd.read_csv(name_similarities_path)
-    image_similarities = pd.read_csv(image_similarities_path)
-    return pd.concat([name_similarities, image_similarities, product_pairs["match"]], axis=1)
 
 
 def analyse_dataset(data):

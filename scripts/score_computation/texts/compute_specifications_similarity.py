@@ -2,40 +2,31 @@ import re
 from difflib import SequenceMatcher
 
 from ...preprocessing.texts.keywords_detection import UNIT_MARK
-from ...preprocessing.texts.specification_preprocessing import preprocess_specifications
+from ...configuration import KEY_SIMILARITY_LIMIT, NUMBER_SIMILARITY_DEVIATION, STRING_SIMILARITY_DEVIATION
 
 
-def preprocess_specifications_and_compute_similarity(dataset1, dataset2):
+def compute_similarity_of_specifications(dataset1, dataset2, product_pairs_idx):
     """
-    Preprocess two datasets of specifications and compute their similarity
-    @param dataset1: first list of list of key-value pairs of products specifications
-    @param dataset2: second list of list of key-value pairs of products specifications
-    @return: similarity of specifications
-    """
-    dataset1 = preprocess_specifications(dataset1)
-    dataset2 = preprocess_specifications(dataset2)
-    similarity_score = compute_similarity_of_specifications(dataset1, dataset2)
-    return similarity_score
-
-
-def compute_similarity_of_specifications(dataset1, dataset2):
-    """
-    Compare two specifications and find common attributes with the same values
+    Compare each possible pair of specifications and find common attributes with the same values
     @param dataset1: first dictionary of specification parameter names and values
     @param dataset2: second dictionary of specification parameter names and values
+    @param product_pairs_idx: indices of candidate matching pairs
     @return: ratio of common attributes with the same values
     """
     similarity_scores = []
-    for product1 in dataset1:
-        for product2 in dataset2:
-            similarities_dict = find_closest_keys(product1, product2, key_similarity_limit=0.9)
+
+    for product_idx, corresponding_indices in product_pairs_idx.items():
+        product1 = dataset1.loc[[product_idx]].values[0]
+        for product2_idx in corresponding_indices:
+            product2 = dataset2.loc[[product2_idx]].values[0]
+            similarities_dict = find_closest_keys(product1, product2, key_similarity_limit=KEY_SIMILARITY_LIMIT)
             matching_keys, matching_keys_and_values = compare_values_similarity(
                 similarities_dict,
-                number_similarity_deviation=0.1,
-                string_similarity_deviation=0.1
+                number_similarity_deviation=NUMBER_SIMILARITY_DEVIATION,
+                string_similarity_deviation=STRING_SIMILARITY_DEVIATION
             )
-            similarity_scores.append({'matching_keys': matching_keys / len(product1),
-                                      'matching_keys_values': matching_keys_and_values / len(product1)})
+            similarity_scores.append({'matching_keys': 0 if not product1 else matching_keys / len(product1),
+                                      'matching_keys_values': 0 if not product1 else matching_keys_and_values / len(product1)})
 
     return similarity_scores
 
@@ -49,11 +40,14 @@ def find_closest_keys(dictionary1, dictionary2, key_similarity_limit):
     @return: dictionary with keys and values from first dictionary supplemented by corresponding values for the same parameter names from the second dictionary
     """
     similarities_dict = {}
-    for key1, value1 in dictionary1.items():
-        similarities_dict[key1] = [value1, None]
-        most_similar_key2 = max(dictionary2.keys(), key=lambda key2: SequenceMatcher(None, key1, key2).ratio())
-        if SequenceMatcher(None, key1, most_similar_key2).ratio() >= key_similarity_limit:
-            similarities_dict[key1] = [value1, dictionary2[most_similar_key2]]
+
+    if dictionary2:
+        for key1, value1 in dictionary1.items():
+            similarities_dict[key1] = [value1, None]
+            most_similar_key2 = max(dictionary2.keys(), key=lambda key2: SequenceMatcher(None, key1, key2).ratio())
+            if SequenceMatcher(None, key1, most_similar_key2).ratio() >= key_similarity_limit:
+                similarities_dict[key1] = [value1, dictionary2[most_similar_key2]]
+
     return similarities_dict
 
 

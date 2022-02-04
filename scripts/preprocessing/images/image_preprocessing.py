@@ -3,8 +3,9 @@ import os
 import shutil
 import cv2
 import numpy as np
+import subprocess
 from PIL import Image
-
+from ...configuration import IMAGE_RESIZE_WIDTH, IMAGE_RESIZE_HEIGHT
 
 def unify_image_size(input_folder, output_folder, width, height):
     """
@@ -50,18 +51,25 @@ def crop_images_simple(input_folder, output_folder):
             cv2.imwrite(output_path, cropped)
 
 
-def crop_images_contour_detection(input_folder, output_folder):
+def crop_images_contour_detection(input_folder, filenames, output_folder):
     """
     Crop images using contour objects detection
     @param input_folder: folder with input images
+    @param filenames: filenames of the images to be cropped
     @param output_folder: folder to store output images
     @return:
     """
-    max_object = True
-    for filename in os.listdir(input_folder):
+    for filename in filenames:
         if imghdr.what(os.path.join(input_folder, filename)) is not None:
             input_path = os.path.join(input_folder, filename)
             image = cv2.imread(input_path)
+
+            # resizing the images to max height and width to increase speed and preserve memory
+            width_resize_ratio = IMAGE_RESIZE_WIDTH / image.shape[1]
+            height_resize_ratio = IMAGE_RESIZE_HEIGHT / image.shape[0]
+            resize_ratio = min(width_resize_ratio, height_resize_ratio)
+            if resize_ratio < 1:
+                image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
 
             # add white border around image
             color = [255, 255, 255]
@@ -85,27 +93,30 @@ def crop_images_contour_detection(input_folder, output_folder):
             dilate = cv2.dilate(canny, kernel, iterations=1)
 
             # finding contours
-            # TODO make sure we have the same version for this
-            #(_, contours, _) = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contours, _ = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            if max_object:
-                # select max object in the picture
-                maxy, maxx, maxw, maxh = 0, 0, 0, 0
-                maxarea = 0
-                for i, c in enumerate(contours):
-                    x, y, w, h = cv2.boundingRect(c)
-                    cropped = image[y:y + h, x:x + w]
-                    # cv2.imwrite(f'{output_folder}{filename[:-4]}_{i}.jpg', cropped) #for 10 products
-                    # cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
-                    if w * h > maxarea:
-                        maxy, maxx, maxw, maxh = y, x, w, h
-                        maxarea = w * h
+            # select max object in the picture
+            maxy, maxx, maxw, maxh = 0, 0, 0, 0
+            maxarea = 0
+            for i, c in enumerate(contours):
+                x, y, w, h = cv2.boundingRect(c)
+                cropped = image[y:y + h, x:x + w]
+                if w * h > maxarea:
+                    maxy, maxx, maxw, maxh = y, x, w, h
+                    maxarea = w * h
 
-                # crop image to the biggest found object
-                cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
-                cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+            # crop image to the biggest found object
+            cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
+            cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
 
+def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, script_dir):
+    index = str(index)
+    cropped_img_dir = os.path.join(dataset_folder, 'images_cropped_{}'.format(index))
+    create_output_directory(cropped_img_dir)
+    crop_images_contour_detection(img_dir, assigned_filenames, cropped_img_dir)
+    hashes_path = os.path.join(dataset_folder, 'hashes_cropped_{}.json'.format(index))
+    subprocess.call(f'node {script_dir} {cropped_img_dir} {hashes_path}', shell=True)
+    return hashes_path
 
 def create_output_directory(output_folder):
     """

@@ -1,10 +1,14 @@
 import json
+from math import ceil
 
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
+
+from configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHS, NUMBER_OF_THRESHS_FOR_AUC, MAX_FP_RATE, \
+    THRESHHOLD_SETTING
 
 
 def setup_classifier(classifier_type, classifier_parameters_file=None):
@@ -19,7 +23,6 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
     classifier_parameters = {}
     if classifier_parameters_file is not None:
         classifier_parameters_path = classifier_parameters_file
-        classifier_parameters_json = '{}'
         with open(classifier_parameters_path, 'r') as classifier_parameters_file:
             classifier_parameters_json = classifier_parameters_file.read()
         classifier_parameters = json.loads(classifier_parameters_json)
@@ -27,42 +30,74 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
     return classifier
 
 
-def train_classifier(classifier, data):
+def train_classifier(classifier, data, plot_and_print_stats=False):
     """
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
+    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @return: train and test datasets with predictions
     """
-    train, test = train_test_split(data, test_size=0.25)
-    classifier.fit(train)
-    train['predicted_match'], train['predicted_scores'] = classifier.predict(train)
-    test['predicted_match'], test['predicted_scores'] = classifier.predict(test)
+    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+    classifier.fit(train_data)
+    train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
+    test_data['predicted_scores'] = classifier.predict(test_data, predict_outputs=False)
+
+    train_stats, test_stats = evaluate_classifier(
+        classifier,
+        train_data,
+        test_data,
+        plot_and_print_stats,
+        THRESHHOLD_SETTING
+    )
     classifier.save()
-    return train, test
+    return train_stats, test_stats
 
 
-def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats):
+def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats, set_threshold=False):
     """
     Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
-    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @param classifier: classifier to train and evaluate
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
+    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
+    @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
     @return: train and test accuracy, recall, specificity, precision
     """
-    train_stats = compute_prediction_accuracies(train_data, 'train')
-    test_stats = compute_prediction_accuracies(test_data, 'test')
-    threshs = create_thresh(train_data['predicted_scores'], 10)
+    threshs = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHS)
     out_train = []
     out_test = []
     for t in threshs:
         out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
         out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
+
+    tprs_train, fprs_train = create_roc_curve_points(train_data['match'].tolist(), out_train, threshs, 'train')
+
+    if set_threshold:
+        optimal_threshold = threshs[0]
+        for x in range(len(threshs)):
+            optimal_threshold = threshs[x]
+            if fprs_train[x] <= MAX_FP_RATE:
+                break
+
+        classifier.set_threshold(optimal_threshold)
+        train_data.drop(columns=['predicted_scores'], inplace=True)
+        train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
+        test_data.drop(columns=['predicted_scores'], inplace=True)
+        test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
+
+    train_stats = compute_prediction_accuracies(train_data, 'train')
+    test_stats = compute_prediction_accuracies(test_data, 'test')
+
     if plot_and_print_stats:
-        plot_roc(train_data['match'].tolist(), out_train, test_data['match'].tolist(), out_test, threshs,
-                 classifier.name)
-        classifier.print_feature_importances()
+        plot_train_test_roc(
+            tprs_train,
+            fprs_train,
+            test_data['match'].tolist(),
+            out_test,
+            threshs,
+            classifier.name
+        )
     return train_stats, test_stats
 
 
@@ -165,19 +200,24 @@ def create_thresh(scores, intervals):
     return [(s[-1]) for s in subarrays][:-1]
 
 
-def plot_train_test_roc(true_train_labels, pred_train_labels_list, true_test_labels, pred_test_labels_list, threshs,
-                        classifier):
+def plot_train_test_roc(
+        tprs_train,
+        fprs_train,
+        true_test_labels,
+        pred_test_labels_list,
+        threshs,
+        classifier
+):
     """
     Plot roc curve
-    @param true_train_labels:  true train labels
-    @param pred_test_labels_list: predicted train labels
+    @param tprs_train: true positive rates for thresholds from the threshs parameter
+    @param fprs_train: false positive rates for thresholds from the threshs parameter
     @param true_train_labels:  true test labels
     @param pred_test_labels_list: predicted test labels
     @param threshs: threshold to evaluate accuracy of similarities
     @param classifier: classifier name to whose plot should be created
     @return:
     """
-    tprs_train, fprs_train = create_roc_curve_points(true_train_labels, pred_train_labels_list, threshs, 'train')
     tprs_test, fprs_test = create_roc_curve_points(true_test_labels, pred_test_labels_list, threshs, 'test')
 
     plt.plot(fprs_train, tprs_train, marker='.', label='train', color='green')
@@ -223,6 +263,8 @@ def create_roc_curve_points(true_labels, pred_labels_list, threshs, label):
     tprs = []
     fprs.append(1)
     tprs.append(1)
+    gap_between_AUC_scores_outputs = ceil(NUMBER_OF_THRESHS / NUMBER_OF_THRESHS_FOR_AUC)
+    threshs_counter = 0
     print(f'AUC score for different threshs for {label} data')
     print('----------------------------')
     for t, pred_labels in zip(threshs, pred_labels_list):
@@ -231,7 +273,9 @@ def create_roc_curve_points(true_labels, pred_labels_list, threshs, label):
         fpr, tpr, _ = roc_curve(true_labels, pred_labels)
         fprs.append(fpr[1])
         tprs.append(tpr[1])
-        print(f'thresh={round(t, 3)} AUC={round(auc, 3)}')
+        if threshs_counter % gap_between_AUC_scores_outputs == 0:
+            print(f'thresh={round(t, 3)} AUC={round(auc, 3)}')
+        threshs_counter += 1
     print('----------------------------')
     print('\n\n')
     fprs.append(0)
