@@ -15,7 +15,7 @@ import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
-from ..configuration import COLUMNS, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
+from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
     MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES
 
@@ -157,7 +157,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS_TO_BE_PREPROCESSED)
     print("Text preprocessing finished")
 
     if filter_data:
@@ -407,22 +407,3 @@ def filter_and_save_fp_and_fn(original_dataset):
     fp_train = joined_datasets[(joined_datasets['match'] == 0) & (joined_datasets['predicted_match'] == 1)]
     fn_train.to_csv(f'fn_dataset.csv', index=False)
     fp_train.to_csv(f'fp_dataset.csv', index=False)
-
-
-def load_model_and_predict_matches(
-        dataset_folder,
-        classifier_type,
-        model_key_value_store_client=None
-):
-    """
-    Directly load model and already created unlabeled dataset with product pairs and predict pairs
-    @param dataset_folder: folder containing test data
-    @param classifier_type: classifier type
-    @param model_key_value_store_client: key-value-store client where the classifier model is stored
-    @return: pair indices of matches
-    """
-    classifier = setup_classifier(classifier_type)
-    classifier.load(key_value_store=model_key_value_store_client)
-    data = create_image_and_text_similarities(os.path.join(os.getcwd(), dataset_folder))
-    data['predicted_match'], data['predicted_scores'] = classifier.predict(data)
-    return data[data['predicted_match'] == 1]

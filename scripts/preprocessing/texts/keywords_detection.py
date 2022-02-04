@@ -6,8 +6,7 @@ import time
 import pandas as pd
 import requests
 
-from ...configuration import MINIMAL_DETECTABLE_ID_LENGTH,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
-
+from ...configuration import MINIMAL_DETECTABLE_ID_LENGTH
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
@@ -22,7 +21,12 @@ PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/
 UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER,
                                              '../../../data/vocabularies/unit_conversion_us-eu.tsv')
 
-
+ID_MARK = '#id#'
+BRAND_MARK = '#bnd#'
+COLOR_MARK = '#col#'
+UNIT_MARK = '#unit#'
+MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
+SIZE_UNITS = ['XXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 
 def load_colors():
@@ -373,3 +377,4 @@ def detect_units(word, previous_word):
     if word in SIZE_UNITS:
         return previous_word, "size " + UNIT_MARK + word
     return previous_word, word
+

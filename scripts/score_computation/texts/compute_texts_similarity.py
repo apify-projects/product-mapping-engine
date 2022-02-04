@@ -6,8 +6,9 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ...configuration import MARKS, BRAND_MARK, ID_MARK, UNIT_MARK, NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
-    MAX_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION
+from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
+    MAX_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED
+from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS
 
 
 def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
@@ -36,42 +37,49 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             match_ratios = {}
 
             # detect and compare ids
-            id2 = [word for word in product2 if ID_MARK in word]
-            match_ratios['id'] = compute_matching_pairs(id1, id2)
+            if 'id' in SIMILARITIES_TO_BE_COMPUTED:
+                id2 = [word for word in product2 if ID_MARK in word]
+                match_ratios['id'] = compute_matching_pairs(id1, id2)
 
             # detect and compare brands
-            bnd2 = [word for word in product2 if BRAND_MARK in word]
-            match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
+            if 'brand' in SIMILARITIES_TO_BE_COMPUTED:
+                bnd2 = [word for word in product2 if BRAND_MARK in word]
+                match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
 
             # ratio of the similar words
-            product2_no_markers = remove_markers(copy.deepcopy(product2))
+            if 'words' in SIMILARITIES_TO_BE_COMPUTED:
+                product2_no_markers = remove_markers(copy.deepcopy(product2))
 
-            intersection = list1.intersection(product2_no_markers)
-            intersection_list = list(intersection)
-            match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
+                intersection = list1.intersection(product2_no_markers)
+                intersection_list = list(intersection)
+                match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
 
-            # cosine similarity of vectors from tf-idf
-            cos_similarity = \
-                cosine_similarity(
-                    [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
-                    1]
+            if 'cos' in SIMILARITIES_TO_BE_COMPUTED:
+                # cosine similarity of vectors from tf-idf
+                cos_similarity = \
+                    cosine_similarity(
+                        [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
+                        1]
+                if product1 == "" or product2 == "":
+                    match_ratios['cos'] = 0
+                else:
+                    match_ratios['cos'] = 2 * cos_similarity - 1
 
-            # commpute number of similar words in both texts
-            descriptive_words_sim = compute_descriptive_words_similarity(
-                descriptive_words.iloc[product_idx].values,
-                descriptive_words.iloc[half_length + product_idx].values
-            ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED:
+                # commpute number of similar words in both texts
+                descriptive_words_sim = compute_descriptive_words_similarity(
+                    descriptive_words.iloc[product_idx].values,
+                    descriptive_words.iloc[half_length + product_idx].values
+                ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+                if product1 == "" or product2 == "":
+                    match_ratios['descriptives'] = 0
+                else:
+                    match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
 
-            if product1 == "" or product2 == "":
-                match_ratios['cos'] = 0
-                match_ratios['descriptives'] = 0
-            else:
-                match_ratios['cos'] = 2 * cos_similarity - 1
-                match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
-
-            # compare ratio of corresponding units and values in both texts
-            match_ratios['units'] = compare_units_and_values(product1, product2)
-            match_ratios_list.append(match_ratios)
+            if 'units' in SIMILARITIES_TO_BE_COMPUTED:
+                # compare ratio of corresponding units and values in both texts
+                match_ratios['units'] = compare_units_and_values(product1, product2)
+                match_ratios_list.append(match_ratios)
 
     return match_ratios_list
 

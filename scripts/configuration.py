@@ -4,20 +4,12 @@ SAVE_PREPROCESSED_PAIRS = True
 SAVE_SIMILARITIES = True
 
 # TEXT PREPROCESSING SETTING
-COLUMNS = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
-SIMILARITY_NAMES = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
+COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
+SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
 LOWER_CASE_TEXT = True
 TEXT_LEMMATIZER = None
 
-
 # KEYWORDS DETECTION SETTING
-ID_MARK = '#id#'
-BRAND_MARK = '#bnd#'
-COLOR_MARK = '#col#'
-UNIT_MARK = '#unit#'
-MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
-SIZE_UNITS = ['XXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
-
 PERFORM_ID_DETECTION = True
 PERFORM_COLOR_DETECTION = True
 PERFORM_BRAND_DETECTION = True
@@ -45,6 +37,8 @@ KEY_SIMILARITY_LIMIT = 0.9
 NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
+COMPUTE_TEXT_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.25

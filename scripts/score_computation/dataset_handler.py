@@ -12,7 +12,8 @@ from .images.compute_hashes_similarity import create_hash_sets, compute_distance
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
-from ..configuration import COLUMNS, SIMILARITY_NAMES, IMAGE_FILTERING, IMAGE_FILTERING_THRESH
+from ..configuration import COLUMNS_TO_BE_PREPROCESSED, SIMILARITIES_TO_BE_COMPUTED, IMAGE_FILTERING, \
+    IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES
 from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
@@ -85,7 +86,7 @@ def preprocess_textual_data(dataset,
     dataset = dataset.sort_values(by=['price'])
     dataset = parse_specifications_and_create_copies(dataset, 'specification')
     dataset = add_all_texts_columns(dataset)
-    for column in COLUMNS:
+    for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset:
             dataset[column] = preprocess_text(dataset[column].values)
             dataset[column] = detect_ids_brands_colors_and_units(
@@ -126,29 +127,40 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
         os.path.join(dataset_folder, "product_pairs.csv"))
 
     print("Text similarities computation started")
-    name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
-                                                      pool, num_cpu)
-
+    if COMPUTE_TEXT_SIMILARITIES:
+        name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs,
+                                                          descriptive_words,
+                                                          pool, num_cpu)
+        name_similarities = pd.DataFrame(name_similarities)
+    else:
+        name_similarities = pd.DataFrame()
     print("Text similarities computation finished")
 
-    pair_identifications = []
-    for source_id, target_ids in product_pairs_idx.items():
-        for target_id in target_ids:
-            pair_identifications.append({
-                'id1': dataset1['id'][source_id],
-                'image1': dataset1['image'][source_id],
-                'id2': dataset2['id'][target_id],
-                'image2': dataset2['image'][target_id],
-            })
+    if COMPUTE_IMAGE_SIMILARITIES:
+        pair_identifications = []
+        for source_id, target_ids in product_pairs_idx.items():
+            for target_id in target_ids:
+                pair_identifications.append({
+                    'id1': dataset1['id'][source_id],
+                    'image1': dataset1['image'][source_id],
+                    'id2': dataset2['id'][target_id],
+                    'image2': dataset2['image'][target_id],
+                })
 
-    image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
-                                                        pair_identifications,
-                                                        dataset_folder=dataset_folder,
-                                                        dataset_images_kvs1=dataset_images_kvs1,
-                                                        dataset_images_kvs2=dataset_images_kvs2
-                                                        )
-    name_similarities = pd.DataFrame(name_similarities)
-    image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
+        image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
+                                                            pair_identifications,
+                                                            dataset_folder=dataset_folder,
+                                                            dataset_images_kvs1=dataset_images_kvs1,
+                                                            dataset_images_kvs2=dataset_images_kvs2
+                                                            )
+        image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
+    else:
+        image_similarities = pd.DataFrame()
+
+    if len(name_similarities) == 0:
+        return image_similarities
+    if len(image_similarities) == 0:
+        return name_similarities
     return [name_similarities, image_similarities]
 
 
@@ -268,7 +280,8 @@ def create_image_similarities_data(
 
     print("Image similarities computation started")
     imaged_pairs_similarities_list = pool.map(multi_run_compute_distances_wrapper,
-                                              [(item[0], item[1], 'binary', IMAGE_FILTERING, IMAGE_FILTERING_THRESH) for item in hashes_names_list])
+                                              [(item[0], item[1], 'binary', IMAGE_FILTERING, IMAGE_FILTERING_THRESH) for
+                                               item in hashes_names_list])
     imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
     print("Image similarities computation finished")
 
@@ -348,7 +361,7 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
     @return: dataset of pair similarity scores
     """
     df_all_similarities = create_empty_dataframe(product_pairs_idx)
-    for column in COLUMNS:
+    for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2:
             columns_similarity = compute_similarity_of_texts(dataset1[column], dataset2[column], product_pairs_idx,
                                                              tf_idfs[column],
@@ -359,7 +372,7 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
             for similarity_name, similarity_value in columns_similarity.items():
                 df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
         else:
-            for similarity_name in SIMILARITY_NAMES:
+            for similarity_name in SIMILARITIES_TO_BE_COMPUTED:
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
     return df_all_similarities
 
