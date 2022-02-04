@@ -6,9 +6,8 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ...configuration import MARKS, BRAND_MARK, ID_MARK, UNIT_MARK, TOP_WORDS, FILTER_LIMIT
-
-
+from ...configuration import MARKS, BRAND_MARK, ID_MARK, UNIT_MARK, NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
+    MAX_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION
 
 
 def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
@@ -16,7 +15,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
-    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @param product_pairs_idx: dict with indices of candidate matching pairs
     @param tf_idfs: tf.idfs of all words from both datasets
     @param descriptive_words: decsriptive words from both datasets
     @return: dataset of pair similarity scores
@@ -53,14 +52,15 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
 
             # cosine similarity of vectors from tf-idf
             cos_similarity = \
-            cosine_similarity([tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
-                1]
+                cosine_similarity(
+                    [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
+                    1]
 
             # commpute number of similar words in both texts
             descriptive_words_sim = compute_descriptive_words_similarity(
                 descriptive_words.iloc[product_idx].values,
                 descriptive_words.iloc[half_length + product_idx].values
-            ) / TOP_WORDS
+            ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
 
             if product1 == "" or product2 == "":
                 match_ratios['cos'] = 0
@@ -168,12 +168,11 @@ def compute_tf_idf(dataset, print_stats=False):
     return tf_idfs
 
 
-
 def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
     """
     Create tf.idfs and descriptive words for each column in the dataset
-    @param dataset1: first dataframe in which create tf.idfs and descriptive words
-    @param dataset2: second dataframe in which create tf.idfs and descriptive words
+    @param dataset1: first dataframe in which to create tf.idfs and descriptive words
+    @param dataset2: second dataframe in which to create tf.idfs and descriptive words
     @param columns: list of columns to create tf.idfs and descriptive words in
     @return: dict with tf.idfs and descriptive words for each column
     """
@@ -182,7 +181,7 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
     for column in columns:
         tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
         descriptive_words_col = find_descriptive_words(
-            tf_idfs_col, filter_limit=FILTER_LIMIT, number_of_top_words=TOP_WORDS
+            tf_idfs_col, filter_limit=MAX_WORD_OCCURRENCES_IN_TEXTS, number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
         )
         tf_idfs[column] = tf_idfs_col
         descriptive_words[column] = descriptive_words_col
@@ -197,13 +196,13 @@ def remove_markers(dataset):
     """
     for text in dataset:
         for j, word in enumerate(text):
-            for m in MARKS:
-                if m in word:
-                    text[j] = word.replace(m, '')
+            for mark_token in MARKS:
+                if mark_token in word:
+                    text[j] = word.replace(mark_token, '')
     return dataset
 
 
-def compare_units_and_values(text1, text2, devation=0.05):
+def compare_units_and_values(text1, text2, devation=UNITS_AND_VALUES_DEVIATION):
     """
     Compare detected units from the texts
     @param text1: List of words for unit detection and comparison

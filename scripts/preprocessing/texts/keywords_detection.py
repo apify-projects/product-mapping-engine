@@ -6,7 +6,7 @@ import time
 import pandas as pd
 import requests
 
-from ...configuration import ID_LEN,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
+from ...configuration import MINIMAL_DETECTABLE_ID_LENGTH,SIZE_UNITS, ID_MARK, COLOR_MARK, BRAND_MARK, UNIT_MARK
 
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -175,7 +175,7 @@ def detect_id(word, next_word):
     # check whether is capslock ad whether is not too short
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
     if (not word_sub.isupper() and word_sub.isalpha()) or len(
-            word_sub) < ID_LEN or is_in_vocabulary(word):
+            word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word):
         return word
 
     if word_sub.isnumeric() and is_word_unit(next_word):
@@ -235,7 +235,7 @@ def detect_brand(word, is_first, first_likelihood):
     if word.lower() in BRANDS:
         is_brand = True
     elif is_first:
-        if (word.isalpha() and len(word) < ID_LEN and word.isupper()) or first_likelihood > 0.9:
+        if (word.isalpha() and len(word) < MINIMAL_DETECTABLE_ID_LENGTH and word.isupper()) or first_likelihood > 0.9:
             is_brand = True
 
     return BRAND_MARK + word if is_brand else word

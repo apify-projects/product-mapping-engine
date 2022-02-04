@@ -12,7 +12,7 @@ from .images.compute_hashes_similarity import create_hash_sets, compute_distance
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
-from ..configuration import COLUMNS, SIMILARITY_NAMES
+from ..configuration import COLUMNS, SIMILARITY_NAMES, IMAGE_FILTERING, IMAGE_FILTERING_THRESH
 from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
@@ -268,7 +268,7 @@ def create_image_similarities_data(
 
     print("Image similarities computation started")
     imaged_pairs_similarities_list = pool.map(multi_run_compute_distances_wrapper,
-                                              [(item[0], item[1], 'binary', True, 0.9) for item in hashes_names_list])
+                                              [(item[0], item[1], 'binary', IMAGE_FILTERING, IMAGE_FILTERING_THRESH) for item in hashes_names_list])
     imaged_pairs_similarities = [item for sublist in imaged_pairs_similarities_list for item in sublist]
     print("Image similarities computation finished")
 

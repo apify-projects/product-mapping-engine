@@ -15,7 +15,9 @@ import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
-from ..configuration import COLUMNS
+from ..configuration import COLUMNS, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
+    MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES
 
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
@@ -37,7 +39,8 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
             second_product_descriptive_words
         )
 
-        if len(set(product['name']) & set(second_product['name'])) > 0 and descriptive_words_sim > 0:
+        if len(set(product['name']) & set(second_product[
+                                              'name'])) > MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and descriptive_words_sim > MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
             data_subset = data_subset.append(second_product)
 
     return data_subset
@@ -81,8 +84,8 @@ def load_model_create_dataset_and_predict_matches(
         classifier_type,
         model_key_value_store_client=None,
         task_id="basic",
-        is_on_platform=False,
-        save_preprocessed_pairs=True
+        is_on_platform=IS_ON_PLATFORM,
+        save_preprocessed_pairs=SAVE_PREPROCESSED_PAIRS
 ):
     """
     For each product in first dataset find same products in the second dataset
@@ -130,7 +133,7 @@ def load_model_create_dataset_and_predict_matches(
 def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client, is_on_platform,
                                 filter_data):
     """
-    Preprocess data, eventually filter data pairs and compute similarities
+    Preprocess data, possibly filter data pairs and compute similarities
     @param dataset1: Source dataframe of products
     @param dataset2: Target dataframe with products to be searched in for the same products
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
@@ -149,8 +152,10 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     dataset2_copy = copy.deepcopy(dataset2)
     dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
     dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
-    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, True, True, True, True)
-    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, True, True, True, True)
+    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
+                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
+    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
+                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS)
     print("Text preprocessing finished")
@@ -256,8 +261,8 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
     idx_start, idx_to = 0, 0
 
     if 'price' in product.index.values and 'price' in dataset2:
-        idx_start = bisect.bisect_left(dataset2['price'].values, 0.67 * product['price'])
-        idx_to = bisect.bisect(dataset2['price'].values, product['price'] * 1.33)
+        idx_start = bisect.bisect_left(dataset2['price'].values, MIN_MATCH_PRICE_RATIO * product['price'])
+        idx_to = bisect.bisect(dataset2['price'].values, product['price'] * MAX_MATCH_PRICE_RATIO)
         if idx_to == len(dataset2):
             idx_to -= 1
 
@@ -338,8 +343,8 @@ def load_data_and_train_model(
         images_kvs2_client=None,
         output_key_value_store_client=None,
         task_id="basic",
-        is_on_platform=False,
-        save_similarities=True
+        is_on_platform=IS_ON_PLATFORM,
+        save_similarities=SAVE_SIMILARITIES
 ):
     """
     Load dataset and train and save model

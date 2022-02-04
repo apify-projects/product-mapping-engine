@@ -7,7 +7,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from configuration import TEST_SIZE, NUMBER_OF_THRESHS, NUMBER_OF_THRESHS_FOR_AUC, MAX_FP_RATE
+from configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHS, NUMBER_OF_THRESHS_FOR_AUC, MAX_FP_RATE, \
+    THRESHHOLD_SETTING
 
 
 def setup_classifier(classifier_type, classifier_parameters_file=None):
@@ -37,7 +38,7 @@ def train_classifier(classifier, data, plot_and_print_stats=False):
     @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @return: train and test datasets with predictions
     """
-    train_data, test_data = train_test_split(data, test_size=TEST_SIZE)
+    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
     classifier.fit(train_data)
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
     test_data['predicted_scores'] = classifier.predict(test_data, predict_outputs=False)
@@ -47,7 +48,7 @@ def train_classifier(classifier, data, plot_and_print_stats=False):
         train_data,
         test_data,
         plot_and_print_stats,
-        True
+        THRESHHOLD_SETTING
     )
     classifier.save()
     return train_stats, test_stats

@@ -2,14 +2,15 @@ import re
 from difflib import SequenceMatcher
 
 from ...preprocessing.texts.keywords_detection import UNIT_MARK
+from ...configuration import KEY_SIMILARITY_LIMIT, NUMBER_SIMILARITY_DEVIATION, STRING_SIMILARITY_DEVIATION
 
 
 def compute_similarity_of_specifications(dataset1, dataset2, product_pairs_idx):
     """
-    Compare each possible pairs of specifications and find common attributes with the same values
+    Compare each possible pair of specifications and find common attributes with the same values
     @param dataset1: first dictionary of specification parameter names and values
     @param dataset2: second dictionary of specification parameter names and values
-    @param product_pairs_idx: indices of filtered possible matching pairs
+    @param product_pairs_idx: indices of candidate matching pairs
     @return: ratio of common attributes with the same values
     """
     similarity_scores = []
@@ -18,11 +19,11 @@ def compute_similarity_of_specifications(dataset1, dataset2, product_pairs_idx):
         product1 = dataset1.loc[[product_idx]].values[0]
         for product2_idx in corresponding_indices:
             product2 = dataset2.loc[[product2_idx]].values[0]
-            similarities_dict = find_closest_keys(product1, product2, key_similarity_limit=0.9)
+            similarities_dict = find_closest_keys(product1, product2, key_similarity_limit=KEY_SIMILARITY_LIMIT)
             matching_keys, matching_keys_and_values = compare_values_similarity(
                 similarities_dict,
-                number_similarity_deviation=0.1,
-                string_similarity_deviation=0.1
+                number_similarity_deviation=NUMBER_SIMILARITY_DEVIATION,
+                string_similarity_deviation=STRING_SIMILARITY_DEVIATION
             )
             similarity_scores.append({'matching_keys': 0 if not product1 else matching_keys / len(product1),
                                       'matching_keys_values': 0 if not product1 else matching_keys_and_values / len(product1)})
