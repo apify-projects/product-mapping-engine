@@ -15,7 +15,8 @@ import copy
 from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
-from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
+from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, \
+    MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
     MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES
 
@@ -110,18 +111,22 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
         pair_identifications = pd.read_csv(pair_identifications_file_path)
     else:
-        pair_identifications, preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
-                                                                               images_kvs2_client, is_on_platform,
-                                                                               filter_data=True)
+        dataset1 = dataset1.head(10)
+        dataset2 = dataset2.head(10)
+        preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
+                                                         images_kvs2_client, is_on_platform,
+                                                         filter_data=True)
     if not is_on_platform and save_preprocessed_pairs:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
         pair_identifications.to_csv(pair_identifications_file_path)
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
-        preprocessed_pairs)
-    preprocessed_pairs = pd.concat([pair_identifications, preprocessed_pairs], axis=1)
+        preprocessed_pairs.drop(['index1', 'index2'], axis=1))
 
     if not is_on_platform:
+        for i in preprocessed_pairs.index:
+            preprocessed_pairs.at[i, 'id1'] = dataset1.loc[preprocessed_pairs.at[i, 'index1'], 'name']
+            preprocessed_pairs.at[i, 'id2'] = dataset2.loc[preprocessed_pairs.at[i, 'index2'], 'name']
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
@@ -157,7 +162,8 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy, COLUMNS_TO_BE_PREPROCESSED)
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy,
+                                                                      COLUMNS_TO_BE_PREPROCESSED)
     print("Text preprocessing finished")
 
     if filter_data:
@@ -181,6 +187,8 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
                                                                      dataset_images_kvs1=images_kvs1_client,
                                                                      dataset_images_kvs2=images_kvs2_client
                                                                      )
+    image_and_text_similarities = pd.concat(
+        [dataframe for dataframe in image_and_text_similarities if len(dataframe) != 0], axis=1)
     print("Similarities creation ended")
     return image_and_text_similarities
 
@@ -372,14 +380,13 @@ def load_data_and_train_model(
         product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
         product_pairs2 = product_pairs.filter(regex='2')
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-
-        similarities_to_concat = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
-                                                             images_kvs2_client, is_on_platform,
-                                                             filter_data=False)
-
+        preprocessed_pairs = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
+                                                         images_kvs2_client, is_on_platform,
+                                                         filter_data=False)
+        preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
+        similarities_to_concat = [preprocessed_pairs]
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
-
         similarities = pd.concat(similarities_to_concat, axis=1)
         if not is_on_platform and save_similarities:
             similarities.to_csv(similarities_file_path, index=False)

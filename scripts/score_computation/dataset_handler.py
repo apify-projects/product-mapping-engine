@@ -126,17 +126,22 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
         os.path.join(dataset_folder, "product_pairs.csv"))
 
-    print("Text similarities computation started")
+    if not COMPUTE_IMAGE_SIMILARITIES and not COMPUTE_TEXT_SIMILARITIES:
+        print('No similarities to be computed. Check value of COMPUTE_IMAGE_SIMILARITIES and COMPUTE_TEXT_SIMILARITIES.')
+        exit()
+
     if COMPUTE_TEXT_SIMILARITIES:
+        print("Text similarities computation started")
         name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs,
                                                           descriptive_words,
                                                           pool, num_cpu)
-        name_similarities = pd.DataFrame(name_similarities)
+        print("Text similarities computation finished")
     else:
         name_similarities = pd.DataFrame()
-    print("Text similarities computation finished")
+
 
     if COMPUTE_IMAGE_SIMILARITIES:
+        print("Image similarities computation started")
         pair_identifications = []
         for source_id, target_ids in product_pairs_idx.items():
             for target_id in target_ids:
@@ -154,13 +159,10 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
                                                             dataset_images_kvs2=dataset_images_kvs2
                                                             )
         image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
+        print("Image similarities computation finished")
     else:
         image_similarities = pd.DataFrame()
 
-    if len(name_similarities) == 0:
-        return image_similarities
-    if len(image_similarities) == 0:
-        return name_similarities
     return [name_similarities, image_similarities]
 
 
