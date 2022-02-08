@@ -49,17 +49,13 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             # ratio of the similar words
             if 'words' in SIMILARITIES_TO_BE_COMPUTED:
                 product2_no_markers = remove_markers(copy.deepcopy(product2))
-
-                intersection = list1.intersection(product2_no_markers)
-                intersection_list = list(intersection)
                 match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
 
             if 'cos' in SIMILARITIES_TO_BE_COMPUTED:
                 # cosine similarity of vectors from tf-idf
-                cos_similarity = \
-                    cosine_similarity(
-                        [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values])[0][
-                        1]
+                cos_similarity = cosine_similarity(
+                    [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values]
+                )[0][1]
                 if product1 == "" or product2 == "":
                     match_ratios['cos'] = 0
                 else:
@@ -224,7 +220,7 @@ def compare_units_and_values(text1, text2, devation=UNITS_AND_VALUES_DEVIATION):
     total_len = len(units_list1) + len(units_list2)
     for u1 in units_list1:
         for u2 in units_list2:
-            if u1[0] == u2[0] and u1[1] > (1 - devation) * u2[1] and u1[1] < (1 + devation) * u2[1]:
+            if u1[0] == u2[0] and (1 - devation) * u2[1] < u1[1] < (1 + devation) * u2[1]:
                 matches += 1
     if matches == 0:
         return 0

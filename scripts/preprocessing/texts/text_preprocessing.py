@@ -114,16 +114,16 @@ def lower_case(word_list):
     @param word_list: list of words
     @return: lowercased list of words
     """
-    lowercased_word_list = []
+    lowercase_word_list = []
     for word in word_list:
-        lowercased_word_list.append(word.lower())
-    return lowercased_word_list
+        lowercase_word_list.append(word.lower())
+    return lowercase_word_list
 
 
 def remove_colors(word_list):
     """
     Remove colors from list of words
-    @param text: original list of words
+    @param word_list: original list of words
     @return: list of words without colors
     """
     nocolor_word_list = []

@@ -127,7 +127,8 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
         os.path.join(dataset_folder, "product_pairs.csv"))
 
     if not COMPUTE_IMAGE_SIMILARITIES and not COMPUTE_TEXT_SIMILARITIES:
-        print('No similarities to be computed. Check value of COMPUTE_IMAGE_SIMILARITIES and COMPUTE_TEXT_SIMILARITIES.')
+        print(
+            'No similarities to be computed. Check value of COMPUTE_IMAGE_SIMILARITIES and COMPUTE_TEXT_SIMILARITIES.')
         exit()
 
     if COMPUTE_TEXT_SIMILARITIES:
@@ -138,7 +139,6 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
         print("Text similarities computation finished")
     else:
         name_similarities = pd.DataFrame()
-
 
     if COMPUTE_IMAGE_SIMILARITIES:
         print("Image similarities computation started")
@@ -158,12 +158,15 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
                                                             dataset_images_kvs1=dataset_images_kvs1,
                                                             dataset_images_kvs2=dataset_images_kvs2
                                                             )
-        image_similarities = pd.DataFrame(image_similarities, columns=['hash_similarity'])
         print("Image similarities computation finished")
     else:
         image_similarities = pd.DataFrame()
 
-    return [name_similarities, image_similarities]
+    if len(name_similarities) == 0:
+        return image_similarities
+    if len(image_similarities) == 0:
+        return name_similarities
+    return pd.concat([name_similarities, image_similarities['hash_similarity']], axis=1)
 
 
 def download_images_from_kvs(
@@ -289,11 +292,15 @@ def create_image_similarities_data(
 
     # Correctly order the similarities and fill in 0 similarities for pairs that don't have images
     image_similarities = []
+    image_similarities_df = pd.DataFrame(columns=['id1', 'id2', 'hash_similarity'])
+    image_similarities_df['id1'] = [item['id1'] for item in pair_ids_and_counts_dataframe]
+    image_similarities_df['id2'] = [item['id2'] for item in pair_ids_and_counts_dataframe]
     for x in range(len(pair_ids_and_counts_dataframe)):
         image_similarities.append(0)
     for index, similarity in imaged_pairs_similarities:
         image_similarities[index] = similarity
-    return image_similarities
+    image_similarities_df['hash_similarity'] = image_similarities
+    return image_similarities_df
 
 
 def chunks(dictionary, dict_num):
@@ -348,6 +355,7 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
+    df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
     return df_all_similarities
 
 
@@ -362,7 +370,7 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
     @param tf_idfs: tf.idfs of all words from both datasets
     @return: dataset of pair similarity scores
     """
-    df_all_similarities = create_empty_dataframe(product_pairs_idx)
+    df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx)
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2:
             columns_similarity = compute_similarity_of_texts(dataset1[column], dataset2[column], product_pairs_idx,
@@ -376,6 +384,26 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
         else:
             for similarity_name in SIMILARITIES_TO_BE_COMPUTED:
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
+    return df_all_similarities
+
+
+def create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx):
+    """
+    Create dataframe for text similarity results with ids of possible pairs after filtration
+    @param product_pairs_idx: indices of filtered possible matching pairs
+    @param dataset1: dataframe of the products from the first dataset
+    @param dataset2: dataframe of the products from the second dataset
+    @return: dataframe with ids of compared products
+    """
+    dataset1_ids = []
+    dataset2_ids = []
+    for product_id in product_pairs_idx:
+        ids1 = [product_id] * len(product_pairs_idx[product_id])
+        dataset1_ids = [dataset1['id'][i] for i in ids1]
+        dataset2_ids = [dataset2['id'][i] for i in product_pairs_idx[product_id]]
+    df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
+    df_all_similarities['id1'] = dataset1_ids
+    df_all_similarities['id2'] = dataset2_ids
     return df_all_similarities
 
 
@@ -425,43 +453,11 @@ def add_all_texts_columns_pairs(dataset):
         if col in columns:
             columns.remove(col)
 
-    columns1 = [x for x in columns if not '2' in x]
-    columns2 = [x for x in columns if not '1' in x]
+    columns1 = [x for x in columns if '2' not in x]
+    columns2 = [x for x in columns if '1' not in x]
     dataset['all_texts1'] = dataset[columns1].agg(','.join, axis=1)
     dataset['all_texts2'] = dataset[columns2].agg(','.join, axis=1)
     return dataset
-
-
-def create_empty_dataframe(product_pairs_idx):
-    """
-    Create empty dataframe for text similarity results with indices of possible pairs after filtration
-    @param product_pairs_idx: indices of filtered possible matching pairs
-    @return: empty dataframe with suitable column names for all measured text similarities
-    """
-    idxs_array = []
-    for idx1, idxs2 in product_pairs_idx.items():
-        for idx2 in idxs2:
-            idxs_array.append([idx1, idx2])
-    df_column_names = pd.DataFrame(idxs_array,
-                                   columns=['index1',
-                                            'index2'])
-
-    return df_column_names
-
-
-def create_empty_dataframe_for_training(text_types, similarity_names):
-    """
-        Create empty dataframe for text similarity results
-        @param text_types: names of compared types of the text
-        @param similarity_names: names of measured similarities
-        @return: empty dataframe with suitable column names for all measured text similarities
-        """
-    df_column_names = []
-    for text_type in text_types:
-        for similarity_name in similarity_names:
-            df_column_names.append(f'{text_type}_{similarity_name}')
-    df_all_similarities = pd.DataFrame(columns=df_column_names)
-    return df_all_similarities
 
 
 def analyse_dataset(data):

@@ -40,14 +40,14 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
             second_product_descriptive_words
         )
 
-        if len(set(product['name']) & set(second_product[
-                                              'name'])) > MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and descriptive_words_sim > MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
+        if len(set(product['name']) & set(second_product['name'])) > MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and \
+                descriptive_words_sim > MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
             data_subset = data_subset.append(second_product)
 
     return data_subset
 
 
-def multi_run_text_prepro_wrapper(args):
+def multi_run_text_preprocessing_wrapper(args):
     """
     Wrapper for passing more arguments to preprocess_textual_data in parallel way
     @param args: Arguments of the function
@@ -60,7 +60,7 @@ def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_dete
                                 units_detection):
     """
     Preprocessing of all textual data in dataset in parallel way
-    @param pool: parallelising object
+    @param pool: parallelling object
     @param num_cpu: number of processes
     @param dataset: dataframe to be preprocessed
     @param id_detection: True if id should be detected
@@ -70,7 +70,7 @@ def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_dete
     @return preprocessed dataset
     """
     dataset_list = np.array_split(dataset, num_cpu)
-    dataset_list_prepro = pool.map(multi_run_text_prepro_wrapper,
+    dataset_list_prepro = pool.map(multi_run_text_preprocessing_wrapper,
                                    [(item, id_detection, color_detection, brand_detection, units_detection) for item in
                                     dataset_list])
     dataset_prepro = pd.concat(dataset_list_prepro)
@@ -109,10 +109,9 @@ def load_model_create_dataset_and_predict_matches(
 
     if save_preprocessed_pairs and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
+        # TODO: k cemu tohle je?
         pair_identifications = pd.read_csv(pair_identifications_file_path)
     else:
-        dataset1 = dataset1.head(10)
-        dataset2 = dataset2.head(10)
         preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
                                                          images_kvs2_client, is_on_platform,
                                                          filter_data=True)
@@ -120,13 +119,12 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
         pair_identifications.to_csv(pair_identifications_file_path)
 
-    preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
-        preprocessed_pairs.drop(['index1', 'index2'], axis=1))
+    if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
+        preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
+    preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
+        preprocessed_pairs.drop(['id1', 'id2'], axis=1))
     if not is_on_platform:
-        for i in preprocessed_pairs.index:
-            preprocessed_pairs.at[i, 'id1'] = dataset1.loc[preprocessed_pairs.at[i, 'index1'], 'name']
-            preprocessed_pairs.at[i, 'id2'] = dataset2.loc[preprocessed_pairs.at[i, 'index2'], 'name']
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
@@ -147,7 +145,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     @param filter_data: True whether filtering during similarity computations should be performed
     @return: dataframe with image and text similarities
     """
-    # setup parallelising stuff
+    # setup parallelling stuff
     pool = Pool()
     num_cpu = os.cpu_count()
 
@@ -187,8 +185,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
                                                                      dataset_images_kvs1=images_kvs1_client,
                                                                      dataset_images_kvs2=images_kvs2_client
                                                                      )
-    image_and_text_similarities = pd.concat(
-        [dataframe for dataframe in image_and_text_similarities if len(dataframe) != 0], axis=1)
+
     print("Similarities creation ended")
     return image_and_text_similarities
 
@@ -234,10 +231,13 @@ def multi_run_filter_wrapper(args):
 def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu):
     """
     Filter possible pairs of two datasets using price similar words and descriptive words filter
+    @param pool: parallelling object
+    @param num_cpu: number of processes
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
     @param descriptive_words: dictionary of descriptive words for each text column in products
-    @return dict with key as indices of products from the first dataset and values as indices of filtered possible matching products from second dataset
+    @return dict with key as indices of products from the first dataset and
+            values as indices of filtered possible matching products from second dataset
     """
     dataset2_no_price_idx = dataset2.index[dataset2['price'] == 0].tolist()
     dataset1 = dataset1.sort_values(by=['price'])
@@ -263,7 +263,8 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
     @param descriptive_words: dictionary of descriptive words for each text column in products
-    @return dict with key as indices of products from the first dataset and values as indices of filtered possible matching products from second dataset
+    @return dict with key as indices of products from the first dataset and
+            values as indices of filtered possible matching products from second dataset
     """
     product = dataset1.iloc[0, :]
     idx_start, idx_to = 0, 0
@@ -336,7 +337,7 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         data_filtered = dataset.iloc[idx_from:idx_to]
     if 'category' in product.index.values and 'category' in dataset:
         data_filtered = data_filtered[
-            data_filtered['category'] == product['category'] or data_filtered['category'] == None]
+            data_filtered['category'] == product['category'] or data_filtered['category'] is None]
 
     data_filtered = filter_products_with_no_similar_words(product, product_descriptive_words, data_filtered,
                                                           dataset_start_index, descriptive_words['all_texts'])
@@ -383,7 +384,8 @@ def load_data_and_train_model(
         preprocessed_pairs = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
                                                          images_kvs2_client, is_on_platform,
                                                          filter_data=False)
-        preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
+        if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
+            preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
         similarities_to_concat = [preprocessed_pairs]
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
@@ -392,7 +394,8 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
-    train_stats, test_stats = train_classifier(classifier, similarities, plot_and_print_stats=not is_on_platform)
+    train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']),
+                                               plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
 
     return train_stats, test_stats
