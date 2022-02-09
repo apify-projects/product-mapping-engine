@@ -6,11 +6,11 @@ import pandas as pd
 import pydot
 from sklearn import svm
 from sklearn import tree
+from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier as RandomForests
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
-from sklearn.decomposition import PCA
 
 from evaluate_classifier import plot_train_test_roc
 
@@ -89,7 +89,8 @@ class Classifier:
                 self.pca = pickle.loads(key_value_store.get_record('pca')['value'])
 
     def dataframe_pca_results(self, pca_result, auxiliary_columns, auxiliary_data, principal_component_count):
-        dataframe = pd.DataFrame(pca_result, columns=["principal_component_{}".format(component) for component in range(1, principal_component_count+1)])
+        dataframe = pd.DataFrame(pca_result, columns=["principal_component_{}".format(component) for component in
+                                                      range(1, principal_component_count + 1)])
         auxiliary_data = auxiliary_data.reset_index(drop=True)
         for column in auxiliary_columns:
             dataframe[column] = auxiliary_data[column]
@@ -130,7 +131,11 @@ class LinearRegressionClassifier(Classifier):
             return scores
 
     def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, self.model.coef_[0]))}:')
+        print(
+            f'Feature importance for {self.name} \n '
+            f'{dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.coef_]))}'
+        )
+
 
 class LogisticRegressionClassifier(Classifier):
     def __init__(self, weights):
@@ -139,13 +144,16 @@ class LogisticRegressionClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.coef_[0]]))}')
+        print(
+            f'Feature importance for {self.name} \n '
+            f'{dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.coef_[0]]))}'
+        )
 
 
 class SvmLinearClassifier(Classifier):
     def __init__(self, weights):
         super().__init__(weights)
-        self.kernel = 'poly'  # linear, rbf, poly
+        self.kernel = 'linear'
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -160,9 +168,6 @@ class SvmRbfClassifier(Classifier):
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self, feature_names):
-        print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
-
 
 class SvmPolyClassifier(Classifier):
     def __init__(self, weights):
@@ -170,9 +175,6 @@ class SvmPolyClassifier(Classifier):
         self.kernel = 'poly'
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
-
-    def print_feature_importance(self, feature_names):
-        print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
 
 
 class NeuralNetworkClassifier(Classifier):
@@ -183,7 +185,9 @@ class NeuralNetworkClassifier(Classifier):
 
     def print_feature_importance(self, feature_names):
         print(
-            f'Number of layers: {self.model.n_layers_} and their shapes; {len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}')
+            f'Number of layers: {self.model.n_layers_} and their shapes; '
+            f'{len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}'
+        )
         print(f'Feature importance for {self.name} \n')
         for i, weights in enumerate(self.model.coefs_):
             weights = [[round(w, 4) for w in weight] for weight in weights]
@@ -197,12 +201,15 @@ class DecisionTreeClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {self.model.feature_importances_}')
+        print(
+            f'Feature importance for {self.name} \n '
+            f'{dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.feature_importances_]))}'
+        )
         dot_data = StringIO()
         tree.export_graphviz(self.model, out_file=dot_data, filled=True, rounded=True, special_characters=False,
-                             impurity=False, feature_names=list(self.weights.keys())[:-1])
+                             impurity=False, feature_names=feature_names)
         graph = pydot.graph_from_dot_data(dot_data.getvalue())
-        graph[0].write_pdf("results/decision_tree.pdf")
+        graph[0].write_pdf("decision_tree.pdf")
 
 
 class RandomForestsClassifier(Classifier):
@@ -212,10 +219,11 @@ class RandomForestsClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {self.model.feature_importances_}')
+        print(f'Feature importance for {self.name} \n '
+              f'{dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.feature_importances_]))}')
         for i, one_tree in enumerate(self.model.estimators_):
             dot_data = StringIO()
             tree.export_graphviz(one_tree, out_file=dot_data, filled=True, rounded=True, special_characters=False,
-                                 impurity=False, feature_names=list(self.weights.keys())[:-1])
+                                 impurity=False, feature_names=feature_names)
             graph = pydot.graph_from_dot_data(dot_data.getvalue())
-            graph[0].write_pdf(f"results/random_forests_{i}.pdf")
+            graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
