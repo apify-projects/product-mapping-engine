@@ -48,7 +48,7 @@ class Classifier:
     def render_roc(self, true_labels, predicted_labels_list, threshes, print_stats):
         plot_train_test_roc(true_labels, predicted_labels_list, threshes, print_stats)
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         pass
 
     def set_threshold(self, threshold):
@@ -129,9 +129,8 @@ class LinearRegressionClassifier(Classifier):
         else:
             return scores
 
-    def print_feature_importance(self):
-        print(f'Feature importances for {self.name} \n {self.model.coef_}')
-
+    def print_feature_importance(self, feature_names):
+        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, self.model.coef_[0]))}:')
 
 class LogisticRegressionClassifier(Classifier):
     def __init__(self, weights):
@@ -139,8 +138,8 @@ class LogisticRegressionClassifier(Classifier):
         self.model = LogisticRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
-        print(f'Feature importance for {self.name} \n {self.model.coef_}')
+    def print_feature_importance(self, feature_names):
+        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.coef_[0]]))}')
 
 
 class SvmLinearClassifier(Classifier):
@@ -150,8 +149,8 @@ class SvmLinearClassifier(Classifier):
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
-        print(f'Feature importances for {self.name} \n {self.model.coef_}')
+    def print_feature_importance(self, feature_names):
+        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, self.model.coef_[0]))}')
 
 
 class SvmRbfClassifier(Classifier):
@@ -161,7 +160,7 @@ class SvmRbfClassifier(Classifier):
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
 
 
@@ -172,7 +171,7 @@ class SvmPolyClassifier(Classifier):
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         print(f'Support vectors for {self.name} \n {self.model.support_vectors_}')
 
 
@@ -182,7 +181,7 @@ class NeuralNetworkClassifier(Classifier):
         self.model = MLPClassifier(hidden_layer_sizes=(5, 5), activation='relu', solver='adam', max_iter=1000)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         print(
             f'Number of layers: {self.model.n_layers_} and their shapes; {len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}')
         print(f'Feature importance for {self.name} \n')
@@ -197,7 +196,7 @@ class DecisionTreeClassifier(Classifier):
         self.model = DecisionTree(max_depth=5, max_leaf_nodes=20)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         print(f'Feature importance for {self.name} \n {self.model.feature_importances_}')
         dot_data = StringIO()
         tree.export_graphviz(self.model, out_file=dot_data, filled=True, rounded=True, special_characters=False,
@@ -212,7 +211,7 @@ class RandomForestsClassifier(Classifier):
         self.model = RandomForests(max_depth=5, n_estimators=3)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self):
+    def print_feature_importance(self, feature_names):
         print(f'Feature importance for {self.name} \n {self.model.feature_importances_}')
         for i, one_tree in enumerate(self.model.estimators_):
             dot_data = StringIO()

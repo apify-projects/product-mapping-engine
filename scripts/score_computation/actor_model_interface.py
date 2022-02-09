@@ -394,6 +394,8 @@ def load_data_and_train_model(
     train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']),
                                                plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
+    feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
+    classifier.print_feature_importance(feature_names)
     return train_stats, test_stats
 
 
