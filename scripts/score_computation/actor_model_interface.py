@@ -109,15 +109,12 @@ def load_model_create_dataset_and_predict_matches(
 
     if save_preprocessed_pairs and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
-        # TODO: k cemu tohle je?
-        pair_identifications = pd.read_csv(pair_identifications_file_path)
     else:
         preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
                                                          images_kvs2_client, is_on_platform,
                                                          filter_data=True)
     if not is_on_platform and save_preprocessed_pairs:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
-        pair_identifications.to_csv(pair_identifications_file_path)
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
@@ -397,7 +394,6 @@ def load_data_and_train_model(
     train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']),
                                                plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)
-
     return train_stats, test_stats
 
 

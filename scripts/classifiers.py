@@ -140,7 +140,7 @@ class LogisticRegressionClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self):
-        print(f'Feature importances for {self.name} \n {self.model.coef_}')
+        print(f'Feature importance for {self.name} \n {self.model.coef_}')
 
 
 class SvmLinearClassifier(Classifier):
