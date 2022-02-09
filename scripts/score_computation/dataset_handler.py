@@ -399,8 +399,8 @@ def create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx):
     dataset2_ids = []
     for product_id in product_pairs_idx:
         ids1 = [product_id] * len(product_pairs_idx[product_id])
-        dataset1_ids = [dataset1['id'][i] for i in ids1]
-        dataset2_ids = [dataset2['id'][i] for i in product_pairs_idx[product_id]]
+        dataset1_ids = dataset1_ids + [dataset1['id'][i] for i in ids1]
+        dataset2_ids = dataset2_ids + [dataset2['id'][i] for i in product_pairs_idx[product_id]]
     df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
     df_all_similarities['id1'] = dataset1_ids
     df_all_similarities['id2'] = dataset2_ids
