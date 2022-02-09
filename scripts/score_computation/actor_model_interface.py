@@ -18,7 +18,7 @@ from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, \
     MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
     MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
-    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES, SIMILARITIES_TO_IGNORE
 
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
@@ -118,6 +118,10 @@ def load_model_create_dataset_and_predict_matches(
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
+
+    if SIMILARITIES_TO_IGNORE:
+        preprocessed_pairs = preprocessed_pairs.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
+
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
@@ -391,6 +395,8 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
+    if SIMILARITIES_TO_IGNORE:
+        similarities = similarities.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
     train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']),
                                                plot_and_print_stats=not is_on_platform)
     classifier.save(key_value_store=output_key_value_store_client)

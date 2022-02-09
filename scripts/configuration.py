@@ -6,6 +6,7 @@ SAVE_SIMILARITIES = True
 # TEXT PREPROCESSING SETTING
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
 SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
+SIMILARITIES_TO_IGNORE = []
 LOWER_CASE_TEXT = True
 TEXT_LEMMATIZER = None
 
