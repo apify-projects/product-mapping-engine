@@ -2,11 +2,12 @@ import json
 from math import ceil
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
-
+import seaborn as sns
 from configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
     THRESHOLD_SETTING
 
@@ -90,14 +91,32 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats,
     test_stats = compute_prediction_accuracies(test_data, 'test')
 
     if plot_and_print_stats:
-        plot_train_test_roc(
-            tprs_train,
-            fprs_train,
-            test_data['match'].tolist(),
-            out_test,
-            threshes,
-            classifier.name
-        )
+        #plot_train_test_roc(
+        #    tprs_train,
+        #    fprs_train,
+        #    test_data['match'].tolist(),
+        #    out_test,
+        #    threshes,
+        #    classifier.name
+        #)
+        data = pd.concat([train_data, test_data])
+        correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
+        print_whole_correlation_matrix = False
+        if print_whole_correlation_matrix:
+            sns.heatmap(correlation_matrix, annot=True, cmap=plt.cm.Reds)
+            plt.show()
+            print(correlation_matrix)
+        upper_limit = 0.7
+        lower_limit = -0.7
+        print(f'Correlations bigger than {upper_limit} ar smaller than {lower_limit}')
+        counter = 0
+        for column in correlation_matrix:
+            for i in range(0, counter):
+                row = correlation_matrix[column][i]
+                if correlation_matrix.columns[i] != column and (row>upper_limit or row <lower_limit):
+                    print(f'{column} + {correlation_matrix.columns[i]}: {row}')
+            counter +=1
+        print('\n----------------------------\n')
     return train_stats, test_stats
 
 
