@@ -4,6 +4,8 @@ from io import StringIO
 
 import pandas as pd
 import pydot
+from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS
+from evaluate_classifier import plot_train_test_roc
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
@@ -11,9 +13,6 @@ from sklearn.ensemble import RandomForestClassifier as RandomForests
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
-
-from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS
-from evaluate_classifier import plot_train_test_roc
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
@@ -89,22 +88,12 @@ class Classifier:
             if self.use_pca:
                 self.pca = pickle.loads(key_value_store.get_record('pca')['value'])
 
-    def dataframe_pca_results(self, pca_result, auxiliary_columns, auxiliary_data, principal_component_count):
-        dataframe = pd.DataFrame(pca_result, columns=["principal_component_{}".format(component) for component in
-                                                      range(1, principal_component_count + 1)])
-        auxiliary_data = auxiliary_data.reset_index(drop=True)
-        for column in auxiliary_columns:
-            dataframe[column] = auxiliary_data[column]
-        return dataframe
-
     def perform_pca(self, data, train_pca=False):
         principal_component_count = PRINCIPAL_COMPONENT_COUNT
-
-        auxiliary_columns = ["index1", "index2"]
-        if "match" in data:
-            auxiliary_columns.append("match")
-        data_auxiliary_columns = data[auxiliary_columns]
-        data = data.drop(columns=auxiliary_columns)
+        data_match = pd.DataFrame()
+        if 'match' in data:
+            data_match['match'] = data['match']
+            data = data.drop(columns='match')
 
         if train_pca:
             self.pca = PCA(n_components=principal_component_count)
@@ -112,9 +101,13 @@ class Classifier:
         else:
             data = self.pca.transform(data)
 
-        data = self.dataframe_pca_results(data, auxiliary_columns, data_auxiliary_columns, principal_component_count)
+        dataframe = pd.DataFrame(data, columns=["principal_component_{}".format(component) for component in
+                                                range(1, principal_component_count + 1)])
+        if not len(data_match) == 0:
+            data_match = data_match.reset_index(drop=True)
+            dataframe['match'] = data_match['match']
 
-        return data
+        return dataframe
 
 
 class LinearRegressionClassifier(Classifier):
