@@ -12,15 +12,16 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
 
+from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS
 from evaluate_classifier import plot_train_test_roc
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
 
 class Classifier:
-    def __init__(self, weights, use_pca=False):
+    def __init__(self, weights):
         self.weights = weights
-        self.use_pca = use_pca
+        self.use_pca = PERFORM_PCA_ANALYSIS
         self.model = None
         self.name = None
         self.pca = None
@@ -97,7 +98,7 @@ class Classifier:
         return dataframe
 
     def perform_pca(self, data, train_pca=False):
-        principal_component_count = 33
+        principal_component_count = PRINCIPAL_COMPONENT_COUNT
 
         auxiliary_columns = ["index1", "index2"]
         if "match" in data:
