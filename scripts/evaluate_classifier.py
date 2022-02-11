@@ -10,7 +10,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    THRESHOLD_SETTING
+    PRINT_ROC_AND_STATISTICS
 
 
 def setup_classifier(classifier_type, classifier_parameters_file=None):
@@ -32,12 +32,11 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
     return classifier
 
 
-def train_classifier(classifier, data, plot_and_print_stats=False):
+def train_classifier(classifier, data):
     """
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
-    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @return: train and test datasets with predictions
     """
     train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
@@ -49,20 +48,18 @@ def train_classifier(classifier, data, plot_and_print_stats=False):
         classifier,
         train_data,
         test_data,
-        plot_and_print_stats,
-        THRESHOLD_SETTING
+        True
     )
     classifier.save()
     return train_stats, test_stats
 
 
-def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats, set_threshold=False):
+def evaluate_classifier(classifier, train_data, test_data, set_threshold):
     """
     Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
     @param classifier: classifier to train and evaluate
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
-    @param plot_and_print_stats: bool whether to plot roc curve and print feature importances
     @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
     @return: train and test accuracy, recall, specificity, precision
     """
@@ -91,7 +88,7 @@ def evaluate_classifier(classifier, train_data, test_data, plot_and_print_stats,
     train_stats = compute_prediction_accuracies(train_data, 'train')
     test_stats = compute_prediction_accuracies(test_data, 'test')
 
-    if plot_and_print_stats:
+    if PRINT_ROC_AND_STATISTICS:
         plot_train_test_roc(
             tprs_train,
             fprs_train,

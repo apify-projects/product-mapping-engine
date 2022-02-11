@@ -18,7 +18,8 @@ from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, \
     MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
     MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
-    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES, SIMILARITIES_TO_IGNORE
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES, \
+    SIMILARITIES_TO_IGNORE
 
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
@@ -122,7 +123,6 @@ def load_model_create_dataset_and_predict_matches(
     if SIMILARITIES_TO_IGNORE:
         preprocessed_pairs = preprocessed_pairs.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
 
-
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
     if not is_on_platform:
@@ -210,13 +210,14 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     merged_data = merged_data.drop_duplicates(subset=['url1', 'url2'])
     merged_data = merged_data[merged_data['url1'].notna()]
 
-    matching_pairs[matching_pairs['match'] == 1][["id1", "id2"]].to_csv("predicted.csv")
+    matching_pairs[matching_pairs['match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
     merged_data[merged_data['predicted_match'] == 1].to_csv("merged.csv")
 
     merged_data['match'] = merged_data['match'].fillna(0)
     merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
     merged_data['predicted_match'] = merged_data['predicted_match'].fillna(0)
-    stats = evaluate_classifier(classifier, merged_data, merged_data, True, False)
+    merged_data = merged_data.drop(['id1', 'id2', 'url1', 'url2', 'price1', 'price2'], axis=1)
+    stats = evaluate_classifier(classifier, merged_data, merged_data, False)
     print(stats)
 
 
@@ -397,8 +398,7 @@ def load_data_and_train_model(
     classifier = setup_classifier(classifier_type)
     if SIMILARITIES_TO_IGNORE:
         similarities = similarities.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
-    train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']),
-                                               plot_and_print_stats=not is_on_platform)
+    train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
     classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
     classifier.print_feature_importance(feature_names)

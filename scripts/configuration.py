@@ -6,7 +6,10 @@ SAVE_SIMILARITIES = True
 # TEXT PREPROCESSING SETTING
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
 SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
-SIMILARITIES_TO_IGNORE = []
+SIMILARITIES_TO_IGNORE = ['long_description_id', 'long_description_brand', 'long_description_words',
+                          'specification_text_cos', 'specification_text_descriptives',
+                          'all_texts_words', 'all_texts_cos', 'all_texts_descriptives', 'all_texts_units',
+                          'long_description_descriptives', 'short_description_descriptives', 'name_descriptives']
 LOWER_CASE_TEXT = True
 TEXT_LEMMATIZER = None
 
@@ -44,10 +47,10 @@ COMPUTE_IMAGE_SIMILARITIES = True
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.25
 PRINCIPAL_COMPONENT_COUNT = 33
-PERFORM_PCA_ANALYSIS = True
+PERFORM_PCA_ANALYSIS = False
 
 # EVALUATION_CONFIGURATION SETTING
-THRESHOLD_SETTING = True
 NUMBER_OF_THRESHES = 100
 NUMBER_OF_THRESHES_FOR_AUC = 10
 MAX_FP_RATE = 0.05
+PRINT_ROC_AND_STATISTICS = False
