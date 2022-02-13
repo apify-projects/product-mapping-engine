@@ -1,5 +1,6 @@
 import base64
 import copy
+import hashlib
 import json
 import os
 from itertools import islice
@@ -189,7 +190,7 @@ def download_images_from_kvs(
         for chunk_record in dataset_images_kvs.list_keys()['items']:
             chunk = json.loads(dataset_images_kvs.get_record(chunk_record['key'])['value'])
             for image_name, image_data in chunk.items():
-                with open(os.path.join(img_dir, prefix + '_' + image_name), 'wb') as image_file:
+                with open(os.path.join(img_dir, prefix + '_' + hashlib.sha224(image_name.encode('utf-8')).hexdigest()), 'wb') as image_file:
                     image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
 
 
@@ -336,6 +337,8 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @param num_cpu: number of processes
     @return: Similarity scores for the product pairs
     """
+    # TODO fix paralelization (copying dataset1 and dataset2 for each process takes way too much memory)
+    num_cpu = 1
     df_all_similarities_list = pool.map(multi_run_text_similarities_wrapper,
                                         [(dataset1, dataset2, descriptive_words,
                                           product_pairs_idx_part, tf_idfs) for product_pairs_idx_part in

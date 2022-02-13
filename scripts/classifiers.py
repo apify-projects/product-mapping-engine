@@ -4,14 +4,14 @@ from io import StringIO
 
 import pandas as pd
 import pydot
-from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS
+from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS, EQUALIZE_CLASS_IMPORTANCE, POSITIVE_CLASS_UPSAMPLING_RATIO
 from evaluate_classifier import plot_train_test_roc
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier as RandomForests
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
@@ -30,15 +30,27 @@ class Classifier:
             data = self.perform_pca(data, True)
         target = data['match']
         inputs = data.drop(columns=['match'])
-        self.model.fit(inputs, target)
+
+        if EQUALIZE_CLASS_IMPORTANCE:
+            value_counts = target.value_counts()
+            positive_sample_count = POSITIVE_CLASS_UPSAMPLING_RATIO * value_counts.loc[0] / value_counts.loc[1]
+            sample_weights = target.apply(lambda match: positive_sample_count if match == 1 else 1)
+            self.model.fit(inputs, target, sample_weight=sample_weights)
+        else:
+            self.model.fit(inputs, target)
 
     def predict(self, data, predict_outputs=True):
         if self.use_pca:
             data = self.perform_pca(data, False)
         if 'match' in data.columns:
             data = data.drop(columns=['match'])
-        scores = self.model.predict_proba(data)
-        scores = [s[1] for s in scores]
+
+        if hasattr(self.model, 'predict_proba'):
+            scores = self.model.predict_proba(data)
+            scores = [s[1] for s in scores]
+        else:
+            scores = self.model.predict(data)
+
         if predict_outputs:
             outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
             return outputs, scores
@@ -53,6 +65,8 @@ class Classifier:
 
     def set_threshold(self, threshold):
         self.weights['threshold'] = threshold
+        print(self.weights)
+        print("THRESHOLD\n\n\n")
 
     def save(self, path='results/models', key_value_store=None):
         if key_value_store is None:
@@ -174,7 +188,12 @@ class SvmPolyClassifier(Classifier):
 class NeuralNetworkClassifier(Classifier):
     def __init__(self, weights):
         super().__init__(weights)
-        self.model = MLPClassifier(hidden_layer_sizes=(5, 5), activation='relu', solver='adam', max_iter=1000)
+        self.model = MLPClassifier(
+            hidden_layer_sizes=(15, 10),
+            activation='relu',
+            solver='adam',
+            max_iter=300
+        )
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):

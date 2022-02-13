@@ -1,3 +1,4 @@
+import hashlib
 from slugify import slugify
 
 from ...configuration import HEX_GROUPS_FOR_IMAGE_HASHES
@@ -124,8 +125,8 @@ def create_hash_sets(
             image_count_key = 'image{}'.format(dataset_index + 1)
             for image_index in range(int(pair[image_count_key])):
                 # TODO equalize indexing (images for instance have indexing starting from 0 and from 1)
-                image_name = dataset_prefixes[dataset_index] + '_' + slugify(
-                    pair[id_key] + '_image_{}'.format(image_index)) + '.jpg'
+                image_name = dataset_prefixes[dataset_index] + '_' + \
+                             hashlib.sha224(slugify(pair[id_key] + '_image_{}'.format(image_index)).encode('utf-8')).hexdigest() + '.jpg'
                 pair_image_identification = 'pair{}_product{}_image{}'.format(pair_index, dataset_index + 1,
                                                                               image_index + 1)
                 hash = data[image_name]

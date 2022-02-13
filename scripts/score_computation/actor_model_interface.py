@@ -40,9 +40,12 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
             product_descriptive_words,
             second_product_descriptive_words
         )
-
-        if len(set(product['name']) & set(second_product['name'])) > MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and \
-                descriptive_words_sim > MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
+        '''
+        if "sony" in second_product['name']:
+            print(f"{set(product['name'])} vs {set(second_product['name'])} = {len(set(product['name']) & set(second_product['name']))}")
+        '''
+        if len(set(product['name']) & set(second_product['name'])) >= MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and \
+                descriptive_words_sim >= MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
             data_subset = data_subset.append(second_product)
 
     return data_subset
@@ -125,6 +128,7 @@ def load_model_create_dataset_and_predict_matches(
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
+
     if not is_on_platform:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
@@ -152,24 +156,28 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
 
     # preprocess data
     print("Text preprocessing started")
-    dataset1_copy = copy.deepcopy(dataset1)
-    dataset2_copy = copy.deepcopy(dataset2)
-    dataset1_copy = parallel_text_preprocessing(pool, num_cpu, dataset1_copy, False, False, False, False)
-    dataset2_copy = parallel_text_preprocessing(pool, num_cpu, dataset2_copy, False, False, False, False)
+    dataset1_without_marks = copy.deepcopy(dataset1)
+    dataset2_without_marks = copy.deepcopy(dataset2)
+    dataset1_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset1_without_marks, False, False, False, False)
+    dataset2_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset2_without_marks, False, False, False, False)
     dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_copy, dataset2_copy,
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks,
                                                                       COLUMNS_TO_BE_PREPROCESSED)
     print("Text preprocessing finished")
 
     if filter_data:
         # filter product pairs
         print("Filtering started")
-        pairs_dataset_idx = filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu)
-        print("Filtered to {} pairs".format(len(pairs_dataset_idx.keys())))
+        pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks, descriptive_words, pool, num_cpu)
+        pairs_count = 0
+        for key, target_ids in pairs_dataset_idx.items():
+            pairs_count += len(target_ids)
+
+        print(f"Filtered to {pairs_count} pairs")
         print("Filtering ended")
     else:
         pairs_dataset_idx = {}
@@ -198,24 +206,32 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     @param preprocessed_pairs: dataframe with predicted and filtered pairs
     @param task_id: unique identification of the currently evaluated Product Mapping task
     """
+    print('{}_unlabeled_data.csv'.format(task_id))
     labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
+    print("Labeled dataset")
+    print(labeled_dataset.shape)
 
-    # TODO remove after uploading fixed dataset
-    labeled_dataset['id1'] = labeled_dataset['name1']
-    labeled_dataset['id2'] = labeled_dataset['name2']
-
-    matching_pairs = labeled_dataset[['id1', 'id2', 'url1', 'url2', 'match', 'price1', 'price2']]
+    matching_pairs = labeled_dataset[['id1', 'id2', 'name1', 'name2', 'url1', 'url2', 'match', 'price1', 'price2']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
-    merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
-    merged_data = merged_data.drop_duplicates(subset=['url1', 'url2'])
-    merged_data = merged_data[merged_data['url1'].notna()]
 
-    matching_pairs[matching_pairs['match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
-    merged_data[merged_data['predicted_match'] == 1].to_csv("merged.csv")
+    print("Predicted pairs")
+    print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
+
+    merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+    #merged_data = merged_data.drop_duplicates(subset=['id1', 'id2'])
+    #merged_data = merged_data[merged_data['url2'].notna() & merged_data['url1'].notna()]
+
+    predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
 
     merged_data['match'] = merged_data['match'].fillna(0)
     merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
     merged_data['predicted_match'] = merged_data['predicted_match'].fillna(0)
+
+    merged_data_to_save = merged_data[merged_data['match'] == 1]
+    merged_data_to_save = merged_data_to_save[merged_data_to_save['predicted_match'] == 0]
+    merged_data_to_save.to_csv("merged.csv")
+
+
     merged_data = merged_data.drop(['id1', 'id2', 'url1', 'url2', 'price1', 'price2'], axis=1)
     stats = evaluate_classifier(classifier, merged_data, merged_data, False)
     print(stats)
@@ -326,20 +342,28 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         data_filtered = dataset
     else:
         last_price = dataset.iloc[idx_from]['price']
-        min_price = product['price'] / 2
+
+        min_price = product['price'] * MIN_MATCH_PRICE_RATIO
         while last_price < min_price and idx_from < len(dataset) - 1:
             idx_from += 1
             last_price = dataset.iloc[idx_from]['price']
 
         last_price = dataset.iloc[idx_to]['price']
-        max_price = product['price'] * 2
+        max_price = product['price'] * MAX_MATCH_PRICE_RATIO
         while last_price <= max_price and idx_to < len(dataset) - 1:
             idx_to += 1
             last_price = dataset.iloc[idx_to]['price']
-        data_filtered = dataset.iloc[idx_from:idx_to]
+
+        if idx_to == len(dataset) - 1:
+            data_filtered = dataset.iloc[idx_from:]
+        else:
+            data_filtered = dataset.iloc[idx_from:idx_to]
+
+    '''
     if 'category' in product.index.values and 'category' in dataset:
         data_filtered = data_filtered[
             data_filtered['category'] == product['category'] or data_filtered['category'] is None]
+    '''
 
     data_filtered = filter_products_with_no_similar_words(product, product_descriptive_words, data_filtered,
                                                           dataset_start_index, descriptive_words['all_texts'])
@@ -401,7 +425,8 @@ def load_data_and_train_model(
     train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
     classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
-    classifier.print_feature_importance(feature_names)
+    if not classifier.use_pca:
+        classifier.print_feature_importance(feature_names)
     return train_stats, test_stats
 
 

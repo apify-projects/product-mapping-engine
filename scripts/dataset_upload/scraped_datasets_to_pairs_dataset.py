@@ -6,7 +6,11 @@ import pandas as pd
 import requests
 import imghdr
 
-from ..run_configuration import RESIZE_WIDTH, RESIZE_HEIGHT
+import importlib.machinery
+configuration = importlib.machinery.SourceFileLoader(
+    'configuration',
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "configuration.py"),
+).load_module()
 
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
@@ -42,8 +46,8 @@ def download_images(images_path, pair_index, product_index, pair):
                 image = cv2.imdecode(np.asarray(bytearray(response.content), dtype="uint8"), cv2.IMREAD_COLOR)
 
                 # decreasing the size of the images when needed to increase speed and preserve memory
-                width_resize_ratio = RESIZE_WIDTH / image.shape[1]
-                height_resize_ratio = RESIZE_HEIGHT / image.shape[0]
+                width_resize_ratio = configuration.IMAGE_RESIZE_WIDTH / image.shape[1]
+                height_resize_ratio = configuration.IMAGE_RESIZE_HEIGHT / image.shape[0]
                 resize_ratio = min(width_resize_ratio, height_resize_ratio)
                 if resize_ratio < 1:
                     image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
@@ -73,12 +77,11 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     url_pairs_dataset = pd.read_csv(url_pairs_dataset_path)
 
     scraped_dataset1 = pd.read_json(scraped_dataset1_path)
-    scraped_dataset1 = scraped_dataset1[["name", "shortDescription", "longDescription", "parameters", "images", "price", "url"]]
+    scraped_dataset1 = scraped_dataset1[["name", "shortDescription", "longDescription", "specification", "images", "price", "url"]]
     scraped_dataset1 = scraped_dataset1.rename(
         columns = {
             "shortDescription": "short_description",
             "longDescription": "long_description",
-            "parameters": "specification",
             "images": "image"
         }
     )
@@ -159,10 +162,20 @@ transform_scraped_datasets_to_full_pairs_dataset(
 )
 '''
 
+'''
 transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "aggregated.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_aggregated.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_aggregated.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
+)
+'''
+
+transform_scraped_datasets_to_full_pairs_dataset(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "complete_cz.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_complete_cz.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_complete_cz.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
 )

@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
-    MAX_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED
+    MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS
 
 
@@ -39,7 +39,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             # detect and compare ids
             if 'id' in SIMILARITIES_TO_BE_COMPUTED:
                 id2 = [word for word in product2 if ID_MARK in word]
-                match_ratios['id'] = compute_matching_pairs(id1, id2)
+                match_ratios['id'] = compute_matching_pairs(id1, id2, True)
 
             # detect and compare brands
             if 'brand' in SIMILARITIES_TO_BE_COMPUTED:
@@ -80,7 +80,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
     return match_ratios_list
 
 
-def compute_matching_pairs(list1, list2):
+def compute_matching_pairs(list1, list2, allow_substrings=False):
     """
     Compute matching items in two lists
     @param list1: first list of items
@@ -92,7 +92,7 @@ def compute_matching_pairs(list1, list2):
     list2 = set(list2)
     for item1 in list1:
         for item2 in list2:
-            if item1 == item2:
+            if item1 == item2 or (allow_substrings and (item1 in item2 or item2 in item1)):
                 matches += 1
     if (len(list1) + len(list2)) == 0:
         return 0
@@ -185,7 +185,7 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
     for column in columns:
         tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
         descriptive_words_col = find_descriptive_words(
-            tf_idfs_col, filter_limit=MAX_WORD_OCCURRENCES_IN_TEXTS, number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+            tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
         )
         tf_idfs[column] = tf_idfs_col
         descriptive_words[column] = descriptive_words_col

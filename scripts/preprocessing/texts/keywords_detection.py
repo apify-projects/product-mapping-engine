@@ -370,8 +370,8 @@ def detect_units(word, previous_word):
     @param previous_word: previous word needed for detection
     @return: word with marker if it is an unit, otherwise the original word
     """
-    if is_word_unit(word.lower()) and previous_word.replace('.', '', 1).isnumeric():
-        new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(), float(previous_word))
+    if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
+        new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(), float(previous_word.replace(',', '.', 1)))
         new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
         return new_value, UNIT_MARK + new_word
     if word in SIZE_UNITS:

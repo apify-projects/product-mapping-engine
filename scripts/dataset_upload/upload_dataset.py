@@ -39,6 +39,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
     images_kvs2_client = client.key_value_store(images_kvs2_id)
 
     dataset1_columns = [
+        "id1",
         "name1",
         "short_description1",
         "long_description1",
@@ -48,6 +49,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         "url1"
     ]
     dataset2_columns = [
+        "id2",
         "name2",
         "short_description2",
         "long_description2",
@@ -61,6 +63,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
     dataset_to_upload = pd.read_csv(pairs_dataset_path)
     dataset_to_upload = dataset_to_upload[columns_to_upload]
     print(dataset_to_upload)
+    dataset_to_upload["long_description1"] = dataset_to_upload["long_description2"].fillna("")
     dataset_to_upload["long_description2"] = dataset_to_upload["long_description2"].fillna("")
 
     to_upload_labeled, to_upload_unlabeled = train_test_split(dataset_to_upload, test_size=0.2)
@@ -68,7 +71,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
     labeled_dataset_client.push_items(to_upload_labeled1.to_dict('records'))
     labeled_dataset_client.push_items(to_upload_labeled2.to_dict('records'))
 
-    to_upload_unlabeled.to_csv("aggregated_with_resized_images_unlabeled_data.csv")
+    to_upload_unlabeled.to_csv("complete_cz_with_resized_images_unlabeled_data.csv")
 
     dataset1_to_upload = to_upload_unlabeled[dataset1_columns]
     dataset1_to_upload = dataset1_to_upload.rename(columns={
@@ -131,7 +134,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
             images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
 
 upload_dataset_to_platform(
-    "aggregated-with-resized-images",
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
+    "complete-cz-with-resized-images",
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
 )
