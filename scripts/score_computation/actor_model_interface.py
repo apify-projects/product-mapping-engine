@@ -88,7 +88,8 @@ def load_model_create_dataset_and_predict_matches(
         images_kvs2_client,
         classifier_type,
         model_key_value_store_client=None,
-        task_id="basic"
+        task_id="basic",
+        is_on_platform=IS_ON_PLATFORM
 ):
     """
     For each product in first dataset find same products in the second dataset
@@ -99,6 +100,7 @@ def load_model_create_dataset_and_predict_matches(
     @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
+    @param is_on_platform: True if this is running on the platform
     @return: List of same products for every given product
     """
     classifier = setup_classifier(classifier_type)
@@ -113,7 +115,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
                                                          images_kvs2_client,
                                                          filter_data=True)
-    if not IS_ON_PLATFORM and SAVE_PREPROCESSED_PAIRS:
+    if not is_on_platform and SAVE_PREPROCESSED_PAIRS:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
@@ -125,7 +127,7 @@ def load_model_create_dataset_and_predict_matches(
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
 
-    if not IS_ON_PLATFORM:
+    if not is_on_platform:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
@@ -153,8 +155,10 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     print("Text preprocessing started")
     dataset1_without_marks = copy.deepcopy(dataset1)
     dataset2_without_marks = copy.deepcopy(dataset2)
-    dataset1_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset1_without_marks, False, False, False, False)
-    dataset2_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset2_without_marks, False, False, False, False)
+    dataset1_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset1_without_marks, False, False, False,
+                                                         False)
+    dataset2_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset2_without_marks, False, False, False,
+                                                         False)
     dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
@@ -167,7 +171,8 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     if filter_data:
         # filter product pairs
         print("Filtering started")
-        pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks, descriptive_words, pool, num_cpu)
+        pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks,
+                                                          descriptive_words, pool, num_cpu)
         pairs_count = 0
         for key, target_ids in pairs_dataset_idx.items():
             pairs_count += len(target_ids)
@@ -212,8 +217,8 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
 
     merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
-    #merged_data = merged_data.drop_duplicates(subset=['id1', 'id2'])
-    #merged_data = merged_data[merged_data['url2'].notna() & merged_data['url1'].notna()]
+    # merged_data = merged_data.drop_duplicates(subset=['id1', 'id2'])
+    # merged_data = merged_data[merged_data['url2'].notna() & merged_data['url1'].notna()]
 
     predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
 
@@ -224,7 +229,6 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     merged_data_to_save = merged_data[merged_data['match'] == 1]
     merged_data_to_save = merged_data_to_save[merged_data_to_save['predicted_match'] == 0]
     merged_data_to_save.to_csv("merged.csv")
-
 
     merged_data = merged_data.drop(['id1', 'id2', 'url1', 'url2', 'price1', 'price2'], axis=1)
     stats = evaluate_classifier(classifier, merged_data, merged_data, False)
@@ -371,7 +375,8 @@ def load_data_and_train_model(
         images_kvs1_client=None,
         images_kvs2_client=None,
         output_key_value_store_client=None,
-        task_id="basic"
+        task_id="basic",
+        is_on_platform=IS_ON_PLATFORM
 ):
     """
     Load dataset and train and save model
@@ -382,6 +387,7 @@ def load_data_and_train_model(
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @param task_id: unique identification of the current Product Mapping task
+    @param is_on_platform: True if this is running on the platform
     @return:
     """
     similarities_file_path = "similarities_{}.csv".format(task_id)
@@ -405,7 +411,7 @@ def load_data_and_train_model(
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
         similarities = pd.concat(similarities_to_concat, axis=1)
-        if not IS_ON_PLATFORM and SAVE_SIMILARITIES:
+        if not is_on_platform and SAVE_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)

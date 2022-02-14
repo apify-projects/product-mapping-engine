@@ -224,7 +224,8 @@ def create_image_similarities_data(
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
-        dataset_images_kvs2=None
+        dataset_images_kvs2=None,
+        is_on_platform=IS_ON_PLATFORM
 ):
     """
     Compute images similarities and create dataset with hash similarity
@@ -234,6 +235,7 @@ def create_image_similarities_data(
     @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
+    @param is_on_platform: True if this is running on the platform
     @return: Similarity scores for the images
     """
     if dataset_folder == '':
@@ -244,7 +246,7 @@ def create_image_similarities_data(
 
     dataset_prefixes = ['dataset1', 'dataset2']
 
-    if IS_ON_PLATFORM and os.path.exists(hashes_file_path):
+    if is_on_platform and os.path.exists(hashes_file_path):
         with open(hashes_file_path, 'r') as hashes_file:
             hashes_data = json.load(hashes_file)
     else:
@@ -269,7 +271,7 @@ def create_image_similarities_data(
         )
 
         hashes_data = load_and_parse_data(hash_files)
-        if IS_ON_PLATFORM:
+        if is_on_platform:
             with open(hashes_file_path, 'w') as hashes_file:
                 json.dump(hashes_data, hashes_file)
 
