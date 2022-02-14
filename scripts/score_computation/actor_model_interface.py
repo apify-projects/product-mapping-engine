@@ -88,9 +88,7 @@ def load_model_create_dataset_and_predict_matches(
         images_kvs2_client,
         classifier_type,
         model_key_value_store_client=None,
-        task_id="basic",
-        is_on_platform=IS_ON_PLATFORM,
-        save_preprocessed_pairs=SAVE_PREPROCESSED_PAIRS
+        task_id="basic"
 ):
     """
     For each product in first dataset find same products in the second dataset
@@ -101,8 +99,6 @@ def load_model_create_dataset_and_predict_matches(
     @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
-    @param is_on_platform: True if this is running on the platform
-    @param save_preprocessed_pairs: True if the preprocessed pairs should be saved locally for future runs
     @return: List of same products for every given product
     """
     classifier = setup_classifier(classifier_type)
@@ -111,13 +107,13 @@ def load_model_create_dataset_and_predict_matches(
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
-    if save_preprocessed_pairs and preprocessed_pairs_file_exists:
+    if SAVE_PREPROCESSED_PAIRS and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
         preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
-                                                         images_kvs2_client, is_on_platform,
+                                                         images_kvs2_client,
                                                          filter_data=True)
-    if not is_on_platform and save_preprocessed_pairs:
+    if not IS_ON_PLATFORM and SAVE_PREPROCESSED_PAIRS:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
@@ -129,7 +125,7 @@ def load_model_create_dataset_and_predict_matches(
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
 
-    if not is_on_platform:
+    if not IS_ON_PLATFORM:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
@@ -138,7 +134,7 @@ def load_model_create_dataset_and_predict_matches(
     return predicted_matches
 
 
-def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client, is_on_platform,
+def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client,
                                 filter_data):
     """
     Preprocess data, possibly filter data pairs and compute similarities
@@ -146,7 +142,6 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     @param dataset2: Target dataframe with products to be searched in for the same products
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @param is_on_platform: True if this is running on the platform
     @param filter_data: True whether filtering during similarity computations should be performed
     @return: dataframe with image and text similarities
     """
@@ -188,7 +183,6 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     print("Similarities creation started")
     image_and_text_similarities = create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words,
                                                                      pool, num_cpu,
-                                                                     is_on_platform,
                                                                      dataset_folder='.',
                                                                      dataset_dataframe=pairs_dataset_idx,
                                                                      dataset_images_kvs1=images_kvs1_client,
@@ -377,9 +371,7 @@ def load_data_and_train_model(
         images_kvs1_client=None,
         images_kvs2_client=None,
         output_key_value_store_client=None,
-        task_id="basic",
-        is_on_platform=IS_ON_PLATFORM,
-        save_similarities=SAVE_SIMILARITIES
+        task_id="basic"
 ):
     """
     Load dataset and train and save model
@@ -390,14 +382,12 @@ def load_data_and_train_model(
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param output_key_value_store_client: key-value-store client where the trained model should be stored
     @param task_id: unique identification of the current Product Mapping task
-    @param is_on_platform: True if this is running on the platform
-    @param save_similarities: Save similarities after preprocessing to make sure they don't need to be computed again
     @return:
     """
     similarities_file_path = "similarities_{}.csv".format(task_id)
     similarities_file_exists = os.path.exists(similarities_file_path)
 
-    if save_similarities and similarities_file_exists:
+    if SAVE_SIMILARITIES and similarities_file_exists:
         similarities = pd.read_csv(similarities_file_path)
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
@@ -408,15 +398,14 @@ def load_data_and_train_model(
         product_pairs2 = product_pairs.filter(regex='2')
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
         preprocessed_pairs = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
-                                                         images_kvs2_client, is_on_platform,
-                                                         filter_data=False)
+                                                         images_kvs2_client, filter_data=False)
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
         similarities_to_concat = [preprocessed_pairs]
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
         similarities = pd.concat(similarities_to_concat, axis=1)
-        if not is_on_platform and save_similarities:
+        if not IS_ON_PLATFORM and SAVE_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)

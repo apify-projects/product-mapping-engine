@@ -1,7 +1,7 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-SAVE_PREPROCESSED_PAIRS = True
-SAVE_SIMILARITIES = True
+SAVE_PREPROCESSED_PAIRS = False
+SAVE_SIMILARITIES = False
 
 # TEXT PREPROCESSING SETTING
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']

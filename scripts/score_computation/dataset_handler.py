@@ -14,7 +14,7 @@ from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, SIMILARITIES_TO_BE_COMPUTED, IMAGE_FILTERING, \
-    IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES
+    IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES, IS_ON_PLATFORM
 from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
@@ -103,7 +103,6 @@ def preprocess_textual_data(dataset,
 
 
 def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
-                                       is_on_platform,
                                        dataset_folder='',
                                        dataset_dataframe=None,
                                        dataset_images_kvs1=None,
@@ -117,7 +116,6 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     @param descriptive_words:  dictionary of descriptive words for each text column in products
     @param pool: parallelising object
     @param num_cpu: number of processes
-    @param is_on_platform: True if this is running on the platform
     @param dataset_folder: folder containing data to be preprocessed
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
@@ -153,8 +151,7 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
                     'image2': dataset2['image'][target_id],
                 })
 
-        image_similarities = create_image_similarities_data(pool, num_cpu, is_on_platform,
-                                                            pair_identifications,
+        image_similarities = create_image_similarities_data(pool, num_cpu, pair_identifications,
                                                             dataset_folder=dataset_folder,
                                                             dataset_images_kvs1=dataset_images_kvs1,
                                                             dataset_images_kvs2=dataset_images_kvs2
@@ -224,7 +221,6 @@ def multi_run_compute_distances_wrapper(args):
 def create_image_similarities_data(
         pool,
         num_cpu,
-        is_on_platform,
         pair_ids_and_counts_dataframe,
         dataset_folder='',
         dataset_images_kvs1=None,
@@ -234,7 +230,6 @@ def create_image_similarities_data(
     Compute images similarities and create dataset with hash similarity
     @param pool: pool of Python processes (from the multiprocessing library)
     @param num_cpu: the amount of processes the CPU can handle at once
-    @param is_on_platform: True if this is running on the platform
     @param pair_ids_and_counts_dataframe: dataframe containing ids and image counts for the pairs of products
     @param dataset_folder: folder to be used as dataset root, determining where the images will be stored
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
@@ -249,7 +244,7 @@ def create_image_similarities_data(
 
     dataset_prefixes = ['dataset1', 'dataset2']
 
-    if is_on_platform and os.path.exists(hashes_file_path):
+    if IS_ON_PLATFORM and os.path.exists(hashes_file_path):
         with open(hashes_file_path, 'r') as hashes_file:
             hashes_data = json.load(hashes_file)
     else:
@@ -274,7 +269,7 @@ def create_image_similarities_data(
         )
 
         hashes_data = load_and_parse_data(hash_files)
-        if is_on_platform:
+        if IS_ON_PLATFORM:
             with open(hashes_file_path, 'w') as hashes_file:
                 json.dump(hashes_data, hashes_file)
 
