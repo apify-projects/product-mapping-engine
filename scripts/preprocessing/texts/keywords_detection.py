@@ -209,7 +209,7 @@ def is_brand(word):
     @param word: checked word
     @return: true if the word is in the dictionary of brands
     """
-    return word in BRANDS
+    return word.lower() in BRANDS
 
 def detect_color(word):
     """
