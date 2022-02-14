@@ -10,7 +10,7 @@ from ...configuration import MINIMAL_DETECTABLE_ID_LENGTH
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
-BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.txt')
+BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.json')
 VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
                                   '../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
 VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
@@ -50,11 +50,11 @@ def load_brands():
     Load file with list of brands
     @return: list of loaded brands
     """
-    brand_list = []
     file = open(BRANDS_FILE, 'r', encoding='utf-8')
-    lines = file.read().splitlines()
-    for line in lines:
-        brand_list.append(line)
+    brand_list = json.load(file)
+    for x in range(len(brand_list)):
+        brand_list[x] = brand_list[x].lower()
+
     return brand_list
 
 
@@ -182,11 +182,11 @@ def detect_id(word, next_word):
             word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word):
         return word
 
-    if word_sub.isnumeric() and is_word_unit(next_word):
+    if word_sub.isnumeric() and not is_word_unit(next_word):
         word = word.replace("(", "").replace(")", "")
         return ID_MARK + word
     elif word_sub.isalpha():
-        if not is_in_vocabulary(word_sub) and is_brand(word_sub):
+        if not is_in_vocabulary(word_sub) and not is_brand(word_sub):
             return ID_MARK + word
     else:
         word = word.replace("(", "").replace(")", "")
@@ -233,23 +233,16 @@ def detect_vocabulary_words(word):
     return word
 
 
-def detect_brand(word, is_first, first_likelihood):
+def detect_brand(word):
     """
     Check whether the word is a brand
     @param word: the word to be checked
-    @param is_first: the word to be checked
-    @param first_likelihood: the probability that this word is the first one in titles that include it
     @return: word with marker if it is a brand, otherwise the original word
     """
-    is_brand = False
-
-    if word.lower() in BRANDS:
-        is_brand = True
-    elif is_first:
-        if (word.isalpha() and len(word) < MINIMAL_DETECTABLE_ID_LENGTH and word.isupper()) or first_likelihood > 0.9:
-            is_brand = True
-
-    return BRAND_MARK + word if is_brand else word
+    if is_brand(word):
+        return BRAND_MARK + word
+    else:
+        return word
 
 
 BRANDS = load_brands()
@@ -264,7 +257,7 @@ def detect_ids_brands_colors_and_units(
         data,
         id_detection=True,
         color_detection=True,
-        brand_detection=False,
+        brand_detection=True,
         units_detection=True
 ):
     """
@@ -277,7 +270,6 @@ def detect_ids_brands_colors_and_units(
     @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
     """
     data_list = []
-    first_likelihood = compute_likelihood_of_first_words(data)
     for word_list in data:
         detected_word_list = []
         is_first = True
@@ -286,7 +278,7 @@ def detect_ids_brands_colors_and_units(
             if color_detection:
                 word = detect_color(word)
             if brand_detection and not word.startswith(COLOR_MARK):
-                word = detect_brand(word, is_first, first_likelihood[word])
+                word = detect_brand(word)
             if units_detection and not is_first:
                 new_value, word = detect_units(word, previous)
                 if 'size' in word:

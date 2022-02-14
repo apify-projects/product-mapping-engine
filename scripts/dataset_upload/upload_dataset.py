@@ -61,6 +61,10 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
     columns_to_upload = dataset1_columns + dataset2_columns + ["match"]
 
     dataset_to_upload = pd.read_csv(pairs_dataset_path)
+
+    # TODO remove
+    dataset_to_upload = dataset_to_upload.head(50)
+
     dataset_to_upload = dataset_to_upload[columns_to_upload]
     print(dataset_to_upload)
     dataset_to_upload["long_description1"] = dataset_to_upload["long_description2"].fillna("")
@@ -134,7 +138,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
             images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
 
 upload_dataset_to_platform(
-    "complete-cz-with-resized-images",
+    "small-sample-cz-with-resized-images",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
 )

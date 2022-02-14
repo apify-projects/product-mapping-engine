@@ -207,12 +207,12 @@ def remove_markers(dataset):
     return dataset
 
 
-def compare_units_and_values(text1, text2, devation=UNITS_AND_VALUES_DEVIATION):
+def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION):
     """
     Compare detected units from the texts
     @param text1: List of words for unit detection and comparison
     @param text2: List of words for unit detection and comparison
-    @param devation: percent of toleration of deviations of two compared numbers
+    @param deviation: percent of toleration of deviations of two compared numbers
     @return: Ratio of the same units between two products
     """
     units_list1 = extract_units_and_values(text1)
@@ -224,10 +224,12 @@ def compare_units_and_values(text1, text2, devation=UNITS_AND_VALUES_DEVIATION):
             if u1[0] == u2[0]:
                 if u1[0] == f'{UNIT_MARK}size' and u1[1] == u2[1]:
                     matches += 1
-                if (1 - devation) * u2[1] < u1[1] < (1 + devation) * u2[1]:
-                    matches += 1
-                if '×' in u1[1] and u1[1] == u2[1]:
-                    matches += 1
+                elif type(u1[1]) is str:
+                    if '×' in u1[1] and u1[1] == str(u2[1]):
+                        matches += 1
+                elif type(u2[1]) is not str:
+                    if (1 - deviation) * u2[1] < u1[1] < (1 + deviation) * u2[1]:
+                        matches += 1
     if matches == 0:
         return 0
     if not total_len == 0:
