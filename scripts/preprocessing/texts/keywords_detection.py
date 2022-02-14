@@ -186,7 +186,7 @@ def detect_id(word, next_word):
         word = word.replace("(", "").replace(")", "")
         return ID_MARK + word
     elif word_sub.isalpha():
-        if not is_in_vocabulary(word_sub):
+        if not is_in_vocabulary(word_sub) and is_brand(word_sub):
             return ID_MARK + word
     else:
         word = word.replace("(", "").replace(")", "")
@@ -203,6 +203,13 @@ def is_word_unit(word):
     """
     return word in UNITS_DICT.keys()
 
+def is_brand(word):
+    """
+    Checks whether a word is in the dictionary of brands
+    @param word: checked word
+    @return: true if the word is in the dictionary of brands
+    """
+    return word in BRANDS
 
 def detect_color(word):
     """
