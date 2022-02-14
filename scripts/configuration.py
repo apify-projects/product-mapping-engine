@@ -11,7 +11,7 @@ SIMILARITIES_TO_IGNORE = ['long_description_id', 'long_description_brand', 'long
                           'all_texts_words', 'all_texts_cos', 'all_texts_descriptives', 'all_texts_units',
                           'long_description_descriptives', 'short_description_descriptives', 'name_descriptives']
 LOWER_CASE_TEXT = True
-TEXT_LEMMATIZER = None
+LEMMATIZE_TEXT = True
 
 # KEYWORDS DETECTION SETTING
 PERFORM_ID_DETECTION = True
