@@ -51,6 +51,8 @@ def remove_useless_spaces_and_characters(text):
     text = re.sub(r'(?<=\d) - (?=\d)', r'-', text)
     text = re.sub(r'(?<=\d),(?=\d)', r'.', text)
     text = re.sub(r'(?<=\d)"', r' inch', text)
+    text = re.sub(r'(?<=\d)x(?=\d)', r'×', text)
+    #text = re.sub(r'(?<=\d)x', r'', text)
     text = text.replace(' × ', '×')
     text = text.replace('(', '')
     text = text.replace(')', '')
@@ -103,7 +105,10 @@ def split_units_and_values(word_list):
         elif re.match('^[0-9]+%$', word) is not None:
             word_list_split.append(re.split('%', word)[0])
             word_list_split.append(re.split('^[0-9]+', word)[1])
-        else:
+        elif re.match('^([0-9]+×[0-9]+(×[0-9])*)[a-zA-Z]+$', word) is not None:
+            word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
+            word_list_split.append(re.split('^([0-9]+×[0-9]+(×[0-9])*)', word)[1])
+        else :
             word_list_split.append(word)
     return word_list_split
 

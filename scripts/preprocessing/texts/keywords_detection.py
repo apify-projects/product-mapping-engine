@@ -264,7 +264,7 @@ def detect_ids_brands_colors_and_units(
         data,
         id_detection=True,
         color_detection=True,
-        brand_detection=True,
+        brand_detection=False,
         units_detection=True
 ):
     """
@@ -289,7 +289,11 @@ def detect_ids_brands_colors_and_units(
                 word = detect_brand(word, is_first, first_likelihood[word])
             if units_detection and not is_first:
                 new_value, word = detect_units(word, previous)
-                detected_word_list[len(detected_word_list) - 1] = str(new_value)
+                if 'size' in word:
+                    detected_word_list.append(word.replace('size ', ''))
+                    detected_word_list.append(f'{UNIT_MARK}size')
+                else:
+                    detected_word_list[len(detected_word_list) - 1] = str(new_value)
             if id_detection:
                 next_word = ''
                 if i < len(word_list) - 1:
@@ -382,6 +386,7 @@ def detect_units(word, previous_word):
         new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
         return new_value, UNIT_MARK + new_word
     if word in SIZE_UNITS:
-        return previous_word, "size " + UNIT_MARK + word
+        return previous_word, "size " + word
+    if is_word_unit(word.lower()) and '×' in previous_word:
+        return previous_word, UNIT_MARK + word
     return previous_word, word
-

@@ -185,7 +185,8 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
     for column in columns:
         tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
         descriptive_words_col = find_descriptive_words(
-            tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+            tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
+            number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
         )
         tf_idfs[column] = tf_idfs_col
         descriptive_words[column] = descriptive_words_col
@@ -220,7 +221,9 @@ def compare_units_and_values(text1, text2, devation=UNITS_AND_VALUES_DEVIATION):
     total_len = len(units_list1) + len(units_list2)
     for u1 in units_list1:
         for u2 in units_list2:
-            if u1[0] == u2[0] and (1 - devation) * u2[1] < u1[1] < (1 + devation) * u2[1]:
+            if u1[0] == u2[0] == f'{UNIT_MARK}size' and u1[1] == u2[1]:
+                matches += 1
+            elif u1[0] == u2[0] and (1 - devation) * u2[1] < u1[1] < (1 + devation) * u2[1]:
                 matches += 1
     if matches == 0:
         return 0
@@ -238,5 +241,9 @@ def extract_units_and_values(text):
     unit_list = []
     for i, word in enumerate(text):
         if UNIT_MARK in word:
-            unit_list.append([word, float(text[i - 1])])
+            try:
+                float(text[i - 1])
+                unit_list.append([word, float(text[i - 1])])
+            except ValueError:
+                unit_list.append([word, text[i - 1]])
     return unit_list
