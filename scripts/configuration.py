@@ -1,23 +1,23 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-SAVE_PREPROCESSED_PAIRS = True
-SAVE_SIMILARITIES = True
+LOAD_PREPROCESSED_DATA = False
+SAVE_PREPROCESSED_DATA = False
+SAVE_COMPUTED_SIMILARITIES = False
 
 # TEXT PREPROCESSING SETTING
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
-SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
-SIMILARITIES_TO_IGNORE = ['long_description_id', 'long_description_brand', 'long_description_words',
-                          'specification_text_cos', 'specification_text_descriptives',
-                          'all_texts_words', 'all_texts_cos', 'all_texts_descriptives', 'all_texts_units',
-                          'long_description_descriptives', 'short_description_descriptives', 'name_descriptives']
+SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units', 'numbers']
+SIMILARITIES_TO_IGNORE = []
 LOWER_CASE_TEXT = True
-LEMMATIZE_TEXT = True
+STEM_ENGLISH_TEXT = True
+LEMMATIZE_CZECH_TEXT = True
 
 # KEYWORDS DETECTION SETTING
 PERFORM_ID_DETECTION = True
 PERFORM_COLOR_DETECTION = True
 PERFORM_BRAND_DETECTION = True
 PERFORM_UNITS_DETECTION = True
+PERFORM_NUMBERS_DETECTION = True
 
 # TEXT FILTERING SETTING
 MINIMAL_DETECTABLE_ID_LENGTH = 4
@@ -42,7 +42,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.2

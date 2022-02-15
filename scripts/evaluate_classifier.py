@@ -70,13 +70,14 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold):
         out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
         out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
 
-    tprs_train, fprs_train = create_roc_curve_points(train_data['match'].tolist(), out_train, threshes, 'train')
+    true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
+                                                                                    out_train, threshes, 'train')
 
     if set_threshold:
         optimal_threshold = threshes[0]
         for x in range(len(threshes)):
             optimal_threshold = threshes[x]
-            if fprs_train[x] <= MAX_FP_RATE:
+            if false_positive_rates_train[x] <= MAX_FP_RATE:
                 break
 
         classifier.set_threshold(optimal_threshold)
@@ -90,8 +91,8 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold):
 
     if PRINT_ROC_AND_STATISTICS:
         plot_train_test_roc(
-            tprs_train,
-            fprs_train,
+            true_positive_rates_train,
+            false_positive_rates_train,
             test_data['match'].tolist(),
             out_test,
             threshes,
@@ -207,14 +208,14 @@ def compute_prediction_accuracies(data, data_type):
 
 def create_thresh(scores, intervals):
     """
-    Create dummy threshs from values by sorting them and splitting into k intervals containing the same number of items
-    @param scores: data to create threshs
-    @param intervals: how many threshs should be created
-    @return: created threshs
+    Create dummy threshes from values by sorting them and splitting into k intervals containing the same number of items
+    @param scores: data to create threshes
+    @param intervals: how many threshes should be created
+    @return: created threshes
     """
     scores = np.asarray(sorted(scores))
-    subarrays = np.array_split(scores, intervals)
-    return [(s[-1]) for s in subarrays][:-1]
+    sub_arrays = np.array_split(scores, intervals)
+    return [(s[-1]) for s in sub_arrays][:-1]
 
 
 def plot_train_test_roc(
@@ -227,8 +228,8 @@ def plot_train_test_roc(
 ):
     """
     Plot roc curve
-    @param true_positive_rates_train: true positive rates for thresholds from the threshs parameter
-    @param false_positive_rates_train: false positive rates for thresholds from the threshs parameter
+    @param true_positive_rates_train: true positive rates for thresholds from the threshes parameter
+    @param false_positive_rates_train: false positive rates for thresholds from the threshes parameter
     @param true_test_labels:  true test labels
     @param predicted_test_labels_list: predicted test labels
     @param threshes: threshold to evaluate accuracy of similarities
@@ -263,7 +264,7 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     true_positive_rates = []
     false_positive_rates.append(1)
     true_positive_rates.append(1)
-    gap_between_AUC_scores_outputs = ceil(NUMBER_OF_THRESHES / NUMBER_OF_THRESHES_FOR_AUC)
+    gap_between_auc_scores_outputs = ceil(NUMBER_OF_THRESHES / NUMBER_OF_THRESHES_FOR_AUC)
     threshes_counter = 0
     print(f'AUC score for different threshes for {label} data')
     print('----------------------------')
@@ -273,7 +274,7 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
         false_positive_rate, true_positive_rate, _ = roc_curve(true_labels, predicted_labels)
         false_positive_rates.append(false_positive_rate[1])
         true_positive_rates.append(true_positive_rate[1])
-        if threshes_counter % gap_between_AUC_scores_outputs == 0:
+        if threshes_counter % gap_between_auc_scores_outputs == 0:
             print(f'thresh={round(thresh, 3)} AUC={round(auc, 3)}')
         threshes_counter += 1
     print('----------------------------')

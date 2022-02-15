@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED
-from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS
+from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
 def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
@@ -18,7 +18,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
     @param dataset2: second list of texts where each is list of words
     @param product_pairs_idx: dict with indices of candidate matching pairs
     @param tf_idfs: tf.idfs of all words from both datasets
-    @param descriptive_words: decsriptive words from both datasets
+    @param descriptive_words: descriptive words from both datasets
     @return: dataset of pair similarity scores
     """
 
@@ -28,7 +28,6 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
     for product_idx, corresponding_indices in product_pairs_idx.items():
         product1 = dataset1.loc[[product_idx]].values[0]
         product1_no_markers = remove_markers(copy.deepcopy(product1))
-        list1 = set(product1_no_markers)
         bnd1 = [word for word in product1 if BRAND_MARK in word]
         id1 = [word for word in product1 if ID_MARK in word]
 
@@ -62,7 +61,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
                     match_ratios['cos'] = 2 * cos_similarity - 1
 
             if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED:
-                # commpute number of similar words in both texts
+                # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
                     descriptive_words.iloc[product_idx].values,
                     descriptive_words.iloc[half_length + product_idx].values
@@ -75,14 +74,19 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             if 'units' in SIMILARITIES_TO_BE_COMPUTED:
                 # compare ratio of corresponding units and values in both texts
                 match_ratios['units'] = compare_units_and_values(product1, product2)
-                match_ratios_list.append(match_ratios)
 
+            if 'numbers' in SIMILARITIES_TO_BE_COMPUTED:
+                # compare unspecified numbers in both texts
+                match_ratios['numbers'] = compare_numerical_values(product1, product2)
+
+            match_ratios_list.append(match_ratios)
     return match_ratios_list
 
 
 def compute_matching_pairs(list1, list2, allow_substrings=False):
     """
     Compute matching items in two lists
+    @param allow_substrings: allow substring in finding matching pairs
     @param list1: first list of items
     @param list2: second list of items
     @return: ratio of matching items
@@ -207,13 +211,31 @@ def remove_markers(dataset):
     return dataset
 
 
+def compare_numerical_values(text1, text2):
+    """
+    Compare detected numbers from the texts
+    @param text1: first list of words for number comparison
+    @param text2:  second list of words for number comparison
+    @return: Ratio of the same numbers between two texts
+    """
+    numbers1 = [word.replace(NUMBER_MARK, '') for word in text1 if NUMBER_MARK in word]
+    numbers2 = [word.replace(NUMBER_MARK, '') for word in text2 if NUMBER_MARK in word]
+    matches = len(set(numbers1) & set(numbers2))
+    total_len = len(numbers1) + len(numbers2)
+    if matches == 0:
+        return 0
+    if not total_len == 0:
+        return (total_len - 2 * matches) / total_len
+    return 0
+
+
 def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION):
     """
     Compare detected units from the texts
     @param text1: List of words for unit detection and comparison
     @param text2: List of words for unit detection and comparison
     @param deviation: percent of toleration of deviations of two compared numbers
-    @return: Ratio of the same units between two products
+    @return: Ratio of the same units between two texts
     """
     units_list1 = extract_units_and_values(text1)
     units_list2 = extract_units_and_values(text2)
@@ -225,7 +247,7 @@ def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION)
                 if u1[0] == f'{UNIT_MARK}size' and u1[1] == u2[1]:
                     matches += 1
                 elif type(u1[1]) is str:
-                    if '×' in u1[1] and u1[1] == str(u2[1]):
+                    if '×' in u1[1] and sorted(u1[1].split('×')) == sorted(u2[1].split('×')):
                         matches += 1
                 elif type(u2[1]) is not str:
                     if (1 - deviation) * u2[1] < u1[1] < (1 + deviation) * u2[1]:
@@ -241,14 +263,13 @@ def extract_units_and_values(text):
     """
     Extract units and values from the list of words
     @param text: list of words to extract units and values from
-    @return: extracted pairs unit-value
+    @return: list of extracted pairs unit-value
     """
     unit_list = []
     for i, word in enumerate(text):
         if UNIT_MARK in word:
-            try:
-                float(text[i - 1])
+            if is_number(text[i - 1]):
                 unit_list.append([word, float(text[i - 1])])
-            except ValueError:
+            else:
                 unit_list.append([word, text[i - 1]])
     return unit_list

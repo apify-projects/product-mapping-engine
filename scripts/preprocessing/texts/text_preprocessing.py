@@ -2,16 +2,19 @@ import os
 import re
 
 import majka
+from nltk.stem import SnowballStemmer
 
 from .keywords_detection import COLOR_MARK
-from ...configuration import LOWER_CASE_TEXT, LEMMATIZE_TEXT
+from ...configuration import LOWER_CASE_TEXT, STEM_ENGLISH_TEXT, LEMMATIZE_CZECH_TEXT
+
 
 def set_czech_lemmatizer():
     """
     Set lemmatizer for Czech language
     @return: lemmatizer
     """
-    lemmatizer = majka.Majka(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/majka.w-lt'))
+    lemmatizer = majka.Majka(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/vocabularies/majka.w-lt'))
     lemmatizer.flags |= majka.ADD_DIACRITICS  # find word forms with diacritics
     lemmatizer.flags |= majka.DISALLOW_LOWERCASE  # do not enable to find lowercase variants
     lemmatizer.flags |= majka.IGNORE_CASE  # ignore the word case whatsoever
@@ -32,13 +35,26 @@ def lemmatize_czech_text(text, lemmatizer):
     lemmatized_text = []
     for word in text:
         x = lemmatizer.find(word)
-        if x == []:
+        if not x:
             lemma = word
         else:
             lemma = x[0]['lemma']
             if 'negation' in x[0]['tags'] and x[0]['tags']['negation']:
                 lemma = 'ne' + lemma
         lemmatized_text.append(lemma)
+    return lemmatized_text
+
+
+def lemmatize_english_text(text):
+    """
+    Lemmatize English text
+    @param text: text to lemmatize
+    @return: lemmatized text
+    """
+    stemmer = SnowballStemmer("english")
+    lemmatized_text = []
+    for word in text:
+        lemmatized_text.append(stemmer.stem(word))
     return lemmatized_text
 
 
@@ -52,18 +68,17 @@ def remove_useless_spaces_and_characters(text):
     text = re.sub(r'(?<=\d),(?=\d)', r'.', text)
     text = re.sub(r'(?<=\d)"', r' inch', text)
     text = re.sub(r'(?<=\d)x(?=\d)', r'×', text)
-    #text = re.sub(r'(?<=\d)x', r'', text)
+    # text = re.sub(r'(?<=\d)x', r'', text)
     text = text.replace(' × ', '×')
     text = text.replace('(', '')
     text = text.replace(')', '')
     return text
 
 
-def preprocess_text(data, lower_case_text=LOWER_CASE_TEXT):
+def preprocess_text(data):
     """
     Lowercase and split units and values in dataset
     @param data: list of texts to preprocess
-    @param lower_case_text: whether to lowercase text
     @return: preprocessed list of texts that consists of list of words
     """
     new_data = []
@@ -71,11 +86,13 @@ def preprocess_text(data, lower_case_text=LOWER_CASE_TEXT):
         text = remove_useless_spaces_and_characters(text)
         word_list = tokenize(text)
         word_list = split_units_and_values(word_list)
-        if lower_case_text:
+        if LOWER_CASE_TEXT:
             word_list = lower_case(word_list)
-        if LEMMATIZE_TEXT:
+        if LEMMATIZE_CZECH_TEXT:
             lemmatizer = set_czech_lemmatizer()
             word_list = lemmatize_czech_text(word_list, lemmatizer)
+        if STEM_ENGLISH_TEXT:
+            word_list = lemmatize_english_text(word_list)
         new_data.append(word_list)
     return new_data
 
@@ -108,7 +125,7 @@ def split_units_and_values(word_list):
         elif re.match('^([0-9]+×[0-9]+(×[0-9])*)[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
             word_list_split.append(re.split('^([0-9]+×[0-9]+(×[0-9])*)', word)[1])
-        else :
+        else:
             word_list_split.append(word)
     return word_list_split
 
@@ -117,7 +134,7 @@ def lower_case(word_list):
     """
     Lower case all texts in dataset
     @param word_list: list of words
-    @return: lowercased list of words
+    @return: lower cased list of words
     """
     lowercase_word_list = []
     for word in word_list:

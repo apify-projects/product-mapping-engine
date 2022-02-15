@@ -73,7 +73,8 @@ def preprocess_textual_data(dataset,
                             id_detection=True,
                             color_detection=True,
                             brand_detection=True,
-                            units_detection=True):
+                            units_detection=True,
+                            numbers_detection=True):
     """
     Preprocessing of all textual data in dataset column by column
     @param dataset: dataset to be preprocessed
@@ -81,6 +82,7 @@ def preprocess_textual_data(dataset,
     @param color_detection: True if color should be detected
     @param brand_detection: True if brand should be detected
     @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
     @return preprocessed dataset
     """
     dataset['price'] = pd.to_numeric(dataset['price'])
@@ -95,7 +97,8 @@ def preprocess_textual_data(dataset,
                 id_detection,
                 color_detection,
                 brand_detection,
-                units_detection
+                units_detection,
+                numbers_detection
             )
     if 'specification' in dataset.columns:
         dataset['specification'] = preprocess_specifications(dataset['specification'])
@@ -187,7 +190,8 @@ def download_images_from_kvs(
         for chunk_record in dataset_images_kvs.list_keys()['items']:
             chunk = json.loads(dataset_images_kvs.get_record(chunk_record['key'])['value'])
             for image_name, image_data in chunk.items():
-                with open(os.path.join(img_dir, prefix + '_' + hashlib.sha224(image_name.encode('utf-8')).hexdigest()), 'wb') as image_file:
+                with open(os.path.join(img_dir, prefix + '_' + hashlib.sha224(image_name.encode('utf-8')).hexdigest()),
+                          'wb') as image_file:
                     image_file.write(base64.b64decode(bytes(image_data, 'utf-8')))
 
 
@@ -432,7 +436,7 @@ def add_all_texts_columns(dataset):
     @return: dataframe with additional two columns containing all texts for each product
     """
     columns = list(dataset.columns)
-    columns_to_remove = ['match', 'image', 'price', 'url', 'index', 'specification']
+    columns_to_remove = ['id', 'match', 'image', 'price', 'url', 'index', 'specification']
     for col in columns_to_remove:
         if col in columns:
             columns.remove(col)
@@ -447,7 +451,8 @@ def add_all_texts_columns_pairs(dataset):
     @return: dataframe with additional two columns containing all texts for each product
     """
     columns = list(dataset.columns)
-    columns_to_remove = ['match', 'image1', 'image2', 'price1', 'price2', 'url1', 'url2', 'index', 'specification1',
+    columns_to_remove = ['id1', 'id2', 'match', 'image1', 'image2', 'price1', 'price2', 'url1', 'url2', 'index',
+                         'specification1',
                          'specification2']
     for col in columns_to_remove:
         if col in columns:

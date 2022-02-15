@@ -1,25 +1,25 @@
 import bisect
+import copy
 import os
 import sys
+from multiprocessing import Pool
 
 import numpy as np
+import pandas as pd
 
 # DO NOT REMOVE
 # Adding the higher level directories to sys.path so that we can import from the other folders
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from multiprocessing import Pool
-import pandas as pd
-import copy
-from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 from .dataset_handler import create_image_and_text_similarities, preprocess_textual_data
 from .texts.compute_texts_similarity import create_tf_idfs_and_descriptive_words, compute_descriptive_words_similarity
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, MIN_DESCRIPTIVE_WORDS_FOR_MATCH, \
     MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
-    MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, SAVE_PREPROCESSED_PAIRS, PERFORM_ID_DETECTION, \
-    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_SIMILARITIES, \
-    SIMILARITIES_TO_IGNORE
+    MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, IS_ON_PLATFORM, LOAD_PREPROCESSED_DATA, PERFORM_ID_DETECTION, \
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SIMILARITIES_TO_IGNORE, \
+    SAVE_PREPROCESSED_DATA, SAVE_COMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION
+from ..evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 
 
 def filter_products_with_no_similar_words(product, product_descriptive_words, dataset, dataset_start_index,
@@ -61,7 +61,7 @@ def multi_run_text_preprocessing_wrapper(args):
 
 
 def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_detection, brand_detection,
-                                units_detection):
+                                units_detection, numbers_detection):
     """
     Preprocessing of all textual data in dataset in parallel way
     @param pool: parallelling object
@@ -71,14 +71,16 @@ def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_dete
     @param color_detection: True if color should be detected
     @param brand_detection: True if brand should be detected
     @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
     @return preprocessed dataset
     """
     dataset_list = np.array_split(dataset, num_cpu)
-    dataset_list_prepro = pool.map(multi_run_text_preprocessing_wrapper,
-                                   [(item, id_detection, color_detection, brand_detection, units_detection) for item in
-                                    dataset_list])
-    dataset_prepro = pd.concat(dataset_list_prepro)
-    return dataset_prepro
+    dataset_list_preprocessed = pool.map(multi_run_text_preprocessing_wrapper,
+                                         [(item, id_detection, color_detection, brand_detection, units_detection,
+                                           numbers_detection) for item in
+                                          dataset_list])
+    dataset_preprocessed = pd.concat(dataset_list_preprocessed)
+    return dataset_preprocessed
 
 
 def load_model_create_dataset_and_predict_matches(
@@ -105,17 +107,16 @@ def load_model_create_dataset_and_predict_matches(
     """
     classifier = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
-    pair_identifications_file_path = "pair_identifications_{}.csv".format(task_id)
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
-    if SAVE_PREPROCESSED_PAIRS and preprocessed_pairs_file_exists:
+    if LOAD_PREPROCESSED_DATA and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
         preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
                                                          images_kvs2_client,
                                                          filter_data=True)
-    if not is_on_platform and SAVE_PREPROCESSED_PAIRS:
+    if not is_on_platform and SAVE_PREPROCESSED_DATA:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
@@ -156,13 +157,13 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     dataset1_without_marks = copy.deepcopy(dataset1)
     dataset2_without_marks = copy.deepcopy(dataset2)
     dataset1_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset1_without_marks, False, False, False,
-                                                         False)
+                                                         False, False)
     dataset2_without_marks = parallel_text_preprocessing(pool, num_cpu, dataset2_without_marks, False, False, False,
-                                                         False)
+                                                         False, False)
     dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
-                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
+                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, PERFORM_NUMBERS_DETECTION)
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
-                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION)
+                                           PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, PERFORM_NUMBERS_DETECTION)
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks,
                                                                       COLUMNS_TO_BE_PREPROCESSED)
@@ -393,7 +394,7 @@ def load_data_and_train_model(
     similarities_file_path = "similarities_{}.csv".format(task_id)
     similarities_file_exists = os.path.exists(similarities_file_path)
 
-    if SAVE_SIMILARITIES and similarities_file_exists:
+    if LOAD_PREPROCESSED_DATA and similarities_file_exists:
         similarities = pd.read_csv(similarities_file_path)
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
@@ -411,7 +412,7 @@ def load_data_and_train_model(
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
         similarities = pd.concat(similarities_to_concat, axis=1)
-        if not is_on_platform and SAVE_SIMILARITIES:
+        if not is_on_platform and SAVE_COMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)

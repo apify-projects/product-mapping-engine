@@ -20,13 +20,13 @@ UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/uni
 PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/prefixes.tsv')
 UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER,
                                              '../../../data/vocabularies/unit_conversion_us-eu.tsv')
-
+NUMBER_MARK = '#num#'
 ID_MARK = '#id#'
 BRAND_MARK = '#bnd#'
 COLOR_MARK = '#col#'
 UNIT_MARK = '#unit#'
-MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
-SIZE_UNITS = ['XXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK, NUMBER_MARK]
+SIZE_UNITS = ['XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 
 def load_colors():
@@ -157,16 +157,14 @@ def is_in_vocabulary(word):
     return False
 
 
-def is_param(word):
+def is_parameter(word):
     """
     Check whether string is not a parameter
     @param word: the word to be checked
     @return: True if it is a parameter from description, otherwise False
     """
     rgx = re.compile("^[0-9]+[A-Za-z]+$|^[A-Za-z]+[0-9]+$")
-    if re.match(rgx, word):
-        return True
-    return False
+    return re.match(rgx, word)
 
 
 def detect_id(word, next_word):
@@ -176,21 +174,24 @@ def detect_id(word, next_word):
     @param next_word: the word following detected word in the text
     @return: word with marker if it is an id, otherwise the original word
     """
-    # check whether is capslock ad whether is not too short
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
-    if (not word_sub.isupper() and word_sub.isalpha()) or len(
-            word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word):
+    if len(word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word) or is_word_unit(word_sub) or is_brand(
+            word_sub) or word_sub.islower():
         return word
 
-    if word_sub.isnumeric() and not is_word_unit(next_word):
-        word = word.replace("(", "").replace(")", "")
-        return ID_MARK + word
+    word = word.replace("(", "").replace(")", "")
+
+    if is_number(word_sub):
+        if not is_word_unit(next_word):
+            return ID_MARK + word
     elif word_sub.isalpha():
-        if not is_in_vocabulary(word_sub) and not is_brand(word_sub):
+        if not re.match('^[A-Z]{2,}[a-z]*', word_sub):
+            return ID_MARK + word
+    elif word_sub.isalnum():
+        if not is_parameter(word):
             return ID_MARK + word
     else:
-        word = word.replace("(", "").replace(")", "")
-        if not is_param(word):
+        if re.match('^[0-9a-zA-Z]+-?/?.?[0-9a-zA-Z]+$', word_sub):
             return ID_MARK + word
     return word
 
@@ -203,6 +204,7 @@ def is_word_unit(word):
     """
     return word in UNITS_DICT.keys()
 
+
 def is_brand(word):
     """
     Checks whether a word is in the dictionary of brands
@@ -210,6 +212,7 @@ def is_brand(word):
     @return: true if the word is in the dictionary of brands
     """
     return word.lower() in BRANDS
+
 
 def detect_color(word):
     """
@@ -228,9 +231,38 @@ def detect_vocabulary_words(word):
     @param word: the word to be checked
     @return: word with marker if it is in a vocabulary, otherwise the original word
     """
-    if is_in_vocabulary(word.lower()):
-        return "#voc#" + word
+    return "#voc#" + word if is_in_vocabulary(word.lower()) else word
+
+
+def detect_unspecified_number(word, following_word):
+    """
+    Check whether the word is numeric and not id, brand, etc. or unit value
+    @param word: the word to be checked
+    @param following_word: word following the detected word
+    @return: word with marker if it is in an unspecified number, otherwise the original word
+    """
+    if is_number(word):
+        detected = False
+        for mark_token in MARKS:
+            if mark_token in word:
+                detected = True
+        if not detected:
+            if following_word is None or not is_word_unit(following_word):
+                return NUMBER_MARK + word
     return word
+
+
+def is_number(word):
+    """
+    Check whether given word is a number
+    @param word: string to be checked
+    @return: true is string is a number else false
+    """
+    try:
+        float(word)
+        return True
+    except ValueError:
+        return False
 
 
 def detect_brand(word):
@@ -239,10 +271,7 @@ def detect_brand(word):
     @param word: the word to be checked
     @return: word with marker if it is a brand, otherwise the original word
     """
-    if is_brand(word):
-        return BRAND_MARK + word
-    else:
-        return word
+    return BRAND_MARK + word if is_brand(word) else word
 
 
 BRANDS = load_brands()
@@ -258,42 +287,48 @@ def detect_ids_brands_colors_and_units(
         id_detection=True,
         color_detection=True,
         brand_detection=True,
-        units_detection=True
+        units_detection=True,
+        numbers_detection=True
 ):
     """
     Detect ids, colors, brands and units in texts
     @param data: List of texts that each consists of list of words
-    @param id_detection: True if id should be detected
-    @param color_detection: True if color should be detected
-    @param brand_detection: True if brand should be detected
+    @param id_detection: True if ids should be detected
+    @param color_detection: True if colors should be detected
+    @param brand_detection: True if brands should be detected
     @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
     @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
     """
     data_list = []
     for word_list in data:
         detected_word_list = []
         is_first = True
-        previous = ''
+        previous_word = ''
+        following_word = ''
         for i, word in enumerate(word_list):
+            if i < len(word_list) - 1:
+                following_word = word_list[i + 1]
+            if i == len(word_list) - 1:
+                following_word = ''
             if color_detection:
                 word = detect_color(word)
             if brand_detection and not word.startswith(COLOR_MARK):
                 word = detect_brand(word)
             if units_detection and not is_first:
-                new_value, word = detect_units(word, previous)
+                new_value, word = detect_units(word, previous_word)
                 if 'size' in word:
                     detected_word_list.append(word.replace('size ', ''))
                     detected_word_list.append(f'{UNIT_MARK}size')
                 else:
                     detected_word_list[len(detected_word_list) - 1] = str(new_value)
             if id_detection:
-                next_word = ''
-                if i < len(word_list) - 1:
-                    next_word = word_list[i + 1]
-                word = detect_id(word, next_word)
+                word = detect_id(word, following_word)
+            if numbers_detection:
+                word = detect_unspecified_number(word, following_word)
             detected_word_list.append(word)
             is_first = False
-            previous = word
+            previous_word = word
         data_list.append(detected_word_list)
 
     return data_list
@@ -374,7 +409,8 @@ def detect_units(word, previous_word):
     @return: word with marker if it is an unit, otherwise the original word
     """
     if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
-        new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(), float(previous_word.replace(',', '.', 1)))
+        new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
+                                                                   float(previous_word.replace(',', '.', 1)))
         new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
         return new_value, UNIT_MARK + new_word
     if word in SIZE_UNITS:
