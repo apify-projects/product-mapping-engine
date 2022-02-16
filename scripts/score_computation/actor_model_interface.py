@@ -161,8 +161,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION, PERFORM_COLOR_DETECTION,
                                            PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, PERFORM_NUMBERS_DETECTION)
     # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks,
-                                                                      COLUMNS_TO_BE_PREPROCESSED)
+    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)
     print("Text preprocessing finished")
 
     if filter_data:

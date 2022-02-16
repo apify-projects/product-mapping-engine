@@ -14,7 +14,8 @@ from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
 from .texts.compute_texts_similarity import compute_similarity_of_texts
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, SIMILARITIES_TO_BE_COMPUTED, IMAGE_FILTERING, \
-    IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES, IS_ON_PLATFORM
+    IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES, IS_ON_PLATFORM, \
+    KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
 from ..preprocessing.images.image_preprocessing import compute_image_hashes
 from ..preprocessing.texts.keywords_detection import detect_ids_brands_colors_and_units
 from ..preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
@@ -92,6 +93,19 @@ def preprocess_textual_data(dataset,
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset:
             dataset[column] = preprocess_text(dataset[column].values)
+            if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys():
+                if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    id_detection = False
+                if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    brand_detection = False
+                if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    color_detection = False
+                if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    id_detection = False
+                if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    units_detection = False
+                if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+                    numbers_detection = False
             dataset[column] = detect_ids_brands_colors_and_units(
                 dataset[column],
                 id_detection,
@@ -377,9 +391,13 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, t
     df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2)
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2[0]:
+            similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[
+                column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED else []
+            tf_idfs_column = tf_idfs[column] if column in tf_idfs else None
+            descriptive_words_column = descriptive_words[column] if column in descriptive_words else None
             columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
-                                                             tf_idfs[column],
-                                                             descriptive_words[column]
+                                                             tf_idfs_column, descriptive_words_column,
+                                                             similarities_to_ignore
                                                              )
 
             columns_similarity = pd.DataFrame(columns_similarity)

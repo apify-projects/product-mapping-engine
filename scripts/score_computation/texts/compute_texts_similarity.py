@@ -7,21 +7,22 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
-    MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED
+    MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
+    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
-def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words):
+def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_ignore):
     """
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
     @param tf_idfs: tf.idfs of all words from both datasets
     @param descriptive_words: descriptive words from both datasets
+    @param similarities_to_ignore: similarities that should not be computed
     @return: dataset of pair similarity scores
     """
-
-    half_length = floor(len(descriptive_words) / 2)
+    half_length = floor(len(descriptive_words) / 2) if descriptive_words is not None else 0
     match_ratios_list = []
 
     for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
@@ -33,21 +34,21 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words):
             match_ratios = {}
 
             # detect and compare ids
-            if 'id' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'id' in SIMILARITIES_TO_BE_COMPUTED and 'id' not in similarities_to_ignore:
                 id2 = [word for word in product2 if ID_MARK in word]
                 match_ratios['id'] = compute_matching_pairs(id1, id2, True)
 
             # detect and compare brands
-            if 'brand' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'brand' in SIMILARITIES_TO_BE_COMPUTED and 'brand' not in similarities_to_ignore:
                 bnd2 = [word for word in product2 if BRAND_MARK in word]
                 match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
 
             # ratio of the similar words
-            if 'words' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'words' in SIMILARITIES_TO_BE_COMPUTED and 'words' not in similarities_to_ignore:
                 product2_no_markers = remove_markers(copy.deepcopy(product2))
                 match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
 
-            if 'cos' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'cos' in SIMILARITIES_TO_BE_COMPUTED and 'cos' not in similarities_to_ignore and tf_idfs is not None:
                 # cosine similarity of vectors from tf-idf
                 cos_similarity = cosine_similarity(
                     [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values]
@@ -57,7 +58,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words):
                 else:
                     match_ratios['cos'] = 2 * cos_similarity - 1
 
-            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED and 'descriptives' not in similarities_to_ignore and descriptive_words is not None:
                 # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
                     descriptive_words.iloc[product1_idx].values,
@@ -68,11 +69,11 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words):
                 else:
                     match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
 
-            if 'units' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'units' in SIMILARITIES_TO_BE_COMPUTED and 'units' not in similarities_to_ignore:
                 # compare ratio of corresponding units and values in both texts
                 match_ratios['units'] = compare_units_and_values(product1, product2)
 
-            if 'numbers' in SIMILARITIES_TO_BE_COMPUTED:
+            if 'numbers' in SIMILARITIES_TO_BE_COMPUTED and 'numbers' not in similarities_to_ignore:
                 # compare unspecified numbers in both texts
                 match_ratios['numbers'] = compare_numerical_values(product1, product2)
 
@@ -173,24 +174,27 @@ def compute_tf_idf(dataset, print_stats=False):
     return tf_idfs
 
 
-def create_tf_idfs_and_descriptive_words(dataset1, dataset2, columns):
+def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
     """
     Create tf.idfs and descriptive words for each column in the dataset
     @param dataset1: first dataframe in which to create tf.idfs and descriptive words
     @param dataset2: second dataframe in which to create tf.idfs and descriptive words
-    @param columns: list of columns to create tf.idfs and descriptive words in
     @return: dict with tf.idfs and descriptive words for each column
     """
     tf_idfs = {}
     descriptive_words = {}
-    for column in columns:
-        tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
-        descriptive_words_col = find_descriptive_words(
-            tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
-            number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
-        )
-        tf_idfs[column] = tf_idfs_col
-        descriptive_words[column] = descriptive_words_col
+    for column in COLUMNS_TO_BE_PREPROCESSED:
+        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and 'cos' in
+                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
+            tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
+            tf_idfs[column] = tf_idfs_col
+        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and 'descriptives' in
+                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
+            descriptive_words_col = find_descriptive_words(
+                tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
+                number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+            )
+            descriptive_words[column] = descriptive_words_col
     return tf_idfs, descriptive_words
 
 
