@@ -40,10 +40,6 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
             product_descriptive_words,
             second_product_descriptive_words
         )
-        '''
-        if "sony" in second_product['name']:
-            print(f"{set(product['name'])} vs {set(second_product['name'])} = {len(set(product['name']) & set(second_product['name']))}")
-        '''
         if len(set(product['name']) & set(second_product['name'])) >= MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and \
                 descriptive_words_sim >= MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
             data_subset = data_subset.append(second_product)

@@ -338,12 +338,14 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @param num_cpu: number of processes
     @return: Similarity scores for the product pairs
     """
-    # TODO fix paralelization (copying dataset1 and dataset2 for each process takes way too much memory)
-    num_cpu = 1
+
+    dataset1_subsets = [dataset1.iloc[list(product_pairs_idx_part.keys())] for product_pairs_idx_part in
+                        chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
+    dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in
+                        chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
     df_all_similarities_list = pool.map(multi_run_text_similarities_wrapper,
-                                        [(dataset1, dataset2, descriptive_words,
-                                          product_pairs_idx_part, tf_idfs) for product_pairs_idx_part in
-                                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))])
+                                        [(dataset1_subsets[i], dataset2_subsets[i], descriptive_words, tf_idfs) for i in
+                                         range(0, len(dataset1_subsets))])
     df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
 
     # for each column compute the similarity of product pairs selected after filtering
@@ -363,21 +365,19 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     return df_all_similarities
 
 
-def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
-                                        product_pairs_idx, tf_idfs):
+def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, tf_idfs):
     """
     Compute similarity score of each pair in both datasets parallelly for each column
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
     @param descriptive_words: decsriptive words from both datasets
-    @param product_pairs_idx: dict with indices of filtered possible matching pairs
     @param tf_idfs: tf.idfs of all words from both datasets
     @return: dataset of pair similarity scores
     """
-    df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx)
+    df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2)
     for column in COLUMNS_TO_BE_PREPROCESSED:
-        if column in dataset1 and column in dataset2:
-            columns_similarity = compute_similarity_of_texts(dataset1[column], dataset2[column], product_pairs_idx,
+        if column in dataset1 and column in dataset2[0]:
+            columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
                                                              tf_idfs[column],
                                                              descriptive_words[column]
                                                              )
@@ -391,7 +391,7 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words,
     return df_all_similarities
 
 
-def create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx):
+def create_empty_dataframe_with_ids(dataset1, dataset2):
     """
     Create dataframe for text similarity results with ids of possible pairs after filtration
     @param product_pairs_idx: indices of filtered possible matching pairs
@@ -401,10 +401,10 @@ def create_empty_dataframe_with_ids(dataset1, dataset2, product_pairs_idx):
     """
     dataset1_ids = []
     dataset2_ids = []
-    for product_id in product_pairs_idx:
-        ids1 = [product_id] * len(product_pairs_idx[product_id])
-        dataset1_ids = dataset1_ids + [dataset1['id'][i] for i in ids1]
-        dataset2_ids = dataset2_ids + [dataset2['id'][i] for i in product_pairs_idx[product_id]]
+    ids1 = dataset1['id'].values
+    for i, id1 in enumerate(ids1):
+        dataset1_ids += [id1] * len(dataset2[i])
+        dataset2_ids += list(dataset2[i]['id'].values)
     df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
     df_all_similarities['id1'] = dataset1_ids
     df_all_similarities['id2'] = dataset2_ids

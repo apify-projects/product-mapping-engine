@@ -11,12 +11,11 @@ from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
-def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words):
+def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words):
     """
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
-    @param product_pairs_idx: dict with indices of candidate matching pairs
     @param tf_idfs: tf.idfs of all words from both datasets
     @param descriptive_words: descriptive words from both datasets
     @return: dataset of pair similarity scores
@@ -25,14 +24,12 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
     half_length = floor(len(descriptive_words) / 2)
     match_ratios_list = []
 
-    for product_idx, corresponding_indices in product_pairs_idx.items():
-        product1 = dataset1.loc[[product_idx]].values[0]
+    for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
         product1_no_markers = remove_markers(copy.deepcopy(product1))
         bnd1 = [word for word in product1 if BRAND_MARK in word]
         id1 = [word for word in product1 if ID_MARK in word]
 
-        for product2_idx in corresponding_indices:
-            product2 = dataset2.loc[[product2_idx]].values[0]
+        for product2_idx, product2 in products2_list.iteritems():
             match_ratios = {}
 
             # detect and compare ids
@@ -53,7 +50,7 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             if 'cos' in SIMILARITIES_TO_BE_COMPUTED:
                 # cosine similarity of vectors from tf-idf
                 cos_similarity = cosine_similarity(
-                    [tf_idfs.iloc[product_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values]
+                    [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values]
                 )[0][1]
                 if product1 == "" or product2 == "":
                     match_ratios['cos'] = 0
@@ -63,8 +60,8 @@ def compute_similarity_of_texts(dataset1, dataset2, product_pairs_idx, tf_idfs, 
             if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED:
                 # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
-                    descriptive_words.iloc[product_idx].values,
-                    descriptive_words.iloc[half_length + product_idx].values
+                    descriptive_words.iloc[product1_idx].values,
+                    descriptive_words.iloc[half_length + product2_idx].values
                 ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
                 if product1 == "" or product2 == "":
                     match_ratios['descriptives'] = 0
