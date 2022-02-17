@@ -416,5 +416,14 @@ def detect_units(word, previous_word):
     if word in SIZE_UNITS:
         return previous_word, "size " + word
     if is_word_unit(word.lower()) and '×' in previous_word:
-        return previous_word, UNIT_MARK + word
+        converted_value_list = []
+        new_word = word
+        for value in previous_word.split('×'):
+            new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
+                                                                       float(value.replace(',', '.', 1)))
+            new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
+            converted_value_list.append(new_value)
+        converted_value_list = [str(item) for item in converted_value_list]
+        converted_value = '×'.join(converted_value_list)
+        return converted_value, UNIT_MARK + new_word
     return previous_word, word
