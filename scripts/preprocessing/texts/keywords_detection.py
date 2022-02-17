@@ -284,7 +284,7 @@ def detect_brand(word_list):
     detected_word_list = []
     for word in word_list:
         if word in BRANDS_JOINED:
-            word = BRAND_MARK+word
+            word = BRAND_MARK + word
         detected_word_list.append(word)
 
     return detected_word_list
