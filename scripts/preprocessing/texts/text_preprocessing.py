@@ -103,7 +103,7 @@ def tokenize(text):
     @param text: string text to be split
     @return: list of words of text
     """
-    rgx = re.compile("\w+[\"\-'×.,%]?\w*")
+    rgx = re.compile("\w[\"\-'×.,%]?\w*")
     word_list = rgx.findall(text)
     return word_list
 

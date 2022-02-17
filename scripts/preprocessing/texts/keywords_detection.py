@@ -52,10 +52,11 @@ def load_brands():
     """
     file = open(BRANDS_FILE, 'r', encoding='utf-8')
     brand_list = json.load(file)
+    brand_list_joined = []
     for x in range(len(brand_list)):
         brand_list[x] = brand_list[x].lower()
-
-    return brand_list
+        brand_list_joined.append(brand_list[x].lower().replace(' ', ''))
+    return brand_list, brand_list_joined
 
 
 def load_vocabulary(vocabulary_file):
@@ -71,7 +72,8 @@ def create_unit_dict():
     """
     Load files with units and their possible prefixes and create all possible units variants and combination
     from shortcuts and different variants of the texts with their values for conversion to their elementary version
-    @return: Dataset with units their prefixes and values for conversion to basic form
+    @return: Dataset with units names (without spaces) and values for conversion to basic form,
+             list of original unit names without removing spaces in them
     """
     prefixes_df = pd.read_csv(PREFIXES_PATH, sep='\t', keep_default_na=False)
     units_df = pd.read_csv(UNITS_PATH, sep='\t', keep_default_na=False)
@@ -109,7 +111,9 @@ def create_unit_dict():
                         units_dict[
                             f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{name.lower()}'] = {
                             'value': value, 'basic': basic_shortcut}
-    return units_dict
+    original_unit_names = units_dict.keys()
+    units_dict = {k.replace(' ', ''): v for k, v in units_dict.items()}
+    return units_dict, list(original_unit_names)
 
 
 def load_imperial_to_metric_units_conversion_file():
@@ -211,7 +215,7 @@ def is_brand(word):
     @param word: checked word
     @return: true if the word is in the dictionary of brands
     """
-    return word.lower() in BRANDS
+    return word.lower() in BRANDS_JOINED
 
 
 def detect_color(word):
@@ -265,20 +269,32 @@ def is_number(word):
         return False
 
 
-def detect_brand(word):
+def detect_brand(word_list):
     """
-    Check whether the word is a brand
-    @param word: the word to be checked
-    @return: word with marker if it is a brand, otherwise the original word
+    Search for the brands in the list of words
+    @param word_list: list if words to be detected
+    @return: word_list with marked words which are the brands
     """
-    return BRAND_MARK + word if is_brand(word) else word
+    # detect units with more words separated by the space in the name and merge them into single word without spaces
+    word_list_joined = ' '.join(word_list)
+    for value in BRANDS:
+        word_list_joined = word_list_joined.replace(value, value.replace(' ', ''))
+    word_list = word_list_joined.split(' ')
+
+    detected_word_list = []
+    for word in word_list:
+        if word in BRANDS_JOINED:
+            word = BRAND_MARK+word
+        detected_word_list.append(word)
+
+    return detected_word_list
 
 
-BRANDS = load_brands()
+BRANDS, BRANDS_JOINED = load_brands()
 COLORS = load_colors()
 VOCABULARY_CZ = load_vocabulary(VOCABULARY_CZ_FILE)
 VOCABULARY_EN = load_vocabulary(VOCABULARY_EN_FILE)
-UNITS_DICT = create_unit_dict()
+UNITS_DICT, ORIGINAL_UNIT_NAMES = create_unit_dict()
 UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
 
 
@@ -303,8 +319,12 @@ def detect_ids_brands_colors_and_units(
     data_list = []
     for word_list in data:
         detected_word_list = []
-        is_first = True
-        previous_word = ''
+
+        # detect units
+        if units_detection:
+            detected_word_list = detect_units(word_list)
+
+        # detect ids and colors and unspecified numbers
         following_word = ''
         for i, word in enumerate(word_list):
             if i < len(word_list) - 1:
@@ -313,22 +333,16 @@ def detect_ids_brands_colors_and_units(
                 following_word = ''
             if color_detection:
                 word = detect_color(word)
-            if brand_detection and not word.startswith(COLOR_MARK):
-                word = detect_brand(word)
-            if units_detection and not is_first:
-                new_value, word = detect_units(word, previous_word)
-                if 'size' in word:
-                    detected_word_list.append(word.replace('size ', ''))
-                    detected_word_list.append(f'{UNIT_MARK}size')
-                else:
-                    detected_word_list[len(detected_word_list) - 1] = str(new_value)
             if id_detection:
                 word = detect_id(word, following_word)
             if numbers_detection:
                 word = detect_unspecified_number(word, following_word)
             detected_word_list.append(word)
-            is_first = False
-            previous_word = word
+
+        # detect brands
+        if brand_detection:
+            detected_word_list = detect_brand(detected_word_list)
+
         data_list.append(detected_word_list)
 
     return data_list
@@ -401,29 +415,59 @@ def convert_unit_and_value_to_basic_form(unit, value):
     return name, value
 
 
-def detect_units(word, previous_word):
+def detect_units(word_list):
     """
-    Check whether the word is not a unit
-    @param word: word to be detected
-    @param previous_word: previous word needed for detection
-    @return: word with marker if it is an unit, otherwise the original word
+    Search for the units and values in the list of words and convert them into their basic forms
+    @param word_list: list if words to be detected
+    @return: word_list with marked words which are the units
     """
-    if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
-        new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
-                                                                   float(previous_word.replace(',', '.', 1)))
-        new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
-        return new_value, UNIT_MARK + new_word
-    if word in SIZE_UNITS:
-        return previous_word, "size " + word
-    if is_word_unit(word.lower()) and '×' in previous_word:
-        converted_value_list = []
-        new_word = word
-        for value in previous_word.split('×'):
+    # detect units with more words separated by the space in the name and merge them into single word without spaces
+    word_list_joined = ' '.join(word_list)
+    for value in ORIGINAL_UNIT_NAMES:
+        word_list_joined = word_list_joined.replace(value, value.replace(' ', ''))
+    word_list = word_list_joined.split(' ')
+
+    # detect units and values
+    detected_word_list = []
+    previous_word = ''
+    for i, word in enumerate(word_list):
+        if previous_word == '':
+            detected_word_list.append(word)
+            if previous_word in SIZE_UNITS:
+                detected_word_list.append(UNIT_MARK + 'size')
+            previous_word = word
+            continue
+        if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
             new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
-                                                                       float(value.replace(',', '.', 1)))
+                                                                       float(
+                                                                           previous_word.replace(',', '.', 1)
+                                                                       )
+                                                                       )
             new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
-            converted_value_list.append(new_value)
-        converted_value_list = [str(item) for item in converted_value_list]
-        converted_value = '×'.join(converted_value_list)
-        return converted_value, UNIT_MARK + new_word
-    return previous_word, word
+            detected_word_list.pop()
+            detected_word_list.append(str(new_value))
+            detected_word_list.append(UNIT_MARK + new_word)
+            previous_word = word
+        elif word in SIZE_UNITS:
+            previous_word = word
+            detected_word_list.append(word)
+            detected_word_list.append(UNIT_MARK + "size")
+        elif is_word_unit(word.lower()) and '×' in previous_word:
+            converted_value_list = []
+            new_word = word
+            for value in previous_word.split('×'):
+                new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
+                                                                           float(value.replace(',', '.', 1)))
+                new_word, new_value = convert_imperial_to_metric_units(new_word, new_value)
+                converted_value_list.append(new_value)
+            converted_value_list = [str(item) for item in converted_value_list]
+            converted_value = '×'.join(converted_value_list)
+            detected_word_list.pop()
+            detected_word_list.append(converted_value)
+            detected_word_list.append(UNIT_MARK + new_word)
+            previous_word = word
+        else:
+            previous_word = word
+            detected_word_list.append(word)
+
+    return detected_word_list
