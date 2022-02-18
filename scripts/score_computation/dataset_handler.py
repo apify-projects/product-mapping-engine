@@ -12,7 +12,7 @@ import pandas as pd
 from .images.compute_hashes_similarity import create_hash_sets, compute_distances
 from .texts.compute_specifications_similarity import \
     compute_similarity_of_specifications
-from .texts.compute_texts_similarity import compute_similarity_of_texts
+from .texts.compute_texts_similarity import compute_similarity_of_texts, compute_similarity_of_keywords
 from ..configuration import COLUMNS_TO_BE_PREPROCESSED, SIMILARITIES_TO_BE_COMPUTED, IMAGE_FILTERING, \
     IMAGE_FILTERING_THRESH, COMPUTE_TEXT_SIMILARITIES, COMPUTE_IMAGE_SIMILARITIES, IS_ON_PLATFORM, \
     KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
@@ -87,6 +87,7 @@ def preprocess_textual_data(dataset,
     @return preprocessed dataset
     """
     dataset['price'] = pd.to_numeric(dataset['price'])
+    detected_keywords_df = pd.DataFrame()
     dataset = dataset.sort_values(by=['price'])
     dataset = parse_specifications_and_create_copies(dataset, 'specification')
     dataset = add_all_texts_columns(dataset)
@@ -106,7 +107,7 @@ def preprocess_textual_data(dataset,
                     units_detection = False
                 if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
                     numbers_detection = False
-            dataset[column] = detect_ids_brands_colors_and_units(
+            dataset[column], detected_keywords_df[column] = detect_ids_brands_colors_and_units(
                 dataset[column],
                 id_detection,
                 color_detection,
@@ -114,9 +115,21 @@ def preprocess_textual_data(dataset,
                 units_detection,
                 numbers_detection
             )
+    detected_keywords_list = []
+    for _, row in detected_keywords_df.iterrows():
+        dict_list = [d[1] for d in row.iteritems()]
+        merged_detected_keywords = {}
+        for item in dict_list:
+            for key in item.keys():
+                if key not in merged_detected_keywords:
+                    merged_detected_keywords[key] = []
+                merged_detected_keywords[key] += item[key]
+        merged_detected_keywords_df = pd.DataFrame([merged_detected_keywords])
+        detected_keywords_list.append(merged_detected_keywords_df)
+    detected_keywords = pd.concat(detected_keywords_list)
     if 'specification' in dataset.columns:
         dataset['specification'] = preprocess_specifications(dataset['specification'])
-    return dataset
+    return dataset, detected_keywords
 
 
 def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
@@ -399,13 +412,15 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, t
                                                              tf_idfs_column, descriptive_words_column,
                                                              similarities_to_ignore
                                                              )
-
             columns_similarity = pd.DataFrame(columns_similarity)
             for similarity_name, similarity_value in columns_similarity.items():
                 df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
         else:
             for similarity_name in SIMILARITIES_TO_BE_COMPUTED:
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
+    dataset1_keywords = dataset1.loc[:, dataset1.columns.str.contains('_list')]
+    dataset2_keywords = [item.loc[:, item.columns.str.contains('_list')] for item in dataset2]
+    keywords_similarity = compute_similarity_of_keywords(dataset1_keywords, dataset2_keywords)
     return df_all_similarities
 
 

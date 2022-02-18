@@ -273,10 +273,11 @@ def detect_brand(word_list):
     """
     Search for the brands in the list of words
     @param word_list: list if words to be detected
-    @return: word_list with marked words which are the brands
+    @return: word_list with marked words which are the brands, list of detected brands
     """
     # detect units with more words separated by the space in the name and merge them into single word without spaces
     word_list_joined = ' '.join(word_list)
+    detected_brand_list = []
     for value in BRANDS:
         word_list_joined = word_list_joined.replace(value, value.replace(' ', ''))
     word_list = word_list_joined.split(' ')
@@ -284,10 +285,11 @@ def detect_brand(word_list):
     detected_word_list = []
     for word in word_list:
         if word in BRANDS_JOINED:
+            detected_brand_list.append(word)
             word = BRAND_MARK + word
         detected_word_list.append(word)
 
-    return detected_word_list
+    return detected_word_list, detected_brand_list
 
 
 BRANDS, BRANDS_JOINED = load_brands()
@@ -317,15 +319,26 @@ def detect_ids_brands_colors_and_units(
     @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
     """
     data_list = []
+    detected_keywords_list = []
     for word_list in data:
         detected_word_list = []
+        detected_keywords = {}
+
+        detected_keywords_in_text = {}
+        if id_detection:
+            detected_keywords_in_text['ids_list'] = []
+        if numbers_detection:
+            detected_keywords_in_text['numbers_list'] = []
 
         # detect units
         if units_detection:
-            detected_word_list = detect_units(word_list)
+            detected_word_list, detected_unit_list = detect_units(word_list)
+            detected_keywords['units_list'] = detected_unit_list
 
         # detect ids and colors and unspecified numbers
         following_word = ''
+        detected_ids_in_text = []
+        detected_numbers_in_text = []
         for i, word in enumerate(word_list):
             if i < len(word_list) - 1:
                 following_word = word_list[i + 1]
@@ -335,17 +348,23 @@ def detect_ids_brands_colors_and_units(
                 word = detect_color(word)
             if id_detection:
                 word = detect_id(word, following_word)
+                if ID_MARK in word:
+                    detected_ids_in_text.append(word.replace(COLOR_MARK, ''))
             if numbers_detection:
                 word = detect_unspecified_number(word, following_word)
+                if NUMBER_MARK in word:
+                    detected_numbers_in_text.append(word.replace(COLOR_MARK, ''))
             detected_word_list.append(word)
-
+        detected_keywords['ids_list'] = detected_ids_in_text
+        detected_keywords['numbers_list'] = detected_numbers_in_text
         # detect brands
         if brand_detection:
-            detected_word_list = detect_brand(detected_word_list)
+            detected_word_list, detected_brand_list = detect_brand(detected_word_list)
+            detected_keywords['brands_list'] = detected_brand_list
 
         data_list.append(detected_word_list)
-
-    return data_list
+        detected_keywords_list.append(detected_keywords)
+    return data_list, detected_keywords_list
 
 
 def compute_likelihood_of_first_words(data):
@@ -419,7 +438,7 @@ def detect_units(word_list):
     """
     Search for the units and values in the list of words and convert them into their basic forms
     @param word_list: list if words to be detected
-    @return: word_list with marked words which are the units
+    @return: word_list with marked words which are the units, list of detected units and values
     """
     # detect units with more words separated by the space in the name and merge them into single word without spaces
     word_list_joined = ' '.join(word_list)
@@ -428,6 +447,7 @@ def detect_units(word_list):
     word_list = word_list_joined.split(' ')
 
     # detect units and values
+    detected_units_list = []
     detected_word_list = []
     previous_word = ''
     for i, word in enumerate(word_list):
@@ -435,6 +455,7 @@ def detect_units(word_list):
             detected_word_list.append(word)
             if previous_word in SIZE_UNITS:
                 detected_word_list.append(UNIT_MARK + 'size')
+                detected_units_list.append(['size', previous_word])
             previous_word = word
             continue
         if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
@@ -448,10 +469,12 @@ def detect_units(word_list):
             detected_word_list.append(str(new_value))
             detected_word_list.append(UNIT_MARK + new_word)
             previous_word = word
+            detected_units_list.append([new_word, new_value])
         elif word in SIZE_UNITS:
             previous_word = word
             detected_word_list.append(word)
             detected_word_list.append(UNIT_MARK + "size")
+            detected_units_list.append(['size', previous_word])
         elif is_word_unit(word.lower()) and '×' in previous_word:
             converted_value_list = []
             new_word = word
@@ -466,8 +489,9 @@ def detect_units(word_list):
             detected_word_list.append(converted_value)
             detected_word_list.append(UNIT_MARK + new_word)
             previous_word = word
+            detected_units_list.append([new_word, converted_value])
         else:
             previous_word = word
             detected_word_list.append(word)
 
-    return detected_word_list
+    return detected_word_list, detected_units_list

@@ -33,7 +33,7 @@ def preprocess_specifications(dataset):
         for name, value in product_specification.items():
             name = preprocess_text([name])
             value = preprocess_text([value])
-            text_detected = detect_ids_brands_colors_and_units(
+            text_detected, _ = detect_ids_brands_colors_and_units(
                 value,
                 id_detection=False,
                 color_detection=False,

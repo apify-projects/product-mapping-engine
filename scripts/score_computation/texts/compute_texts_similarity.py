@@ -81,6 +81,19 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
     return match_ratios_list
 
 
+def compute_similarity_of_keywords(keywords1, keywords2_df):
+    """
+    Computes similarity of keywords
+    @param keywords1: first dataframe with keywords
+    @param keywords2_df: list of dataframes with second kewyords
+    @return: keywords similarity
+    """
+    #for keyword1, keywords2_list in zip(keywords1.iteritems(), keywords2_df):
+    #    for keyword2 in keywords2_list.iteritems():
+    #        pass
+    return 0
+
+
 def compute_matching_pairs(list1, list2, allow_substrings=False):
     """
     Compute matching items in two lists
