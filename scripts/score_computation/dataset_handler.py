@@ -421,6 +421,9 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, t
     dataset1_keywords = dataset1.loc[:, dataset1.columns.str.contains('_list')]
     dataset2_keywords = [item.loc[:, item.columns.str.contains('_list')] for item in dataset2]
     keywords_similarity = compute_similarity_of_keywords(dataset1_keywords, dataset2_keywords)
+    keywords_similarity = pd.DataFrame(keywords_similarity)
+    for similarity_name, similarity_value in keywords_similarity.items():
+        df_all_similarities[similarity_name] = similarity_value
     return df_all_similarities
 
 

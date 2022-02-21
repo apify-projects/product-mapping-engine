@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
-    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
+    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, ALL_KEYWORDS_SIMILARITIES
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
@@ -85,13 +85,26 @@ def compute_similarity_of_keywords(keywords1, keywords2_df):
     """
     Computes similarity of keywords
     @param keywords1: first dataframe with keywords
-    @param keywords2_df: list of dataframes with second kewyords
-    @return: keywords similarity
+    @param keywords2_df: list of dataframes with second keywords
+    @return: list of keywords similarities
     """
-    #for keyword1, keywords2_list in zip(keywords1.iteritems(), keywords2_df):
-    #    for keyword2 in keywords2_list.iteritems():
-    #        pass
-    return 0
+    total_similarities = []
+    for keywords1, keywords2_list in zip(keywords1.iterrows(), keywords2_df):
+        similarities_dict = {}
+        keywords1 = keywords1[1].to_dict()
+        for keywords2 in keywords2_list.iterrows():
+            keywords2 = keywords2[1].to_dict()
+            for (key1, value1), (key2, value2) in zip(keywords1.items(), keywords2.items()):
+                if key1 in ALL_KEYWORDS_SIMILARITIES:
+                    value1_tuples = [tuple(v) for v in value1]
+                    value2_tuples = [tuple(v) for v in value2]
+                    similarity = len(set(value1_tuples) & set(value2_tuples))
+                    total_len = len(value1) + len(value2)
+                    if similarity != 0 and not total_len == 0:
+                        similarity = (total_len - 2 * similarity) / total_len
+                    similarities_dict[key1] = similarity
+            total_similarities.append(similarities_dict)
+    return total_similarities
 
 
 def compute_matching_pairs(list1, list2, allow_substrings=False):

@@ -10,6 +10,7 @@ SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'u
 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_description': ['id', 'brand', 'color', 'words'],
                                                  'specification_text': ['descriptives', 'cos', 'words'],
                                                  'all_texts': ['id', 'brand', 'color', 'numbers', 'words', 'units']}
+ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 SIMILARITIES_TO_IGNORE = []
 LOWER_CASE_TEXT = True
 STEM_ENGLISH_TEXT = True

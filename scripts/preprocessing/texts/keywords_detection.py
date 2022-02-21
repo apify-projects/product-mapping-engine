@@ -326,14 +326,14 @@ def detect_ids_brands_colors_and_units(
 
         detected_keywords_in_text = {}
         if id_detection:
-            detected_keywords_in_text['ids_list'] = []
+            detected_keywords_in_text['all_ids_list'] = []
         if numbers_detection:
-            detected_keywords_in_text['numbers_list'] = []
+            detected_keywords_in_text['all_numbers_list'] = []
 
         # detect units
         if units_detection:
             detected_word_list, detected_unit_list = detect_units(word_list)
-            detected_keywords['units_list'] = detected_unit_list
+            detected_keywords['all_units_list'] = detected_unit_list
 
         # detect ids and colors and unspecified numbers
         following_word = ''
@@ -355,12 +355,12 @@ def detect_ids_brands_colors_and_units(
                 if NUMBER_MARK in word:
                     detected_numbers_in_text.append(word.replace(COLOR_MARK, ''))
             detected_word_list.append(word)
-        detected_keywords['ids_list'] = detected_ids_in_text
-        detected_keywords['numbers_list'] = detected_numbers_in_text
+        detected_keywords['all_ids_list'] = detected_ids_in_text
+        detected_keywords['all_numbers_list'] = detected_numbers_in_text
         # detect brands
         if brand_detection:
             detected_word_list, detected_brand_list = detect_brand(detected_word_list)
-            detected_keywords['brands_list'] = detected_brand_list
+            detected_keywords['all_brands_list'] = detected_brand_list
 
         data_list.append(detected_word_list)
         detected_keywords_list.append(detected_keywords)
