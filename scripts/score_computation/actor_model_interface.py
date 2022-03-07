@@ -75,9 +75,8 @@ def parallel_text_preprocessing(pool, num_cpu, dataset, id_detection, color_dete
                                          [(item, id_detection, color_detection, brand_detection, units_detection,
                                            numbers_detection) for item in
                                           dataset_list])
-    dataset_preprocessed = pd.concat(preprocessed_data[0] for preprocessed_data in dataset_list_preprocessed)
-    keywords_detected = pd.concat(preprocessed_data[1] for preprocessed_data in dataset_list_preprocessed)
-    return dataset_preprocessed, keywords_detected
+    dataset_preprocessed = pd.concat(preprocessed_data for preprocessed_data in dataset_list_preprocessed)
+    return dataset_preprocessed
 
 
 def load_model_create_dataset_and_predict_matches(
@@ -134,6 +133,19 @@ def load_model_create_dataset_and_predict_matches(
     return predicted_matches
 
 
+def split_dataframes(dataset):
+    """
+    Split preprocessed dataframe into dataframe with detected keywords and without them
+    @param dataset: preprocessed dataframe
+    @return: two dataframes with detected keywords and without them
+    """
+    columns = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'price']
+    dataset_without_marks = dataset[[col for col in columns]]
+    dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
+    dataset = dataset[[col for col in dataset.columns if col not in columns]]
+    return dataset, dataset_without_marks
+
+
 def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client,
                                 filter_data):
     """
@@ -151,23 +163,21 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
 
     # preprocess data
     print("Text preprocessing started")
-    dataset1_without_marks = copy.deepcopy(dataset1)
-    dataset2_without_marks = copy.deepcopy(dataset2)
-    dataset1_without_marks, _ = parallel_text_preprocessing(pool, num_cpu, dataset1_without_marks, False, False, False,
-                                                            False, False)
-    dataset2_without_marks, _ = parallel_text_preprocessing(pool, num_cpu, dataset2_without_marks, False, False, False,
-                                                            False, False)
-    dataset1, detected_keywords1 = parallel_text_preprocessing(pool, num_cpu, dataset1, PERFORM_ID_DETECTION,
-                                                               PERFORM_COLOR_DETECTION,
-                                                               PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION,
-                                                               PERFORM_NUMBERS_DETECTION)
-    dataset2, detected_keywords2 = parallel_text_preprocessing(pool, num_cpu, dataset2, PERFORM_ID_DETECTION,
-                                                               PERFORM_COLOR_DETECTION,
-                                                               PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION,
-                                                               PERFORM_NUMBERS_DETECTION)
+    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1,
+                                           PERFORM_ID_DETECTION,
+                                           PERFORM_COLOR_DETECTION,
+                                           PERFORM_BRAND_DETECTION,
+                                           PERFORM_UNITS_DETECTION,
+                                           PERFORM_NUMBERS_DETECTION)
+    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2,
+                                           PERFORM_ID_DETECTION,
+                                           PERFORM_COLOR_DETECTION,
+                                           PERFORM_BRAND_DETECTION,
+                                           PERFORM_UNITS_DETECTION,
+                                           PERFORM_NUMBERS_DETECTION)
+    dataset1, dataset1_without_marks = split_dataframes(dataset1)
+    dataset2, dataset2_without_marks = split_dataframes(dataset2)
 
-    dataset1 = reindex_and_merge_dataframes(dataset1, detected_keywords1)
-    dataset2 = reindex_and_merge_dataframes(dataset2, detected_keywords2)
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)
     print("Text preprocessing finished")
@@ -200,19 +210,6 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
 
     print("Similarities creation ended")
     return image_and_text_similarities
-
-
-def reindex_and_merge_dataframes(dataset, detected_keywords):
-    """
-    Reindex dataframe with extracted keywords and merge them with other data
-    @param dataset: dataframe with textual data
-    @param detected_keywords: dataframe with extracted keywords
-    @return:
-    """
-    detected_keywords['index'] = [x for x in range(len(detected_keywords.index))]
-    detected_keywords1 = detected_keywords.set_index('index')
-    dataset = pd.concat([dataset, detected_keywords1], axis=1)
-    return dataset
 
 
 def evaluate_executor_results(classifier, preprocessed_pairs, task_id):

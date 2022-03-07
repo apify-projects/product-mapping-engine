@@ -70,6 +70,27 @@ def load_file(name_file):
     return names
 
 
+def convert_keyword_dicts_to_dataframe(detected_keywords_df):
+    """
+    Convert dataframe with products features as columns as rows to dataframe with all detected keywords from all texts as columns
+    @param detected_keywords_df: dataframe with products features as columns
+    @return: dataframe with all detected keywords from all texts as columns
+    """
+    detected_keywords_list = []
+    for _, row in detected_keywords_df.iterrows():
+        dict_list = [d[1] for d in row.iteritems()]
+        merged_detected_keywords = {}
+        for item in dict_list:
+            for key in item.keys():
+                if key not in merged_detected_keywords:
+                    merged_detected_keywords[key] = []
+                merged_detected_keywords[key] += item[key]
+        merged_detected_keywords_df = pd.DataFrame([merged_detected_keywords])
+        detected_keywords_list.append(merged_detected_keywords_df)
+    detected_keywords = pd.concat(detected_keywords_list)
+    return detected_keywords
+
+
 def preprocess_textual_data(dataset,
                             id_detection=True,
                             color_detection=True,
@@ -90,23 +111,13 @@ def preprocess_textual_data(dataset,
     detected_keywords_df = pd.DataFrame()
     dataset = dataset.sort_values(by=['price'])
     dataset = parse_specifications_and_create_copies(dataset, 'specification')
-    dataset = add_all_texts_columns(dataset)
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset:
             dataset[column] = preprocess_text(dataset[column].values)
-            if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys():
-                if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    id_detection = False
-                if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    brand_detection = False
-                if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    color_detection = False
-                if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    id_detection = False
-                if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    units_detection = False
-                if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
-                    numbers_detection = False
+            dataset[column + '_no_detection'] = copy.deepcopy(dataset[column])
+            brand_detection, color_detection, id_detection, numbers_detection, units_detection = update_keywords_detection_from_config(
+                column, id_detection, brand_detection, color_detection, numbers_detection,
+                units_detection)
             dataset[column], detected_keywords_df[column] = detect_ids_brands_colors_and_units(
                 dataset[column],
                 id_detection,
@@ -115,21 +126,55 @@ def preprocess_textual_data(dataset,
                 units_detection,
                 numbers_detection
             )
-    detected_keywords_list = []
-    for _, row in detected_keywords_df.iterrows():
-        dict_list = [d[1] for d in row.iteritems()]
-        merged_detected_keywords = {}
-        for item in dict_list:
-            for key in item.keys():
-                if key not in merged_detected_keywords:
-                    merged_detected_keywords[key] = []
-                merged_detected_keywords[key] += item[key]
-        merged_detected_keywords_df = pd.DataFrame([merged_detected_keywords])
-        detected_keywords_list.append(merged_detected_keywords_df)
-    detected_keywords = pd.concat(detected_keywords_list)
+    dataset = add_all_texts_columns(dataset)
+    detected_keywords = convert_keyword_dicts_to_dataframe(detected_keywords_df)
+
     if 'specification' in dataset.columns:
         dataset['specification'] = preprocess_specifications(dataset['specification'])
-    return dataset, detected_keywords
+
+    dataset = reindex_and_merge_dataframes(dataset, detected_keywords)
+    return dataset
+
+
+def update_keywords_detection_from_config(column, id_detection, brand_detection, color_detection, numbers_detection,
+                                          units_detection):
+    """
+    Update keyrds detection according to the config file
+    @param column: column in dataset in whitch to detect keywords or not
+    @param id_detection: True if id should be detected
+    @param color_detection: True if color should be detected
+    @param brand_detection: True if brand should be detected
+    @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
+    @return: updated booleans whether to detects keywords or not
+    """
+    if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys():
+        if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            id_detection = False
+        if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            brand_detection = False
+        if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            color_detection = False
+        if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            id_detection = False
+        if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            units_detection = False
+        if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            numbers_detection = False
+    return brand_detection, color_detection, id_detection, numbers_detection, units_detection
+
+
+def reindex_and_merge_dataframes(dataset, detected_keywords):
+    """
+    Reindex dataframe with extracted keywords and merge them with other data
+    @param dataset: dataframe with textual data
+    @param detected_keywords: dataframe with extracted keywords
+    @return: merged dataframe with keywords
+    """
+    detected_keywords['index'] = [x for x in dataset.index]
+    detected_keywords = detected_keywords.set_index('index')
+    dataset = pd.concat([dataset, detected_keywords], axis=1)
+    return dataset
 
 
 def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
@@ -469,14 +514,15 @@ def add_all_texts_columns(dataset):
     """
     Add to the dataset column containing all joined texts columns
     @param dataset: dataframe in which to join text columns
-    @return: dataframe with additional two columns containing all texts for each product
+    @return: dataframe with additional column containing all texts for each product
     """
-    columns = list(dataset.columns)
-    columns_to_remove = ['id', 'match', 'image', 'price', 'url', 'index', 'specification']
-    for col in columns_to_remove:
-        if col in columns:
-            columns.remove(col)
-    dataset['all_texts'] = dataset[columns].agg(','.join, axis=1)
+
+    columns = [col for col in dataset.columns if '_no_detection' in col]
+    datset_subset = dataset[columns]
+    joined_rows = []
+    for _, row in datset_subset.iterrows():
+        joined_rows.append([r for v in row.values for r in v])
+    dataset['all_texts'] = joined_rows
     return dataset
 
 
