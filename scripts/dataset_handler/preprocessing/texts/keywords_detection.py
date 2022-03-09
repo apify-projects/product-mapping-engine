@@ -6,20 +6,21 @@ import time
 import pandas as pd
 import requests
 
-from ...configuration import MINIMAL_DETECTABLE_ID_LENGTH
+from ....configuration import MINIMAL_DETECTABLE_ID_LENGTH, \
+    KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
 
 CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
-COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/colors.txt')
-BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/brands.json')
+COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/colors.txt')
+BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/brands.json')
 VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                  '../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
+                                  '../../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
 VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                  '../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
+                                  '../../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
 
-UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/units.tsv')
-PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../data/vocabularies/prefixes.tsv')
+UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/units.tsv')
+PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/prefixes.tsv')
 UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                             '../../../data/vocabularies/unit_conversion_us-eu.tsv')
+                                             '../../../../data/vocabularies/unit_conversion_us-eu.tsv')
 NUMBER_MARK = '#num#'
 ID_MARK = '#id#'
 BRAND_MARK = '#bnd#'
@@ -126,30 +127,12 @@ def load_imperial_to_metric_units_conversion_file():
     return imperial_to_metric_units_file
 
 
-def does_this_word_exist(lemma):
-    """
-    Check whether the word is in Czech or English vocabulary in LINDAT repository
-    @param lemma: the word to be checked
-    @return: True if it is an existing word, otherwise False
-    """
-    while True:
-        try:
-            url_cz = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
-                    &output=json&guesser=no&model=czech-morfflex-pdt-161115"
-            url_en = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
-                    &output=json&guesser=no&model=english-morphium-wsj-140407"
-
-            r_cz = json.loads(requests.get(url_cz).text)['result']
-            r_en = json.loads(requests.get(url_en).text)['result']
-
-            if not r_cz or not r_en:
-                return False
-
-            if r_cz[0][0]['tag'] == 'X@-------------' and r_en[0][0]['tag'] == 'UNK':
-                return False
-            return True
-        except:
-            time.sleep(1)
+BRANDS, BRANDS_JOINED = load_brands()
+COLORS = load_colors()
+VOCABULARY_CZ = load_vocabulary(VOCABULARY_CZ_FILE)
+VOCABULARY_EN = load_vocabulary(VOCABULARY_EN_FILE)
+UNITS_DICT, ORIGINAL_UNIT_NAMES = create_unit_dict()
+UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
 
 
 def is_in_vocabulary(word):
@@ -306,123 +289,6 @@ def detect_brand(word_list):
     return detected_word_list, detected_brand_list
 
 
-BRANDS, BRANDS_JOINED = load_brands()
-COLORS = load_colors()
-VOCABULARY_CZ = load_vocabulary(VOCABULARY_CZ_FILE)
-VOCABULARY_EN = load_vocabulary(VOCABULARY_EN_FILE)
-UNITS_DICT, ORIGINAL_UNIT_NAMES = create_unit_dict()
-UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
-
-
-def detect_ids_brands_colors_and_units(
-        data,
-        id_detection=True,
-        color_detection=True,
-        brand_detection=True,
-        units_detection=True,
-        numbers_detection=True
-):
-    """
-    Detect ids, colors, brands and units in texts
-    @param data: List of texts that each consists of list of words
-    @param id_detection: True if ids should be detected
-    @param color_detection: True if colors should be detected
-    @param brand_detection: True if brands should be detected
-    @param units_detection: True if units should be detected
-    @param numbers_detection: True if unspecified numbers should be detected
-    @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
-    """
-    data_list = []
-    detected_keywords_list = []
-    for word_list in data:
-        detected_word_list = []
-        detected_keywords = {}
-
-        detected_keywords_in_text = {}
-        if id_detection:
-            detected_keywords_in_text['all_ids_list'] = []
-        if numbers_detection:
-            detected_keywords_in_text['all_numbers_list'] = []
-
-        # detect units
-        if units_detection:
-            detected_word_list, detected_unit_list = detect_units(word_list)
-            detected_keywords['all_units_list'] = detected_unit_list
-
-        # detect ids and colors and unspecified numbers
-        following_word = ''
-        detected_ids_in_text = []
-        detected_numbers_in_text = []
-        for i, word in enumerate(detected_word_list):
-            if i < len(detected_word_list) - 1:
-                following_word = detected_word_list[i + 1]
-            if i == len(detected_word_list) - 1:
-                following_word = ''
-            if color_detection:
-                word = detect_color(word)
-            if id_detection:
-                word = detect_id(word, following_word)
-                if ID_MARK in word:
-                    detected_ids_in_text.append(word.replace(COLOR_MARK, ''))
-            if numbers_detection:
-                word = detect_unspecified_number(word, following_word)
-                if NUMBER_MARK in word:
-                    detected_numbers_in_text.append(word.replace(COLOR_MARK, ''))
-            detected_word_list[i] = word
-        detected_keywords['all_ids_list'] = detected_ids_in_text
-        detected_keywords['all_numbers_list'] = detected_numbers_in_text
-        # detect brands
-        if brand_detection:
-            detected_word_list, detected_brand_list = detect_brand(detected_word_list)
-            detected_keywords['all_brands_list'] = detected_brand_list
-
-        data_list.append(detected_word_list)
-        detected_keywords_list.append(detected_keywords)
-    return data_list, detected_keywords_list
-
-
-def compute_likelihood_of_first_words(data):
-    """
-    Compute likelihood that the words appears in the first place
-    @param data: dataset with texts that are list of words
-    @return: likelihood of each word to be the first one
-    """
-    word_counts = {}
-    first_likelihood = {}
-    for word_list in data:
-        is_first = True
-        for word in word_list:
-            if word not in word_counts:
-                word_counts[word] = 0
-                first_likelihood[word] = 0
-            word_counts[word] += 1
-            if is_first:
-                first_likelihood[word] += 1
-            is_first = False
-    for word in first_likelihood:
-        first_likelihood[word] = first_likelihood[word] / word_counts[word]
-    return first_likelihood
-
-
-def convert_units_to_basic_form(dataset):
-    """
-    Convert units with prefixes into their basic form.
-    @param dataset: List of products each containing list of units
-    @return:  List of products each containing list of converted units into their basic form
-    """
-    converted_dataset = []
-    for product in dataset:
-        converted_product = []
-        for unit in product:
-            if is_word_in_unit_list(unit[0].lower()):
-                name, value = convert_unit_and_value_to_basic_form(unit[0].lower(), unit[1])
-                converted_product.append([name.lower(), value])
-            else:
-                converted_product.append(unit)
-        converted_dataset.append(converted_product)
-    return converted_dataset
-
-
 def convert_imperial_to_metric_units(unit, value):
     """
     Convert us unit and value to the eu form
@@ -509,3 +375,183 @@ def detect_units(word_list):
             detected_word_list.append(word)
 
     return detected_word_list, detected_units_list
+
+
+def detect_ids_brands_colors_and_units(
+        data,
+        id_detection=True,
+        color_detection=True,
+        brand_detection=True,
+        units_detection=True,
+        numbers_detection=True
+):
+    """
+    Detect ids, colors, brands and units in texts
+    @param data: List of texts that each consists of list of words
+    @param id_detection: True if ids should be detected
+    @param color_detection: True if colors should be detected
+    @param brand_detection: True if brands should be detected
+    @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
+    @return: texts with detected stuff, eventually number of lemmas from vocabulary and lemmas from morphoditta
+    """
+    data_list = []
+    detected_keywords_list = []
+    for word_list in data:
+        detected_word_list = []
+        detected_keywords = {}
+
+        detected_keywords_in_text = {}
+        if id_detection:
+            detected_keywords_in_text['all_ids_list'] = []
+        if numbers_detection:
+            detected_keywords_in_text['all_numbers_list'] = []
+
+        # detect units
+        if units_detection:
+            detected_word_list, detected_unit_list = detect_units(word_list)
+            detected_keywords['all_units_list'] = detected_unit_list
+
+        # detect ids and colors and unspecified numbers
+        following_word = ''
+        detected_ids_in_text = []
+        detected_numbers_in_text = []
+        for i, word in enumerate(detected_word_list):
+            if i < len(detected_word_list) - 1:
+                following_word = detected_word_list[i + 1]
+            if i == len(detected_word_list) - 1:
+                following_word = ''
+            if color_detection:
+                word = detect_color(word)
+            if id_detection:
+                word = detect_id(word, following_word)
+                if ID_MARK in word:
+                    detected_ids_in_text.append(word.replace(COLOR_MARK, ''))
+            if numbers_detection:
+                word = detect_unspecified_number(word, following_word)
+                if NUMBER_MARK in word:
+                    detected_numbers_in_text.append(word.replace(COLOR_MARK, ''))
+            detected_word_list[i] = word
+        detected_keywords['all_ids_list'] = detected_ids_in_text
+        detected_keywords['all_numbers_list'] = detected_numbers_in_text
+        # detect brands
+        if brand_detection:
+            detected_word_list, detected_brand_list = detect_brand(detected_word_list)
+            detected_keywords['all_brands_list'] = detected_brand_list
+
+        data_list.append(detected_word_list)
+        detected_keywords_list.append(detected_keywords)
+    return data_list, detected_keywords_list
+
+
+def update_keywords_detection_from_config(column, id_detection, brand_detection, color_detection, numbers_detection,
+                                          units_detection):
+    """
+    Update keywords detection according to the config file
+    @param column: column in dataset in which to detect keywords or not
+    @param id_detection: True if id should be detected
+    @param color_detection: True if color should be detected
+    @param brand_detection: True if brand should be detected
+    @param units_detection: True if units should be detected
+    @param numbers_detection: True if unspecified numbers should be detected
+    @return: updated booleans whether to detects keywords or not
+    """
+    if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys():
+        if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            id_detection = False
+        if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            brand_detection = False
+        if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            color_detection = False
+        if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            id_detection = False
+        if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            units_detection = False
+        if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+            numbers_detection = False
+    return brand_detection, color_detection, id_detection, numbers_detection, units_detection
+
+
+def convert_keyword_dicts_to_dataframe(detected_keywords_df):
+    """
+    Convert dataframe with products features as dictionaries to
+    dataframe with all detected keywords from all texts as arrays
+    @param detected_keywords_df: dataframe with products features as columns
+    @return: dataframe with all detected keywords from all texts as columns
+    """
+    detected_keywords_list = []
+    for _, row in detected_keywords_df.iterrows():
+        dict_list = [d[1] for d in row.iteritems()]
+        merged_detected_keywords = {}
+        for item in dict_list:
+            for key in item.keys():
+                if key not in merged_detected_keywords:
+                    merged_detected_keywords[key] = []
+                merged_detected_keywords[key] += item[key]
+        merged_detected_keywords_df = pd.DataFrame([merged_detected_keywords])
+        detected_keywords_list.append(merged_detected_keywords_df)
+    detected_keywords = pd.concat(detected_keywords_list)
+    return detected_keywords
+
+
+def reindex_and_merge_dataframes(dataset, detected_keywords):
+    """
+    Reindex dataframe with extracted keywords and merge them with other data
+    @param dataset: dataframe with textual data
+    @param detected_keywords: dataframe with extracted keywords
+    @return: merged dataframe with keywords
+    """
+    detected_keywords['index'] = [x for x in dataset.index]
+    detected_keywords = detected_keywords.set_index('index')
+    dataset = pd.concat([dataset, detected_keywords], axis=1)
+    return dataset
+
+
+# NOT USED METHODS
+def compute_likelihood_of_first_words(data):
+    """
+    Compute likelihood that the words appears in the first place
+    @param data: dataset with texts that are list of words
+    @return: likelihood of each word to be the first one
+    """
+    word_counts = {}
+    first_likelihood = {}
+    for word_list in data:
+        is_first = True
+        for word in word_list:
+            if word not in word_counts:
+                word_counts[word] = 0
+                first_likelihood[word] = 0
+            word_counts[word] += 1
+            if is_first:
+                first_likelihood[word] += 1
+            is_first = False
+    for word in first_likelihood:
+        first_likelihood[word] = first_likelihood[word] / word_counts[word]
+    return first_likelihood
+
+
+def does_this_word_exist(lemma):
+    """
+    Check whether the word is in Czech or English vocabulary in LINDAT repository
+    @param lemma: the word to be checked
+    @return: True if it is an existing word, otherwise False
+    """
+    while True:
+        try:
+            url_cz = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
+                    &output=json&guesser=no&model=czech-morfflex-pdt-161115"
+            url_en = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
+                    &output=json&guesser=no&model=english-morphium-wsj-140407"
+
+            r_cz = json.loads(requests.get(url_cz).text)['result']
+            r_en = json.loads(requests.get(url_en).text)['result']
+
+            if not r_cz or not r_en:
+                return False
+
+            if r_cz[0][0]['tag'] == 'X@-------------' and r_en[0][0]['tag'] == 'UNK':
+                return False
+            return True
+        except:
+            time.sleep(1)

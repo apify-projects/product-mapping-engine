@@ -1,5 +1,5 @@
-from scripts.preprocessing.texts.text_preprocessing import preprocess_text, set_czech_lemmatizer
-from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
+from scripts.dataset_handler.preprocessing.texts.text_preprocessing import preprocess_text, set_czech_lemmatizer
+from scripts.dataset_handler.similarity_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 test_texts1 = [
     '123e45 1 cm 3 h Notebook Lenovo IdeaPad 3 splní všechna vaše přání. Nabízí skvělý displej s jemným rozlišením, procesor s vysokým výkonem, rychlou RAM paměť a až 9,6 hodinovou výdrží baterie s podporou rychlého nabíjení. Dvojice výkonných reproduktorů s technologií Dolby Audio vám zprostředkuje kvalitní zvuk a zásluhou nízké hmotnosti si jej můžete vzít kamkoliv s sebou, aniž by se pronesl. A to nejlepší - jeho stylový design v mnoha barevných provedeních vám vyrazí dech.',

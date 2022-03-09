@@ -9,7 +9,7 @@ import imghdr
 import importlib.machinery
 configuration = importlib.machinery.SourceFileLoader(
     'configuration',
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "configuration.py"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..", "configuration.py"),
 ).load_module()
 
 def is_url(potential_url):

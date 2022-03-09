@@ -1,5 +1,5 @@
 data/vocabularies/corpus/source/en-cs.txt
-scripts/preprocessing/datasets/wdc_dataset/*
+scripts/dataset_handler/preprocessing/datasets/wdc_dataset/*
 venv/*
 data/wdc_dataset/data_files/*
 data/wdc_dataset/dataset/*

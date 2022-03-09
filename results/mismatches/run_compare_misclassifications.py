@@ -31,9 +31,9 @@ def load_mismatches_from_classificators(directory):
 
 def create_mismatched_product_indices_dict(product_indices_list):
     """
-    Create dictionary with indices and number of classifiers that predicted them wrongly
+    Create dictionary with indices and number of classifier_handler that predicted them wrongly
     @param product_indices_list: list of wrongly predicted products for each classificator
-    @return: dictionary with indices and number of classifiers that predicted them wrongly
+    @return: dictionary with indices and number of classifier_handler that predicted them wrongly
     """
     product_indices_dict = {}
     for product_indices in product_indices_list:
@@ -46,8 +46,8 @@ def create_mismatched_product_indices_dict(product_indices_list):
 
 def plot_mismatched_products_counts(product_indices_dict):
     """
-    Plot counts of products that were wrongly predicted according to the number of classifiers that predicted them wrongly
-    @param product_indices_dict: indices of products and number of classifiers predicted them wrongly
+    Plot counts of products that were wrongly predicted according to the number of classifier_handler that predicted them wrongly
+    @param product_indices_dict: indices of products and number of classifier_handler predicted them wrongly
     @return:
     """
     values_occurrences = dict(
@@ -61,7 +61,7 @@ def plot_mismatched_products_counts(product_indices_dict):
 def find_mismatching_product_names(product_indices_dict, data, mismatches):
     """
     Print product pairs which were predicted wrongly by given number of classificators
-    @param product_indices_dict: indices of products and number of classifiers predicted them wrongly
+    @param product_indices_dict: indices of products and number of classifier_handler predicted them wrongly
     @param data: original dataset with product pairs
     @param mismatches: number of classificators, that predicted wrongly a given products
     @return:

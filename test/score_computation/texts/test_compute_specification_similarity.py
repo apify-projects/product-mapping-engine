@@ -1,9 +1,9 @@
-from scripts.preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
+from scripts.dataset_handler.preprocessing.texts.specification_preprocessing import convert_specifications_to_texts, \
     parse_specifications
-from scripts.preprocessing.texts.text_preprocessing import preprocess_text
-from scripts.score_computation.texts.compute_specifications_similarity import \
+from scripts.dataset_handler.preprocessing.texts.text_preprocessing import preprocess_text
+from scripts.dataset_handler.similarity_computation.texts.compute_specifications_similarity import \
     preprocess_specifications_and_compute_similarity
-from scripts.score_computation.texts.compute_texts_similarity import compute_similarity_of_texts
+from scripts.dataset_handler.similarity_computation.texts.compute_texts_similarity import compute_similarity_of_texts
 
 test_dataset1 = ['[{"key": "Provedení", "value": "1 GB Pecky"}, {"key": "Konstrukce", "value": "Uzavřená"},\
                   {"key": "Mikrofon", "value": "Ano"}, {"key": "Typ připojení", "value": "Bluetooth"},\

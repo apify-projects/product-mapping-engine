@@ -1,6 +1,6 @@
 import click
 
-from scripts.preprocessing.images.image_preprocessing import create_output_directory, crop_images_simple
+from scripts.dataset_handler.preprocessing.images import create_output_directory, crop_images_simple
 
 
 @click.command()

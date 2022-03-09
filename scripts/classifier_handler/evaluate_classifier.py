@@ -8,8 +8,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
-
-from configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
+from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
     PRINT_ROC_AND_STATISTICS
 
 
@@ -21,7 +20,8 @@ def setup_classifier(classifier_type, classifier_parameters_file=None):
     @return: set up classifier
     """
     classifier_class_name = classifier_type + 'Classifier'
-    classifier_class = getattr(__import__('classifiers', fromlist=[classifier_class_name]), classifier_class_name)
+
+    classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]), classifier_class_name)
     classifier_parameters = {}
     if classifier_parameters_file is not None:
         classifier_parameters_path = classifier_parameters_file
@@ -119,55 +119,6 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold):
     return train_stats, test_stats
 
 
-def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
-    """
-    Compute number of FP and FN and plot their distribution
-    @param classifier_class_name: name of the classifier
-    @param train_data: train data
-    @param test_data: test data
-    @return:
-    """
-    for data, data_type in zip([train_data, test_data], ['train_data', 'test_data']):
-        print(data_type)
-        mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
-        tp_data = data[(data['predicted_match'] == 1) & (data['match'] == 1)]
-        fp_data = data[(data['predicted_match'] == 1) & (data['match'] == 0)]
-        tn_data = data[(data['predicted_match'] == 0) & (data['match'] == 0)]
-        fn_data = data[(data['predicted_match'] == 0) & (data['match'] == 1)]
-
-        print(f'Number of mismatching values for {data} is: {mismatched_count}')
-        print('----------------------------')
-        print(f'Number of FPs is: {len(fp_data)}')
-        print(f'Number of FNs is: {len(fn_data)}')
-        print('----------------------------')
-        print('\n\n')
-
-        visualize_outliers(tp_data, fp_data, ['TP', 'FP', data_type])
-        visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
-
-        mismatched = data[data['predicted_match'] != data['match']]
-        mismatched.to_csv(f'results/mismatches/data/{classifier_class_name}_{data_type}.csv')
-
-
-def visualize_outliers(correct_data, wrong_data, labels):
-    """
-    Plot outliers according to the feature values
-    @param correct_data: correctly predicted data
-    @param wrong_data: wrongly predicted data
-    @param labels: labels whether iit is TP+FP or TN+FN
-    @return:
-    """
-    for column in correct_data.iloc[:, :-3]:
-        plt.scatter(np.arange(0, len(correct_data)), correct_data[column], color='green')
-        plt.scatter(np.arange(0, len(wrong_data)), wrong_data[column], color='red')
-        plt.title(f'{labels[0]} and {labels[1]} distribution on {labels[2]} by {column} match')
-        plt.xlabel(f'{labels[2]}')
-        plt.ylabel(f'{column} data match value')
-        plt.legend(labels)
-        plt.show()
-        plt.clf()
-
-
 def compute_prediction_accuracies(data, data_type):
     """
     Compute accuracy, precision, recall and show confusion matrix
@@ -182,7 +133,6 @@ def compute_prediction_accuracies(data, data_type):
     true_positive_count = data[(data['predicted_match'] == 1) & (data['match'] == 1)].shape[0]
     false_positive_count = data[(data['predicted_match'] == 1) & (data['match'] == 0)].shape[0]
     true_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 0)].shape[0]
-    false_negative_count = data[(data['predicted_match'] == 0) & (data['match'] == 1)].shape[0]
 
     accuracy = (data_count - mismatched_count) / data_count if data_count != 0 else 0
     recall = true_positive_count / actual_positive_count if actual_positive_count != 0 else 0
@@ -284,6 +234,7 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     return true_positive_rates, false_positive_rates
 
 
+# OTHER UNUSED METHODS
 def compute_mean_values(statistics):
     """
     Compute mean values of accuracy, recall, specificity and precision after several runs
@@ -310,3 +261,52 @@ def compute_mean_values(statistics):
     print(f"Mean Test Precision: \t{round(mean_test_precision * 100, 2)}")
     print("----------------------------")
     print("\n\n")
+
+
+def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
+    """
+    Compute number of FP and FN and plot their distribution
+    @param classifier_class_name: name of the classifier
+    @param train_data: train data
+    @param test_data: test data
+    @return:
+    """
+    for data, data_type in zip([train_data, test_data], ['train_data', 'test_data']):
+        print(data_type)
+        mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
+        tp_data = data[(data['predicted_match'] == 1) & (data['match'] == 1)]
+        fp_data = data[(data['predicted_match'] == 1) & (data['match'] == 0)]
+        tn_data = data[(data['predicted_match'] == 0) & (data['match'] == 0)]
+        fn_data = data[(data['predicted_match'] == 0) & (data['match'] == 1)]
+
+        print(f'Number of mismatching values for {data} is: {mismatched_count}')
+        print('----------------------------')
+        print(f'Number of FPs is: {len(fp_data)}')
+        print(f'Number of FNs is: {len(fn_data)}')
+        print('----------------------------')
+        print('\n\n')
+
+        visualize_outliers(tp_data, fp_data, ['TP', 'FP', data_type])
+        visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
+
+        mismatched = data[data['predicted_match'] != data['match']]
+        mismatched.to_csv(f'results/mismatches/data/{classifier_class_name}_{data_type}.csv')
+
+
+def visualize_outliers(correct_data, wrong_data, labels):
+    """
+    Plot outliers according to the feature values
+    @param correct_data: correctly predicted data
+    @param wrong_data: wrongly predicted data
+    @param labels: labels whether iit is TP+FP or TN+FN
+    @return:
+    """
+    for column in correct_data.iloc[:, :-3]:
+        plt.scatter(np.arange(0, len(correct_data)), correct_data[column], color='green')
+        plt.scatter(np.arange(0, len(wrong_data)), wrong_data[column], color='red')
+        plt.title(f'{labels[0]} and {labels[1]} distribution on {labels[2]} by {column} match')
+        plt.xlabel(f'{labels[2]}')
+        plt.ylabel(f'{column} data match value')
+        plt.legend(labels)
+        plt.show()
+        plt.clf()

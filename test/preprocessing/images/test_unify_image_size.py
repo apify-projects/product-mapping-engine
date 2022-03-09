@@ -1,6 +1,6 @@
 import click
 
-from scripts.preprocessing.images.image_preprocessing import create_output_directory, unify_image_size
+from scripts.dataset_handler.preprocessing.images import create_output_directory, unify_image_size
 
 
 @click.command()

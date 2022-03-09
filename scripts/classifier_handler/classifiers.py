@@ -4,15 +4,16 @@ from io import StringIO
 
 import pandas as pd
 import pydot
-from configuration import PRINCIPAL_COMPONENT_COUNT, PERFORM_PCA_ANALYSIS, EQUALIZE_CLASS_IMPORTANCE, POSITIVE_CLASS_UPSAMPLING_RATIO
-from evaluate_classifier import plot_train_test_roc
+
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier as RandomForests
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
+from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
+    PERFORM_PCA_ANALYSIS
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
@@ -45,7 +46,7 @@ class Classifier:
         if 'match' in data.columns:
             data = data.drop(columns=['match'])
 
-        if hasattr(self.model, 'predict_proba'):
+        if hasattr(self.model, 'predict_probability'):
             scores = self.model.predict_proba(data)
             scores = [s[1] for s in scores]
         else:
@@ -56,9 +57,6 @@ class Classifier:
             return outputs, scores
         else:
             return scores
-
-    def render_roc(self, true_labels, predicted_labels_list, threshes, print_stats):
-        plot_train_test_roc(true_labels, predicted_labels_list, threshes, print_stats)
 
     def print_feature_importance(self, feature_names):
         pass

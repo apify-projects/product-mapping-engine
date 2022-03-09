@@ -1,4 +1,5 @@
 import copy
+from itertools import islice
 from math import floor
 
 import numpy as np
@@ -6,7 +7,8 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
+from .compute_specifications_similarity import compute_similarity_of_specifications
+from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
     COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, \
     ALL_KEYWORDS_SIMILARITIES
@@ -202,6 +204,22 @@ def compute_tf_idf(dataset, print_stats=False):
     return tf_idfs
 
 
+def extract_units_and_values(text):
+    """
+    Extract units and values from the list of words
+    @param text: list of words to extract units and values from
+    @return: list of extracted pairs unit-value
+    """
+    unit_list = []
+    for i, word in enumerate(text):
+        if UNIT_MARK in word:
+            if is_number(text[i - 1]):
+                unit_list.append([word, float(text[i - 1])])
+            else:
+                unit_list.append([word, text[i - 1]])
+    return unit_list
+
+
 def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
     """
     Create tf.idfs and descriptive words for each column in the dataset
@@ -289,17 +307,115 @@ def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION)
     return 0
 
 
-def extract_units_and_values(text):
+def chunks(dictionary, dict_num):
     """
-    Extract units and values from the list of words
-    @param text: list of words to extract units and values from
-    @return: list of extracted pairs unit-value
+    Split dictionary into several same parts
+    @param dictionary: dictionary to be split
+    @param dict_num: number or parts
+    @return: list of dict_num dictionaries of the same size
     """
-    unit_list = []
-    for i, word in enumerate(text):
-        if UNIT_MARK in word:
-            if is_number(text[i - 1]):
-                unit_list.append([word, float(text[i - 1])])
-            else:
-                unit_list.append([word, text[i - 1]])
-    return unit_list
+    it = iter(dictionary)
+    for i in range(0, len(dictionary), dict_num):
+        yield {k: dictionary[k] for k in islice(it, dict_num)}
+
+
+def multi_run_text_similarities_wrapper(args):
+    """
+    Wrapper for passing more arguments to compute_similarity_of_texts in parallel way
+    @param args: Arguments of the function
+    @return: call the compute_similarity_of_texts in parallel way
+    """
+    return compute_text_similarities_parallelly(*args)
+
+
+def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words, pool, num_cpu):
+    """
+    Compute all the text-based similarities for the product pairs
+    @param dataset1: first dataset of all products
+    @param dataset2: second dataset of all products
+    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @param tf_idfs: tf.idfs of all words from both datasets
+    @param descriptive_words: descriptive words from both datasets
+    @param pool: parallelling object
+    @param num_cpu: number of processes
+    @return: Similarity scores for the product pairs
+    """
+
+    dataset1_subsets = [dataset1.iloc[list(product_pairs_idx_part.keys())] for product_pairs_idx_part in
+                        chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
+    dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in
+                        chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
+    df_all_similarities_list = pool.map(multi_run_text_similarities_wrapper,
+                                        [(dataset1_subsets[i], dataset2_subsets[i], descriptive_words, tf_idfs) for i in
+                                         range(0, len(dataset1_subsets))])
+    df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
+
+    # for each column compute the similarity of product pairs selected after filtering
+
+    # specification comparison with units and values preprocessed as specification
+    df_all_similarities['specification_key_matches'] = 0
+    df_all_similarities['specification_key_value_matches'] = 0
+
+    if 'specification' in dataset1.columns and 'specification' in dataset2.columns:
+        specification_similarity = compute_similarity_of_specifications(dataset1['specification'],
+                                                                        dataset2['specification'], product_pairs_idx)
+        specification_similarity = pd.DataFrame(specification_similarity)
+        df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
+        df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
+
+    df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
+    return df_all_similarities
+
+
+def create_empty_dataframe_with_ids(dataset1, dataset2):
+    """
+    Create dataframe for text similarity results with ids of possible pairs after filtration
+    @param dataset1: dataframe of the products from the first dataset
+    @param dataset2: dataframe of the products from the second dataset
+    @return: dataframe with ids of compared products
+    """
+    dataset1_ids = []
+    dataset2_ids = []
+    ids1 = dataset1['id'].values
+    for i, id1 in enumerate(ids1):
+        dataset1_ids += [id1] * len(dataset2[i])
+        dataset2_ids += list(dataset2[i]['id'].values)
+    df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
+    df_all_similarities['id1'] = dataset1_ids
+    df_all_similarities['id2'] = dataset2_ids
+    return df_all_similarities
+
+
+def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, tf_idfs):
+    """
+    Compute similarity score of each pair in both datasets parallelly for each column
+    @param dataset1: first list of texts where each is list of words
+    @param dataset2: second list of texts where each is list of words
+    @param descriptive_words: descriptive words from both datasets
+    @param tf_idfs: tf.idfs of all words from both datasets
+    @return: dataset of pair similarity scores
+    """
+    df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2)
+    for column in COLUMNS_TO_BE_PREPROCESSED:
+        if column in dataset1 and column in dataset2[0]:
+            similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[
+                column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED else []
+            tf_idfs_column = tf_idfs[column] if column in tf_idfs else None
+            descriptive_words_column = descriptive_words[column] if column in descriptive_words else None
+            columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
+                                                             tf_idfs_column, descriptive_words_column,
+                                                             similarities_to_ignore
+                                                             )
+            columns_similarity = pd.DataFrame(columns_similarity)
+            for similarity_name, similarity_value in columns_similarity.items():
+                df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
+        else:
+            for similarity_name in SIMILARITIES_TO_BE_COMPUTED:
+                df_all_similarities[f'{column}_{similarity_name}'] = 0
+    dataset1_keywords = dataset1.loc[:, dataset1.columns.str.contains('_list')]
+    dataset2_keywords = [item.loc[:, item.columns.str.contains('_list')] for item in dataset2]
+    keywords_similarity = compute_similarity_of_keywords(dataset1_keywords, dataset2_keywords)
+    keywords_similarity = pd.DataFrame(keywords_similarity)
+    for similarity_name, similarity_value in keywords_similarity.items():
+        df_all_similarities[similarity_name] = similarity_value
+    return df_all_similarities

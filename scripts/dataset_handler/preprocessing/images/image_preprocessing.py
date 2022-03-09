@@ -1,11 +1,13 @@
 import imghdr
+import json
 import os
 import shutil
 import cv2
 import numpy as np
 import subprocess
 from PIL import Image
-from ...configuration import IMAGE_RESIZE_WIDTH, IMAGE_RESIZE_HEIGHT
+from ....configuration import IMAGE_RESIZE_WIDTH, IMAGE_RESIZE_HEIGHT
+
 
 def unify_image_size(input_folder, output_folder, width, height):
     """
@@ -40,7 +42,7 @@ def crop_images_simple(input_folder, output_folder):
             blurred = cv2.blur(image, (3, 3))
             canny = cv2.Canny(blurred, 50, 200)
 
-            # find the non-zero min-max coords of canny
+            # find the non-zero min-max coordinates of canny
             pts = np.argwhere(canny > 0)
             y1, x1 = pts.min(axis=0)
             y2, x2 = pts.max(axis=0)
@@ -96,18 +98,18 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
             contours, _ = cv2.findContours(dilate.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             # select max object in the picture
-            maxy, maxx, maxw, maxh = 0, 0, 0, 0
-            maxarea = 0
+            max_y, max_x, max_w, max_h = 0, 0, 0, 0
+            max_area = 0
             for i, c in enumerate(contours):
                 x, y, w, h = cv2.boundingRect(c)
-                cropped = image[y:y + h, x:x + w]
-                if w * h > maxarea:
-                    maxy, maxx, maxw, maxh = y, x, w, h
-                    maxarea = w * h
+                if w * h > max_area:
+                    max_y, max_x, max_w, max_h = y, x, w, h
+                    max_area = w * h
 
             # crop image to the biggest found object
-            cropped = image[maxy:maxy + maxh, maxx:maxx + maxw]
+            cropped = image[max_y:max_y + max_h, max_x:max_x + max_w]
             cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+
 
 def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, script_dir):
     index = str(index)
@@ -118,6 +120,7 @@ def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, scr
     subprocess.call(f'node {script_dir} {cropped_img_dir} {hashes_path}', shell=True)
     return hashes_path
 
+
 def create_output_directory(output_folder):
     """
     Check whether output directory exists - if yes empty it, if not create it
@@ -127,3 +130,22 @@ def create_output_directory(output_folder):
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
     os.mkdir(output_folder)
+
+
+def load_and_parse_data(input_files):
+    """
+    Load input file and split name and hash into dictionary
+    @param input_files: files with hashes and names
+    @return: dictionary with name and has value of the image
+    """
+    data = {}
+
+    for input_file in input_files:
+        with open(input_file) as json_file:
+            loaded_data = json.load(json_file)
+
+        for image_name_and_hash_pair in loaded_data:
+            data_split = image_name_and_hash_pair.split(';')
+            data[data_split[0]] = data_split[1]
+
+    return data
