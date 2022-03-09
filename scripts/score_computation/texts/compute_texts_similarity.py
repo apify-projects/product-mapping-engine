@@ -8,7 +8,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from ...configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
-    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, ALL_KEYWORDS_SIMILARITIES
+    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, \
+    ALL_KEYWORDS_SIMILARITIES
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
@@ -58,7 +59,8 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 else:
                     match_ratios['cos'] = 2 * cos_similarity - 1
 
-            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED and 'descriptives' not in similarities_to_ignore and descriptive_words is not None:
+            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED and 'descriptives' not in similarities_to_ignore and \
+                    descriptive_words is not None:
                 # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
                     descriptive_words.iloc[product1_idx].values,
@@ -186,7 +188,7 @@ def compute_tf_idf(dataset, print_stats=False):
     @return: tf-idf for each word
     """
     vectorizer = TfidfVectorizer(
-        token_pattern='(?u)\\b[\w.,-]+\\b',
+        token_pattern='(?u)\\b[\\w.,-]+\\b',
         lowercase=False
     )  # unicode and then matching \b empty line before and after word and \w matching word
     tfidf_vectors = vectorizer.fit_transform(dataset)
@@ -214,13 +216,14 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
                 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
             tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
             tf_idfs[column] = tf_idfs_col
-        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and 'descriptives' in
-                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
-            descriptive_words_col = find_descriptive_words(
-                tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
-                number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
-            )
-            descriptive_words[column] = descriptive_words_col
+
+            if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and
+                    'descriptives' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
+                descriptive_words_col = find_descriptive_words(
+                    tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
+                    number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+                )
+                descriptive_words[column] = descriptive_words_col
     return tf_idfs, descriptive_words
 
 

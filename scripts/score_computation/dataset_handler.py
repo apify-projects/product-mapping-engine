@@ -139,8 +139,8 @@ def preprocess_textual_data(dataset,
 def update_keywords_detection_from_config(column, id_detection, brand_detection, color_detection, numbers_detection,
                                           units_detection):
     """
-    Update keyrds detection according to the config file
-    @param column: column in dataset in whitch to detect keywords or not
+    Update keywords detection according to the config file
+    @param column: column in dataset in which to detect keywords or not
     @param id_detection: True if id should be detected
     @param color_detection: True if color should be detected
     @param brand_detection: True if brand should be detected

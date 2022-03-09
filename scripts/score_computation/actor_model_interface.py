@@ -1,5 +1,4 @@
 import bisect
-import copy
 import os
 import sys
 from multiprocessing import Pool
@@ -231,8 +230,6 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
 
     merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
-    # merged_data = merged_data.drop_duplicates(subset=['id1', 'id2'])
-    # merged_data = merged_data[merged_data['url2'].notna() & merged_data['url1'].notna()]
 
     predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
 

@@ -134,8 +134,10 @@ def does_this_word_exist(lemma):
     """
     while True:
         try:
-            url_cz = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}&output=json&guesser=no&model=czech-morfflex-pdt-161115"
-            url_en = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}&output=json&guesser=no&model=english-morphium-wsj-140407"
+            url_cz = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
+                    &output=json&guesser=no&model=czech-morfflex-pdt-161115"
+            url_en = f"http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={lemma}\
+                    &output=json&guesser=no&model=english-morphium-wsj-140407"
 
             r_cz = json.loads(requests.get(url_cz).text)['result']
             r_en = json.loads(requests.get(url_en).text)['result']
@@ -171,22 +173,21 @@ def is_parameter(word):
     return re.match(rgx, word)
 
 
-def detect_id(word, next_word):
+def detect_id(word, following_word):
     """
     Check whether the word is not an id (whether it is a valid word)
     @param word: the word to be checked
-    @param next_word: the word following detected word in the text
+    @param following_word: the word following detected word in the text
     @return: word with marker if it is an id, otherwise the original word
     """
     word_sub = re.sub(r"[\W_]+", "", word, flags=re.UNICODE)
-    if len(word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word) or is_word_unit(word_sub) or is_brand(
-            word_sub) or word_sub.islower():
+    if len(word_sub) < MINIMAL_DETECTABLE_ID_LENGTH or is_in_vocabulary(word) or is_unit_mark_in_word(
+            word_sub) or is_brand_mark_in_word(word_sub) or word_sub.islower():
         return word
 
     word = word.replace("(", "").replace(")", "")
-
     if is_number(word_sub):
-        if not is_word_unit(next_word):
+        if not is_unit_mark_in_word(following_word):
             return ID_MARK + word
     elif word_sub.isalpha():
         if not re.match('^[A-Z]{2,}[a-z]*', word_sub):
@@ -200,7 +201,7 @@ def detect_id(word, next_word):
     return word
 
 
-def is_word_unit(word):
+def is_word_in_unit_list(word):
     """
     Checks whether a word is in the dictionary of unit names
     @param word: checked word
@@ -209,13 +210,31 @@ def is_word_unit(word):
     return word in UNITS_DICT.keys()
 
 
-def is_brand(word):
+def is_unit_mark_in_word(word):
+    """
+    Checks whether a unit mark is in a word
+    @param word: checked word
+    @return: true if a unit mark is in a word
+    """
+    return UNIT_MARK in word
+
+
+def is_word_in_brand_list(word):
     """
     Checks whether a word is in the dictionary of brands
     @param word: checked word
     @return: true if the word is in the dictionary of brands
     """
     return word.lower() in BRANDS_JOINED
+
+
+def is_brand_mark_in_word(word):
+    """
+    Checks whether a brand mark is in a word
+    @param word: checked word
+    @return: true if a brand mark is in a word
+    """
+    return BRAND_MARK in word
 
 
 def detect_color(word):
@@ -246,13 +265,8 @@ def detect_unspecified_number(word, following_word):
     @return: word with marker if it is in an unspecified number, otherwise the original word
     """
     if is_number(word):
-        detected = False
-        for mark_token in MARKS:
-            if mark_token in word:
-                detected = True
-        if not detected:
-            if following_word is None or not is_word_unit(following_word):
-                return NUMBER_MARK + word
+        if not is_unit_mark_in_word(following_word):
+            return NUMBER_MARK + word
     return word
 
 
@@ -339,10 +353,10 @@ def detect_ids_brands_colors_and_units(
         following_word = ''
         detected_ids_in_text = []
         detected_numbers_in_text = []
-        for i, word in enumerate(word_list):
-            if i < len(word_list) - 1:
-                following_word = word_list[i + 1]
-            if i == len(word_list) - 1:
+        for i, word in enumerate(detected_word_list):
+            if i < len(detected_word_list) - 1:
+                following_word = detected_word_list[i + 1]
+            if i == len(detected_word_list) - 1:
                 following_word = ''
             if color_detection:
                 word = detect_color(word)
@@ -354,7 +368,7 @@ def detect_ids_brands_colors_and_units(
                 word = detect_unspecified_number(word, following_word)
                 if NUMBER_MARK in word:
                     detected_numbers_in_text.append(word.replace(COLOR_MARK, ''))
-            detected_word_list.append(word)
+            detected_word_list[i] = word
         detected_keywords['all_ids_list'] = detected_ids_in_text
         detected_keywords['all_numbers_list'] = detected_numbers_in_text
         # detect brands
@@ -400,7 +414,7 @@ def convert_units_to_basic_form(dataset):
     for product in dataset:
         converted_product = []
         for unit in product:
-            if is_word_unit(unit[0].lower()):
+            if is_word_in_unit_list(unit[0].lower()):
                 name, value = convert_unit_and_value_to_basic_form(unit[0].lower(), unit[1])
                 converted_product.append([name.lower(), value])
             else:
@@ -458,7 +472,7 @@ def detect_units(word_list):
                 detected_units_list.append(['size', previous_word])
             previous_word = word
             continue
-        if is_word_unit(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
+        if is_word_in_unit_list(word.lower()) and previous_word.replace(',', '', 1).replace('.', '', 1).isnumeric():
             new_word, new_value = convert_unit_and_value_to_basic_form(word.lower(),
                                                                        float(
                                                                            previous_word.replace(',', '.', 1)
@@ -475,7 +489,7 @@ def detect_units(word_list):
             detected_word_list.append(word)
             detected_word_list.append(UNIT_MARK + "size")
             detected_units_list.append(['size', previous_word])
-        elif is_word_unit(word.lower()) and '×' in previous_word:
+        elif is_word_in_unit_list(word.lower()) and '×' in previous_word:
             converted_value_list = []
             new_word = word
             for value in previous_word.split('×'):
