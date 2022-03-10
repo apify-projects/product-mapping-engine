@@ -4,6 +4,7 @@ from math import floor
 
 import numpy as np
 import pandas as pd
+from boto.dynamodb.types import is_num
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -15,7 +16,8 @@ from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
-def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_ignore):
+def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_ignore,
+                                dataset2_starting_index):
     """
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
@@ -23,9 +25,9 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
     @param tf_idfs: tf.idfs of all words from both datasets
     @param descriptive_words: descriptive words from both datasets
     @param similarities_to_ignore: similarities that should not be computed
+    @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: dataset of pair similarity scores
     """
-    half_length = floor(len(descriptive_words) / 2) if descriptive_words is not None else 0
     match_ratios_list = []
 
     for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
@@ -54,7 +56,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
             if 'cos' in SIMILARITIES_TO_BE_COMPUTED and 'cos' not in similarities_to_ignore and tf_idfs is not None:
                 # cosine similarity of vectors from tf-idf
                 cos_similarity = cosine_similarity(
-                    [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + len(dataset1)].values]
+                    [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
                 )[0][1]
                 if product1 == "" or product2 == "":
                     match_ratios['cos'] = 0
@@ -66,7 +68,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
                     descriptive_words.iloc[product1_idx].values,
-                    descriptive_words.iloc[half_length + product2_idx].values
+                    descriptive_words.iloc[product2_idx + dataset2_starting_index].values
                 ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
                 if product1 == "" or product2 == "":
                     match_ratios['descriptives'] = 0
@@ -277,12 +279,11 @@ def compare_numerical_values(text1, text2):
     return 0
 
 
-def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION):
+def compare_units_and_values(text1, text2):
     """
     Compare detected units from the texts
     @param text1: List of words for unit detection and comparison
     @param text2: List of words for unit detection and comparison
-    @param deviation: percent of toleration of deviations of two compared numbers
     @return: Ratio of the same units between two texts
     """
     units_list1 = extract_units_and_values(text1)
@@ -292,19 +293,36 @@ def compare_units_and_values(text1, text2, deviation=UNITS_AND_VALUES_DEVIATION)
     for u1 in units_list1:
         for u2 in units_list2:
             if u1[0] == u2[0]:
-                if u1[0] == f'{UNIT_MARK}size' and u1[1] == u2[1]:
-                    matches += 1
-                elif type(u1[1]) is str:
-                    if '×' in u1[1] and sorted(u1[1].split('×')) == sorted(u2[1].split('×')):
-                        matches += 1
-                elif type(u2[1]) is not str:
-                    if (1 - deviation) * u2[1] < u1[1] < (1 + deviation) * u2[1]:
-                        matches += 1
+                if u1[0] == f'{UNIT_MARK}size' and u2[0] == f'{UNIT_MARK}size':
+                    matches += 1 if u1[1] == u2[1] else 0
+                elif '×' in str(u1[1]) and '×' in str(u2[1]):
+                    list1 = [float(x) for x in u1[1].split('×')]
+                    list2 = [float(x) for x in u2[1].split('×')]
+                    matching_values = 0
+                    for val1 in list1:
+                        for val2 in list2:
+                            matching_values += compute_matching_units(val1, val2)
+                    matches += matching_values
+                    if len(list1) + len(list2) - 2 < 0:
+                        print('Wtf this should not happen! Unpredictable bug!')
+                    total_len += len(list1) + len(list2) - 2
+                elif is_number(u1[1]) and is_number(u2[1]):
+                    matches += compute_matching_units(u1[1], u2[1])
     if matches == 0:
         return 0
     if not total_len == 0:
         return (total_len - 2 * matches) / total_len
     return 0
+
+
+def compute_matching_units(value1, value2):
+    """
+    Compute whether two values are equal with respect to some deviation
+    @param value1: first value to be compared
+    @param value2: second value to be compared
+    @return: 1 if values are the same else 0
+    """
+    return 1 if (1 - UNITS_AND_VALUES_DEVIATION) * value2 < value1 < (1 + UNITS_AND_VALUES_DEVIATION) * value2 else 0
 
 
 def chunks(dictionary, dict_num):
@@ -328,7 +346,8 @@ def multi_run_text_similarities_wrapper(args):
     return compute_text_similarities_parallelly(*args)
 
 
-def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words, pool, num_cpu):
+def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
+                                  dataset2_starting_index, pool, num_cpu):
     """
     Compute all the text-based similarities for the product pairs
     @param dataset1: first dataset of all products
@@ -338,6 +357,7 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @param descriptive_words: descriptive words from both datasets
     @param pool: parallelling object
     @param num_cpu: number of processes
+    @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: Similarity scores for the product pairs
     """
 
@@ -346,7 +366,8 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in
                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
     df_all_similarities_list = pool.map(multi_run_text_similarities_wrapper,
-                                        [(dataset1_subsets[i], dataset2_subsets[i], descriptive_words, tf_idfs) for i in
+                                        [(dataset1_subsets[i], dataset2_subsets[i], descriptive_words, tf_idfs,
+                                          dataset2_starting_index) for i in
                                          range(0, len(dataset1_subsets))])
     df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
 
@@ -386,13 +407,14 @@ def create_empty_dataframe_with_ids(dataset1, dataset2):
     return df_all_similarities
 
 
-def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, tf_idfs):
+def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, tf_idfs, dataset2_starting_index):
     """
     Compute similarity score of each pair in both datasets parallelly for each column
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
     @param descriptive_words: descriptive words from both datasets
     @param tf_idfs: tf.idfs of all words from both datasets
+    @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: dataset of pair similarity scores
     """
     df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2)
@@ -404,7 +426,7 @@ def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, 
             descriptive_words_column = descriptive_words[column] if column in descriptive_words else None
             columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
                                                              tf_idfs_column, descriptive_words_column,
-                                                             similarities_to_ignore
+                                                             similarities_to_ignore, dataset2_starting_index
                                                              )
             columns_similarity = pd.DataFrame(columns_similarity)
             for similarity_name, similarity_value in columns_similarity.items():

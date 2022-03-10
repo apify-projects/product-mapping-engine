@@ -355,7 +355,7 @@ def detect_units(word_list):
             detected_word_list.append(word)
             detected_word_list.append(UNIT_MARK + "size")
             detected_units_list.append(['size', previous_word])
-        elif is_word_in_unit_list(word.lower()) and '×' in previous_word:
+        elif is_word_in_unit_list(word.lower()) and '×' in previous_word and all(is_number(subword) for subword in previous_word.split('×')):
             converted_value_list = []
             new_word = word
             for value in previous_word.split('×'):

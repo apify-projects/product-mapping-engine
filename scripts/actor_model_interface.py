@@ -36,7 +36,8 @@ def split_dataframes(dataset):
     return dataset, dataset_without_marks
 
 
-def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, pool, num_cpu,
+def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, dataset2_starting_index, pool,
+                                       num_cpu,
                                        dataset_folder='',
                                        dataset_dataframe=None,
                                        dataset_images_kvs1=None,
@@ -54,6 +55,7 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
+    @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: list of dataframes with image and text similarities
     """
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
@@ -67,7 +69,7 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     if COMPUTE_TEXT_SIMILARITIES:
         print("Text similarities computation started")
         name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs,
-                                                          descriptive_words,
+                                                          descriptive_words, dataset2_starting_index,
                                                           pool, num_cpu)
         print("Text similarities computation finished")
     else:
@@ -132,7 +134,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
                                            PERFORM_NUMBERS_DETECTION)
     dataset1, dataset1_without_marks = split_dataframes(dataset1)
     dataset2, dataset2_without_marks = split_dataframes(dataset2)
-
+    dataset2_starting_index = len(dataset1_without_marks)
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)
     print("Text preprocessing finished")
@@ -156,7 +158,7 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
     # create image and text similarities
     print("Similarities creation started")
     image_and_text_similarities = create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words,
-                                                                     pool, num_cpu,
+                                                                     dataset2_starting_index, pool, num_cpu,
                                                                      dataset_folder='.',
                                                                      dataset_dataframe=pairs_dataset_idx,
                                                                      dataset_images_kvs1=images_kvs1_client,
