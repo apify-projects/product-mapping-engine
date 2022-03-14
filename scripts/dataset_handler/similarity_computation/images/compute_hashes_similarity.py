@@ -247,7 +247,7 @@ def create_image_similarities_data(
 
         print("Image preprocessing started")
         script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                  "../preprocessing/images/image_hash_creator/main.js")
+                                  "../../preprocessing/images/image_hash_creator/main.js")
         image_filenames = os.listdir(img_dir)
         image_filenames_chunks = np.array_split(image_filenames, num_cpu)
         hash_files = pool.map(
