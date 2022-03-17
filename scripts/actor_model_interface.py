@@ -132,8 +132,6 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
                                            PERFORM_BRAND_DETECTION,
                                            PERFORM_UNITS_DETECTION,
                                            PERFORM_NUMBERS_DETECTION)
-    dataset1 = dataset1.sort_index()
-    dataset2 = dataset2.sort_index()
     dataset1, dataset1_without_marks = split_dataframes(dataset1)
     dataset2, dataset2_without_marks = split_dataframes(dataset2)
     dataset1.to_csv('data1.csv')

@@ -181,7 +181,6 @@ def preprocess_textual_data(dataset,
     """
     dataset['price'] = pd.to_numeric(dataset['price'])
     detected_keywords_df = pd.DataFrame()
-    dataset = dataset.sort_values(by=['price'])
     dataset = parse_specifications_and_create_copies(dataset, 'specification')
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset:
