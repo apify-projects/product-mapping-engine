@@ -134,8 +134,6 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
                                            PERFORM_NUMBERS_DETECTION)
     dataset1, dataset1_without_marks = split_dataframes(dataset1)
     dataset2, dataset2_without_marks = split_dataframes(dataset2)
-    dataset1.to_csv('data1.csv')
-    dataset2.to_csv('data2.csv')
     dataset2_starting_index = len(dataset1_without_marks)
     # create tf_idfs
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)

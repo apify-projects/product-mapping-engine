@@ -82,7 +82,7 @@ def create_unit_dict():
 
     for idx, row in units_df.iterrows():
 
-        shortcut_list = row['shortcut'].split(',')
+        shortcut_list = [r.lower() for r in row['shortcut'].split(',')]
         basic_shortcut = shortcut_list[0]
         units_dict[basic_shortcut] = {'value': 1, 'basic': basic_shortcut}
         if len(shortcut_list) > 1:
@@ -112,9 +112,9 @@ def create_unit_dict():
                         units_dict[
                             f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{name.lower()}'] = {
                             'value': value, 'basic': basic_shortcut}
-    original_unit_names = units_dict.keys()
+    original_unit_names = [k for k in list(units_dict.keys())]
     units_dict = {k.replace(' ', ''): v for k, v in units_dict.items()}
-    return units_dict, list(original_unit_names)
+    return units_dict, original_unit_names
 
 
 def load_imperial_to_metric_units_conversion_file():

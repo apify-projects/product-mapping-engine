@@ -99,15 +99,22 @@ def split_units_and_values(word_list):
     """
     word_list_split = []
     for word in word_list:
-        if re.match('^[0-9]*.[0-9]+[a-zA-Z]+$', word) is not None:
+        if re.match('^([0-9]*[.])?[0-9]+[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
-            word_list_split.append(re.split('^[0-9]*.[0-9]+', word)[1])
-        elif re.match('^[0-9]+%$', word) is not None:
-            word_list_split.append(re.split('%', word)[0])
-            word_list_split.append(re.split('^[0-9]+', word)[1])
+            split = re.split('^([0-9]*[.])?[0-9]+', word)
+            word_list_split.append(split[len(split)-1])
+        elif re.match('^([0-9]*[.])?[0-9]+[{°C}{°F}°%£€$Ω\"\']+$', word) is not None:
+            word_list_split.append(re.split('[{°C}{°F}°%£€$Ω\"\']+$', word)[0])
+            split = re.split('^([0-9]*[.])?[0-9]+', word)
+            word_list_split.append(split[len(split) - 1])
+        elif re.match('^([0-9]*[.])?[0-9]+-([0-9]*[.])?[0-9]+[a-zA-Z]+$', word) is not None:
+            word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
+            split = re.split('^([0-9]*[.])?[0-9]+-([0-9]*[.])?[0-9]+', word)
+            word_list_split.append(split[len(split) - 1])
         elif re.match('^([0-9]+×[0-9]+(×[0-9])*)[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
-            word_list_split.append(re.split('^([0-9]+×[0-9]+(×[0-9])*)', word)[1])
+            split = re.split('^([0-9]+×[0-9]+(×[0-9])*)', word)
+            word_list_split.append(split[len(split) - 1])
         else:
             word_list_split.append(word)
     return word_list_split
