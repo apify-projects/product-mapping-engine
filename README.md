@@ -1,139 +1,107 @@
 # Product Mapping Project
-Project for automatic mapping among products from different websites.
+Source codes for automatic mapping of products from different e-shop websites based on comparison of images and texts chracterising each product.
 
 ## Folder *data*
-Contains all necessary datasets for product mapping project
-
+This folder contains all necessary data for text preprocessing and keywords detection.
 
 ### Folder *vocabularies*
-Folder containing all the vocabularies and corpus and other stuff for names preprocessing
-- folder *corpus*
-  - contains all files and scripts for processing CZ corpus from https://www.paracrawl.eu/index.php
-  - folder *preprocessed*
-    - contains preprocessed corpus - parsed to Czech and English vocabulary and cleaned them
-    - contains text corpus to parse dictionaries from it
-    - cz_dict.csv and en_dict.csv are the files with unique words parsed from corpus
-    - en_dict_cleaned.csv and cz_dict_cleaned.csv contains words from dictionary that were also found in MORPHODITTA
-  - folder *source*
-    - contains source corpus (not in git as it has 8 GB)
-    - en-cs.txt is the corpus file
-  - contains all necessary scripts for corpus preprocessing
+This folder contains the vocabularies and corpus and other stuff for texts preprocessing
+- Folder *corpus*
+  - This folder contains files and scripts for processing CZ corpus from[here](https://www.paracrawl.eu/index.php)
+  - Folder *preprocessed*
+    - This folder contains preprocessed corpus with split words to Czech and English vocabularies which are used to detect existing words in texts characterising products
+    - `cz_dict.csv` and `en_dict.csv` are the files with unique words parsed from corpus
+    - `en_dict_cleaned.csv` and `cz_dict_cleaned.csv` contain words from dictionary that were also found in MORPHODITTA
+  - NOTE: source corpus file `en-cs.txt` is not in git as it has 8 GB
   - `corpus_preprocessing.py`
-    - `run_corpus_preprocessing.py`
-    - load corpus file, split Czech and English sentences and create dictionary of unique words for each language 
+    - Load corpus file, split Czech and English sentences and create dictionary of unique words for each language 
   - `vocabulary_cleaner.py`
-    - `run_vocabulary_cleaner.py`
-    - check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITTA
+    - Check whether all words in manually created vocabulary from source corpus are existing words using MORPHODITTA
 - brands.txt
-    - brands of notebooks manually extracted from Alza, Datart and CZC
+  - Contains brands automatically extracted from Alza 
 - colors.txt
-  - colors in English and Czech manually extracted from https://www.color-ize.com/color-list.php and https://cs.wikipedia.org/wiki/Seznam_barev
-
-### Folder *wdc_dataset*
-Contains the most common dataset of products from webs 
-- folder *dataset*
-  - contains all source and preprocessed data
-  - folder *preprocessed*
-    - contains folder with preprocessed data - file with product pairs
-    - images prepro: images and file with image hashes and image hashes similarities
-    - names prepro: contains file with name similarities
-  - folder *source*
-    - contains source data
-- `wdc_dataset_preparation.py`
-  - script for downloading and preprocessing data from [here](http://webdatacommons.org/)
-
-
-### Folder *extra_dataset*
-Contains datasets of products for first POC received from the website Extra
-- folder *dataset*
-  - contains all source and preprocessed data
-  - folder *results*
-    - contains folder with predicted data - file with product pairs
-  - folder *source*
-    - contains two source dataset to find matching pairs: extra and amazon 
+  - Contains colors in English and Czech manually extracted from [here](https://www.color-ize.com/color-list.php) and [here](https://cs.wikipedia.org/wiki/Seznam_barev)
 
 ## Folder *scripts*
-This is the folder containing all the necessary scripts for product mapping
+This folder contains all the necessary scripts for product mapping
 
-### Folder *classifier_parameters*
-- contains configurable parameters for model classificators
+### Folder *classifier_handler*
+- This folder contains configurable parameters for model classificators
 - `classifiers.py`
-  - contains all possible models to be trained to find amtching products
+  - Contains all possible models to be trained to find matching products
 - `evaluate_classifier.py`
-  - library with all necessary functions for evaluation of classifiers
-- `run_evaluate_classifier.py`
-  - single classifier evaluator
-- `run_compare_classifier.py`
-  - multiple classifiers evaluator and comparator
+  - Contains all necessary functions for evaluation of classifiers
 
   
+### Folder *dataset_handler*
+This folder contains all the necessary scripts for dataset preprocessing and similarity computations
+
+### Folder *dataset_upload* 
+This folder contains all the necessary scripts for uploading the dataset from platform and its scraping
+- `combine_initial_datasets.py`
+  - TODO: 
+- `pairs_to_url.py`
+  - TODO:
+- `scraped_datasets_to_pairs_dataset.py`
+  - TODO:
+- `scraped_datasets_to_pairs_datasets.py`
+  - TODO:
+- `upload_dataset.py`
+  - TODO:
+
 ### Folder *preprocessing* 
+This folder contains all the necessary scripts for images and texts preprocessing
 #### Folder *images*
-This is the folder containing all the necessary scripts for images preprocessing
+This folder contains all the necessary scripts for images preprocessing
 - folder image_hash_creator
-  - contains javascript code to create hashes from images
-  - using apify run from cmd call main.js which creates hashes of images in given folder
+  - This folder contains javascript code to create hashes from images using apify run from cmd call main.js which creates hashes of images in given folder
   - `image_preprocessing.py`
-    - serves to preprocess images: crop, resize, object detection 
+    - Preprocess images: crop and if necessary resize them, detect objects in them 
   
-#### Folder *names*
-This is the folder containing all the necessary scripts for names preprocessing
-- `names_preprocessing.py`
-  - preprocess names of products - detects, ids, colors, brands
- 
-#### Folder *specification*
-This is the folder containing all the necessary scripts for specifition preprocessing
-- TODO:
+#### Folder *texts*
+This folder contains all the necessary scripts for texts preprocessing
+- `text_preprocessing.py`
+  - Preprocess all texts characterising the products
+- `keywords_detection.py`
+  - Detect all important words in products - ids, colors, brands, units, parameters, unspecified numbers, words out of vocabularies
 
-
-### Folder *score_computation* 
-This is the folder containing all the necessary scripts for similarity score computation
+### Folder *similarity_computation* 
+This folder contains all the necessary scripts for similarity score computation
 - folder *images*
   - This folder contains all the necessary scripts for comparison images of the products
-  - `compute_names_similarity.py`
-    - compares created hashes using bit distance (comparison of % of bits that differs)
-    - select the most similar images - they have the highest similarity of hashes
-- folder *names*
+  - `compute_hashes_similarity.py`
+    - Compares created hashes using bit distance (comparison of % of bits that differs) and select the most similar images - they have the highest similarity of hashes
+- folder *texts*
   - This folder contains all the necessary scripts for comparison names of the products
-  - `compute_name_similarity.py`
-    - compute similarity between two names according to the ids, brands and cosine similarity of vectors created from all words by tf.idf
-- `actor_model_interface.py`
-  - interface for website Extra to train model and save it and then load trained model, preprocess their datasets and predict possibly matching pairs
-- `dataset_handler.py`
-  -  all necessary stuff for operating with datasets (loda, save, prerocess, analyse, etc)
-- `run_analyse_dataset.py`
-  - preprocess and analyse dataset
+  - `compute_texts_similarity.py`
+    - Compute similarity between two texts according to the ids, colors, brands, units, parameters, unspecified numbers, words out of vocabularies and selected descriptive and the most characterising words and according to the cosine similarity of vectors created from all words by tf.idf
+  - `compute_specifications_similarity.py`
+    - Compute similarity between two specifications according to matching the parameters names and comparing their values
+- `dataset_analyser.py`
+  -  Contains functions for analysing the datasets
+- `pairs_filtering.py`
+  - Contains methods for filtering of nonmatching pairs in two datasets with products according to the price and descripttive words and words similarity
 
+### `actor_model_interface.py`
+- Interface for product-mapping-trainer and product-mapping-executor that are used to preprocess datasets to train and save the model and to load trained model and predict possibly matching pairs
+### `congfiguration.py`
+- Contains all parameters and other configuration stuff that can be configured for model training and data preprocessing 
 
-## Folder *test*
-Contains data and scripts for testing
-- folder *data*
-  - folder *10_products*
-    - manually extracted the 10 pairs of products from different web pages (Alza, CZC, Datart) also with corresponding image sets
-    -  folder *source*
-      - contains source data  
-    - folder *preprocessed*
-      - contains preprocessed data
-- folder *preprocessing*
-  - folder *images*
-    - contains scripts for testing functions for images preprocessing 
-  - folder *names*
-    - contains scripts for testing functions for names preprocessing 
-- folder *score_computation*
-  - contains scripts for testing functions for compute names and images similarity 
  
 ## Folder *results*
-Contains all results after runs of scripts.
+This folder contains all results after runs of scripts.
 - folder *classifier_visualization*
-  - contains images of classifiers
+  - Contains images of visualised classifiers
 - folder *mismatches*
-  - contains mismatched pair
+  - Contains mismatched pair from datasets
   - folder *data*
-    - contains wrongly predicted pairs of every classificator 
-  - `run_compare_missclassification.py`
-    - loads misclassified pairs from all classificators and analyses them
+    - Contains wrongly predicted pairs of every classificator 
+  - `compare_missclassification.py`
+    - Loads misclassified pairs from all classificators and analyses them
 - folder *models*
-  - contains saved model parameters
+  - Contains saved model parameters
+
+
 ### ReadMe.md
 - File you should definitely read!
 
