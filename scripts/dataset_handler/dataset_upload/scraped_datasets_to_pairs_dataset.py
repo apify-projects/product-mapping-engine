@@ -7,13 +7,16 @@ import requests
 import imghdr
 
 import importlib.machinery
+
 configuration = importlib.machinery.SourceFileLoader(
     'configuration',
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..", "configuration.py"),
 ).load_module()
 
+
 def is_url(potential_url):
     return "http" in potential_url or ".com" in potential_url
+
 
 def download_images(images_path, pair_index, product_index, pair):
     """
@@ -59,11 +62,11 @@ def download_images(images_path, pair_index, product_index, pair):
 
 
 def transform_scraped_datasets_to_full_pairs_dataset(
-    url_pairs_dataset_path,
-    scraped_dataset1_path,
-    scraped_dataset2_path,
-    full_pairs_dataset_path,
-    images_path
+        url_pairs_dataset_path,
+        scraped_dataset1_path,
+        scraped_dataset2_path,
+        full_pairs_dataset_path,
+        images_path
 ):
     """
     Uses scraped data to construct a labeled dataset than can be uploaded to the platform
@@ -77,16 +80,17 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     url_pairs_dataset = pd.read_csv(url_pairs_dataset_path)
 
     scraped_dataset1 = pd.read_json(scraped_dataset1_path)
-    scraped_dataset1 = scraped_dataset1[["name", "shortDescription", "longDescription", "specification", "images", "price", "url"]]
+    scraped_dataset1 = scraped_dataset1[
+        ["name", "shortDescription", "longDescription", "specification", "images", "price", "url"]]
     scraped_dataset1 = scraped_dataset1.rename(
-        columns = {
+        columns={
             "shortDescription": "short_description",
             "longDescription": "long_description",
             "images": "image"
         }
     )
     scraped_dataset1 = scraped_dataset1.rename(
-        columns = {
+        columns={
             "name": "name1",
             "short_description": "short_description1",
             "long_description": "long_description1",
@@ -100,9 +104,10 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     scraped_dataset1["id1"] = scraped_dataset1["url1"]
 
     scraped_dataset2 = pd.read_json(scraped_dataset2_path)
-    scraped_dataset2 = scraped_dataset2[["name", "shortDescription", "longDescription", "params", "images", "price", "url"]]
+    scraped_dataset2 = scraped_dataset2[
+        ["name", "shortDescription", "longDescription", "params", "images", "price", "url"]]
     scraped_dataset2 = scraped_dataset2.rename(
-        columns = {
+        columns={
             "shortDescription": "short_description",
             "longDescription": "long_description",
             "params": "specification",
@@ -110,7 +115,7 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         }
     )
     scraped_dataset2 = scraped_dataset2.rename(
-        columns = {
+        columns={
             "name": "name2",
             "short_description": "short_description2",
             "long_description": "long_description2",
@@ -152,6 +157,7 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     full_pairs_dataset.to_csv(full_pairs_dataset_path, index=False)
     print(full_pairs_dataset.shape)
 
+
 '''
 transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "Hotovo - Televize - Karolína Bečvářová.xlsx - Sheet1.csv"),
@@ -173,9 +179,12 @@ transform_scraped_datasets_to_full_pairs_dataset(
 '''
 
 transform_scraped_datasets_to_full_pairs_dataset(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files", "complete_cz.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "alza_complete_cz.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data", "mall_complete_cz.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
+                 "complete_cz.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "alza_complete_cz.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "mall_complete_cz.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
 )

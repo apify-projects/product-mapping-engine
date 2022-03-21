@@ -9,6 +9,7 @@ from apify_client import ApifyClient
 
 IMAGES_CHUNK_SIZE = 1000
 
+
 def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
     """
     Uploads prepared dataset to platform
@@ -118,10 +119,11 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         chunks = 0
         collected_images = {}
         for item in datasets[e]:
-            for f in range(1, item['image{}'.format(e+1)] + 1):
-                with open(os.path.join(images_path, "pair_{}_product_{}_image_{}.jpg".format(counter, e+1, f)), mode='rb') as image:
-                    collected_images[slugify(item['id{}'.format(e+1)] + '_image_{}'.format(f-1))] = str(base64.b64encode(image.read()), 'utf-8')
-
+            for f in range(1, item['image{}'.format(e + 1)] + 1):
+                with open(os.path.join(images_path, "pair_{}_product_{}_image_{}.jpg".format(counter, e + 1, f)),
+                          mode='rb') as image:
+                    collected_images[slugify(item['id{}'.format(e + 1)] + '_image_{}'.format(f - 1))] = str(
+                        base64.b64encode(image.read()), 'utf-8')
 
             print('Item {} uploaded'.format(counter))
             counter += 1
@@ -136,6 +138,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
             chunks += 1
             print("images_chunk_{}".format(chunks))
             images_kvs_clients[e].set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
+
 
 upload_dataset_to_platform(
     "small-sample-cz-with-resized-images",

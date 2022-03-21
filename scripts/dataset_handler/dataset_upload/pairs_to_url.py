@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import json
 
+
 def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url_json_path):
     """
     Extracts unique product URLs from a dataset of product pairs to create a file that can be fed to a scraper
@@ -24,6 +25,7 @@ def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url
     with open(url_json_path, 'w') as url_json_file:
         json.dump(array_to_jsonify, url_json_file)
         print("Saving {} URLs to {}".format(len(array_to_jsonify), url_json_path.split("/")[-1]))
+
 
 def transform_pairs_dataset_to_json_lists_of_urls(pairs_datasets_folder, url_files_folder, pairs_datasets_filenames):
     """
