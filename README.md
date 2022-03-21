@@ -42,7 +42,7 @@ This folder contains all the necessary scripts for uploading the dataset from pl
   - TODO: 
 - `pairs_to_url.py`
   - TODO:
-- `scraped_datasets_to_pairs_dataset.py`
+- `repair_excel_with_hyperlinks.py`
   - TODO:
 - `scraped_datasets_to_pairs_datasets.py`
   - TODO:
