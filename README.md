@@ -7,7 +7,7 @@ This folder contains all necessary data for text preprocessing and keywords dete
 ### Folder *vocabularies*
 This folder contains the vocabularies and corpus and other stuff for texts preprocessing
 - Folder *corpus*
-  - This folder contains files and scripts for processing CZ corpus from[here](https://www.paracrawl.eu/index.php)
+  - This folder contains files and scripts for processing CZ corpus from [here](https://www.paracrawl.eu/index.php)
   - Folder *preprocessed*
     - This folder contains preprocessed corpus with split words to Czech and English vocabularies which are used to detect existing words in texts characterising products
     - `cz_dict.csv` and `en_dict.csv` are the files with unique words parsed from corpus
