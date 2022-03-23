@@ -10,7 +10,7 @@ from nltk.stem import SnowballStemmer
 
 from .keywords_detection import detect_ids_brands_colors_and_units, update_keywords_detection_from_config, \
     convert_keyword_dicts_to_dataframe, reindex_and_merge_dataframes
-from ....configuration import LOWER_CASE_TEXT, STEM_ENGLISH_TEXT, LEMMATIZE_CZECH_TEXT, COLUMNS_TO_BE_PREPROCESSED
+from ....configuration import LOWER_CASE_TEXT, LANGUAGE, COLUMNS_TO_BE_PREPROCESSED
 
 
 def set_czech_lemmatizer():
@@ -86,7 +86,7 @@ def tokenize(text):
     @param text: string text to be split
     @return: list of words of text
     """
-    rgx = re.compile("\\w[\"\\-'×.,%]?\\w*")
+    rgx = re.compile("\w[\"-'×.,%]?\w*")
     word_list = rgx.findall(text)
     return word_list
 
@@ -99,18 +99,22 @@ def split_units_and_values(word_list):
     """
     word_list_split = []
     for word in word_list:
+        # if word in the form: number+string (eg:12kb, 1.2kb)
         if re.match('^([0-9]*[.])?[0-9]+[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
             split = re.split('^([0-9]*[.])?[0-9]+', word)
-            word_list_split.append(split[len(split)-1])
+            word_list_split.append(split[len(split) - 1])
+        # if word in the form: number+nonstring_unit (eg: 50°C,70.5°F, 14")
         elif re.match('^([0-9]*[.])?[0-9]+[{°C}{°F}°%£€$Ω\"\']+$', word) is not None:
             word_list_split.append(re.split('[{°C}{°F}°%£€$Ω\"\']+$', word)[0])
             split = re.split('^([0-9]*[.])?[0-9]+', word)
             word_list_split.append(split[len(split) - 1])
+        # if word in the form: number-number+string (eg: 10-15h)
         elif re.match('^([0-9]*[.])?[0-9]+-([0-9]*[.])?[0-9]+[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
             split = re.split('^([0-9]*[.])?[0-9]+-([0-9]*[.])?[0-9]+', word)
             word_list_split.append(split[len(split) - 1])
+        # if word in the form: number×number×number+string (eg: 10×10×10cm)
         elif re.match('^([0-9]+×[0-9]+(×[0-9])*)[a-zA-Z]+$', word) is not None:
             word_list_split.append(re.split('[a-zA-Z]+$', word)[0])
             split = re.split('^([0-9]+×[0-9]+(×[0-9])*)', word)
@@ -122,7 +126,7 @@ def split_units_and_values(word_list):
 
 def lower_case(word_list):
     """
-    Lower case all texts in dataset
+    Lower case all words in the list of words
     @param word_list: list of words
     @return: lower cased list of words
     """
@@ -134,29 +138,29 @@ def lower_case(word_list):
 
 def preprocess_text(data):
     """
-    Lowercase and split units and values in dataset
+    Lowercase and split units and values in dataset, then do the lemmatization and stemization
     @param data: list of texts to preprocess
     @return: preprocessed list of texts that consists of list of words
     """
     new_data = []
+    lemmatizer = set_czech_lemmatizer()
     for text in data:
         text = remove_useless_spaces_and_characters(text)
         word_list = tokenize(text)
         word_list = split_units_and_values(word_list)
         if LOWER_CASE_TEXT:
             word_list = lower_case(word_list)
-        if LEMMATIZE_CZECH_TEXT:
-            lemmatizer = set_czech_lemmatizer()
+        if LANGUAGE == 'czech':
             word_list = lemmatize_czech_text(word_list, lemmatizer)
-        if STEM_ENGLISH_TEXT:
+        if LANGUAGE == 'english':
             word_list = lemmatize_english_text(word_list)
         new_data.append(word_list)
     return new_data
 
 
-def add_all_texts_columns(dataset):
+def add_all_texts_column(dataset):
     """
-    Add to the dataset column containing all joined texts columns
+    Add a column containing a concatenation of all other text columns to the dataset
     @param dataset: dataframe in which to join text columns
     @return: dataframe with additional column containing all texts for each product
     """
@@ -206,7 +210,7 @@ def preprocess_textual_data(dataset,
                 units_detection,
                 numbers_detection
             )
-    dataset = add_all_texts_columns(dataset)
+    dataset = add_all_texts_column(dataset)
     detected_keywords = convert_keyword_dicts_to_dataframe(detected_keywords_df)
 
     if 'specification' in dataset.columns:

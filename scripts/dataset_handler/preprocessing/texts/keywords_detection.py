@@ -9,18 +9,15 @@ import requests
 from ....configuration import MINIMAL_DETECTABLE_ID_LENGTH, \
     KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
 
-CURRENT_SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
-COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/colors.txt')
-BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/brands.json')
-VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                  '../../../../data/vocabularies/corpus/preprocessed/en_dict_cleaned.csv')
-VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                  '../../../../data/vocabularies/corpus/preprocessed/cz_dict_cleaned.csv')
+CURRENT_SCRIPT_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../data/vocabularies/')
+COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'colors.txt')
+BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'brands.json')
+VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'corpus/preprocessed/en_dict_cleaned.csv')
+VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'corpus/preprocessed/cz_dict_cleaned.csv')
 
-UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/units.tsv')
-PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, '../../../../data/vocabularies/prefixes.tsv')
-UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER,
-                                             '../../../../data/vocabularies/unit_conversion_us-eu.tsv')
+UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'units.tsv')
+PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'prefixes.tsv')
+UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'unit_conversion_us-eu.tsv')
 NUMBER_MARK = '#num#'
 ID_MARK = '#id#'
 BRAND_MARK = '#bnd#'
@@ -257,7 +254,7 @@ def is_number(word):
     """
     Check whether given word is a number
     @param word: string to be checked
-    @return: true is string is a number else false
+    @return: true if string is a number else false
     """
     try:
         float(word)
@@ -355,7 +352,8 @@ def detect_units(word_list):
             detected_word_list.append(word)
             detected_word_list.append(UNIT_MARK + "size")
             detected_units_list.append(['size', previous_word])
-        elif is_word_in_unit_list(word.lower()) and '×' in previous_word and all(is_number(subword) for subword in previous_word.split('×')):
+        elif is_word_in_unit_list(word.lower()) and '×' in previous_word and all(
+                is_number(subword) for subword in previous_word.split('×')):
             converted_value_list = []
             new_word = word
             for value in previous_word.split('×'):
@@ -507,30 +505,7 @@ def reindex_and_merge_dataframes(dataset, detected_keywords):
     return dataset
 
 
-# NOT USED METHODS
-def compute_likelihood_of_first_words(data):
-    """
-    Compute likelihood that the words appears in the first place
-    @param data: dataset with texts that are list of words
-    @return: likelihood of each word to be the first one
-    """
-    word_counts = {}
-    first_likelihood = {}
-    for word_list in data:
-        is_first = True
-        for word in word_list:
-            if word not in word_counts:
-                word_counts[word] = 0
-                first_likelihood[word] = 0
-            word_counts[word] += 1
-            if is_first:
-                first_likelihood[word] += 1
-            is_first = False
-    for word in first_likelihood:
-        first_likelihood[word] = first_likelihood[word] / word_counts[word]
-    return first_likelihood
-
-
+# NOT USED - BUT MIGHT BE USEFUL FOR EXPERIMENTS INSTEAD OF VOCABULARIES
 def does_this_word_exist(lemma):
     """
     Check whether the word is in Czech or English vocabulary in LINDAT repository

@@ -63,8 +63,6 @@ class Classifier:
 
     def set_threshold(self, threshold):
         self.weights['threshold'] = threshold
-        print(self.weights)
-        print("THRESHOLD\n\n\n")
 
     def save(self, path='results/models', key_value_store=None):
         if key_value_store is None:
@@ -102,9 +100,9 @@ class Classifier:
 
     def perform_pca(self, data, train_pca=False):
         principal_component_count = PRINCIPAL_COMPONENT_COUNT
-        data_match = pd.DataFrame()
+        data_match = pd.Series()
         if 'match' in data:
-            data_match['match'] = data['match']
+            data_match = data['match']
             data = data.drop(columns='match')
 
         if train_pca:
@@ -113,13 +111,13 @@ class Classifier:
         else:
             data = self.pca.transform(data)
 
-        dataframe = pd.DataFrame(data, columns=["principal_component_{}".format(component) for component in
-                                                range(1, principal_component_count + 1)])
+        data_principal_components = pd.DataFrame(data,
+                                                 columns=["principal_component_{}".format(component) for component in
+                                                          range(1, principal_component_count + 1)])
         if not len(data_match) == 0:
-            data_match = data_match.reset_index(drop=True)
-            dataframe['match'] = data_match['match']
+            data_principal_components['match'] = data_match
 
-        return dataframe
+        return data_principal_components
 
 
 class LinearRegressionClassifier(Classifier):

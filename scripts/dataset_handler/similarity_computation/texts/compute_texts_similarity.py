@@ -1,10 +1,8 @@
 import copy
 from itertools import islice
-from math import floor
 
 import numpy as np
 import pandas as pd
-from boto.dynamodb.types import is_num
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -16,22 +14,26 @@ from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
-def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_ignore,
-                                dataset2_starting_index):
+def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_compute,
+                                dataset2_starting_index, are_there_markers=True):
     """
     Compute similarity score of each pair in both datasets
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
     @param tf_idfs: tf.idfs of all words from both datasets
     @param descriptive_words: descriptive words from both datasets
-    @param similarities_to_ignore: similarities that should not be computed
+    @param similarities_to_compute: similarities that should be computed
     @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
+    @param are_there_markers: whether there are markers detecting units, ids, brands etc in the datasets
     @return: dataset of pair similarity scores
     """
     match_ratios_list = []
 
     for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
-        product1_no_markers = remove_markers(copy.deepcopy(product1))
+        if are_there_markers:
+            product1_no_markers = remove_markers(copy.deepcopy(product1))
+        else:
+            product1_no_markers = copy.deepcopy(product1)
         bnd1 = [word for word in product1 if BRAND_MARK in word]
         id1 = [word for word in product1 if ID_MARK in word]
 
@@ -39,21 +41,24 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
             match_ratios = {}
 
             # detect and compare ids
-            if 'id' in SIMILARITIES_TO_BE_COMPUTED and 'id' not in similarities_to_ignore:
+            if 'id' in similarities_to_compute:
                 id2 = [word for word in product2 if ID_MARK in word]
-                match_ratios['id'] = compute_matching_pairs(id1, id2, True)
+                match_ratios['id'] = compute_match_ratio(id1, id2, True)
 
             # detect and compare brands
-            if 'brand' in SIMILARITIES_TO_BE_COMPUTED and 'brand' not in similarities_to_ignore:
+            if 'brand' in similarities_to_compute:
                 bnd2 = [word for word in product2 if BRAND_MARK in word]
-                match_ratios['brand'] = compute_matching_pairs(bnd1, bnd2)
+                match_ratios['brand'] = compute_match_ratio(bnd1, bnd2)
 
             # ratio of the similar words
-            if 'words' in SIMILARITIES_TO_BE_COMPUTED and 'words' not in similarities_to_ignore:
-                product2_no_markers = remove_markers(copy.deepcopy(product2))
-                match_ratios['words'] = compute_matching_pairs(product1_no_markers, product2_no_markers)
+            if 'words' in similarities_to_compute:
+                if are_there_markers:
+                    product2_no_markers = remove_markers(copy.deepcopy(product2))
+                else:
+                    product2_no_markers = copy.deepcopy(product2)
+                match_ratios['words'] = compute_match_ratio(product1_no_markers, product2_no_markers)
 
-            if 'cos' in SIMILARITIES_TO_BE_COMPUTED and 'cos' not in similarities_to_ignore and tf_idfs is not None:
+            if 'cos' in similarities_to_compute and tf_idfs is not None:
                 # cosine similarity of vectors from tf-idf
                 cos_similarity = cosine_similarity(
                     [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
@@ -63,8 +68,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 else:
                     match_ratios['cos'] = 2 * cos_similarity - 1
 
-            if 'descriptives' in SIMILARITIES_TO_BE_COMPUTED and 'descriptives' not in similarities_to_ignore and \
-                    descriptive_words is not None:
+            if 'descriptives' in similarities_to_compute and descriptive_words is not None:
                 # compute number of similar words in both texts
                 descriptive_words_sim = compute_descriptive_words_similarity(
                     descriptive_words.iloc[product1_idx].values,
@@ -75,11 +79,11 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 else:
                     match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
 
-            if 'units' in SIMILARITIES_TO_BE_COMPUTED and 'units' not in similarities_to_ignore:
+            if 'units' in similarities_to_compute:
                 # compare ratio of corresponding units and values in both texts
                 match_ratios['units'] = compare_units_and_values(product1, product2)
 
-            if 'numbers' in SIMILARITIES_TO_BE_COMPUTED and 'numbers' not in similarities_to_ignore:
+            if 'numbers' in similarities_to_compute:
                 # compare unspecified numbers in both texts
                 match_ratios['numbers'] = compare_numerical_values(product1, product2)
 
@@ -113,7 +117,7 @@ def compute_similarity_of_keywords(keywords1, keywords2_df):
     return total_similarities
 
 
-def compute_matching_pairs(list1, list2, allow_substrings=False):
+def compute_match_ratio(list1, list2, allow_substrings=False):
     """
     Compute matching items in two lists
     @param allow_substrings: allow substring in finding matching pairs
@@ -418,15 +422,17 @@ def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, 
     @return: dataset of pair similarity scores
     """
     df_all_similarities = create_empty_dataframe_with_ids(dataset1, dataset2)
+    similarities_to_compute = SIMILARITIES_TO_BE_COMPUTED
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2[0]:
             similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[
                 column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED else []
+            similarities_to_compute = [similarity for similarity in similarities_to_compute if similarity not in similarities_to_ignore]
             tf_idfs_column = tf_idfs[column] if column in tf_idfs else None
             descriptive_words_column = descriptive_words[column] if column in descriptive_words else None
             columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
                                                              tf_idfs_column, descriptive_words_column,
-                                                             similarities_to_ignore, dataset2_starting_index
+                                                             similarities_to_compute, dataset2_starting_index
                                                              )
             columns_similarity = pd.DataFrame(columns_similarity)
             for similarity_name, similarity_value in columns_similarity.items():

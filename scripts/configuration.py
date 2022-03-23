@@ -2,19 +2,22 @@
 IS_ON_PLATFORM = False
 LOAD_PREPROCESSED_DATA = False
 SAVE_PREPROCESSED_DATA = False
-SAVE_COMPUTED_SIMILARITIES = False
+SAVE_COMPUTED_SIMILARITIES = True
 
 # TEXT PREPROCESSING SETTING
+# Text column names that should be preprocessed and used for similarity computations
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
+# Elements
 SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units', 'numbers']
+# Specification for each column name separately which keywords not to detect and which similarities not to compute
 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_description': ['id', 'brand', 'color', 'words'],
-                                                 'specification_text': ['descriptives', 'cos', 'words'],
-                                                 'all_texts': ['id', 'brand', 'color', 'numbers', 'words', 'units']}
+                                                                  'specification_text': ['descriptives', 'cos',
+                                                                                         'words'],
+                                                                  'all_texts': ['id', 'brand', 'color', 'numbers',
+                                                                                'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
-SIMILARITIES_TO_IGNORE = []
 LOWER_CASE_TEXT = True
-STEM_ENGLISH_TEXT = True
-LEMMATIZE_CZECH_TEXT = True
+LANGUAGE = 'czech'  # can be one of {czech, english}
 
 # KEYWORDS DETECTION SETTING
 PERFORM_ID_DETECTION = True
@@ -46,7 +49,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = False
+COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.2

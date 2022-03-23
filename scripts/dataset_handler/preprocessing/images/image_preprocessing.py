@@ -136,7 +136,7 @@ def load_and_parse_data(input_files):
     """
     Load input file and split name and hash into dictionary
     @param input_files: files with hashes and names
-    @return: dictionary with name and has value of the image
+    @return: dictionary with name as key and hash of the image as value
     """
     data = {}
 

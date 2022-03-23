@@ -4,8 +4,6 @@ from multiprocessing import Pool
 
 import pandas as pd
 
-# DO NOT REMOVE
-# Adding the higher level directories to sys.path so that we can import from the other folders
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
 from .dataset_handler.pairs_filtering import filter_possible_product_pairs
@@ -17,8 +15,8 @@ from .dataset_handler.preprocessing.texts.text_preprocessing import parallel_tex
 from .dataset_handler.similarity_computation.texts.compute_texts_similarity import \
     create_tf_idfs_and_descriptive_words, create_text_similarities_data
 from .configuration import IS_ON_PLATFORM, LOAD_PREPROCESSED_DATA, PERFORM_ID_DETECTION, \
-    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SIMILARITIES_TO_IGNORE, \
-    SAVE_PREPROCESSED_DATA, SAVE_COMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_PREPROCESSED_DATA, \
+    SAVE_COMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 
@@ -29,10 +27,10 @@ def split_dataframes(dataset):
     @param dataset: preprocessed dataframe
     @return: two dataframes with detected keywords and without them
     """
-    columns = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'price']
-    dataset_without_marks = dataset[[col for col in columns]]
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'price']
+    dataset_without_marks = dataset[[col for col in columns_without_marks]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
-    dataset = dataset[[col for col in dataset.columns if col not in columns]]
+    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks]]
     return dataset, dataset_without_marks
 
 
@@ -55,7 +53,8 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     @param dataset_dataframe: dataframe of pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
-    @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
+    @param dataset2_starting_index: size of the dataset1 used for indexing values of second dataset in tf_idfs and
+                                    descriptive_words which contains joint dataset1 nad dataset2 into one dataset
     @return: list of dataframes with image and text similarities
     """
     product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
@@ -243,9 +242,6 @@ def load_model_create_dataset_and_predict_matches(
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
-    if SIMILARITIES_TO_IGNORE:
-        preprocessed_pairs = preprocessed_pairs.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
-
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
         preprocessed_pairs.drop(['id1', 'id2'], axis=1))
 
@@ -305,49 +301,9 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
-    if SIMILARITIES_TO_IGNORE:
-        similarities = similarities.drop(SIMILARITIES_TO_IGNORE, axis=1, errors='ignore')
     train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
     classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
     if not classifier.use_pca:
         classifier.print_feature_importance(feature_names)
     return train_stats, test_stats
-
-
-# NOT USED METHODS
-def create_dataset_for_predictions(product, maybe_the_same_products):
-    """
-    Create one dataset for model to predict matches that will consist of following
-    pairs: given product with every product from the dataset of possible matches
-    @param product: product to be compared with all products in the dataset
-    @param maybe_the_same_products: dataset of products that are possibly the same as given product
-    @return: one dataset for model to predict pairs
-    """
-    maybe_the_same_products = maybe_the_same_products.rename(columns=lambda s: s + '2')
-    final_dataset = pd.DataFrame(columns=product.index.values)
-    for _ in range(0, len(maybe_the_same_products.index)):
-        final_dataset = final_dataset.append(product, ignore_index=True)
-    final_dataset.reset_index(drop=True, inplace=True)
-    maybe_the_same_products.reset_index(drop=True, inplace=True)
-    final_dataset = final_dataset.rename(columns=lambda s: s + '1')
-    final_dataset = pd.concat([final_dataset, maybe_the_same_products], axis=1)
-    return final_dataset
-
-
-def filter_and_save_fp_and_fn(original_dataset):
-    """
-    Filter and save FP and FN from predicted matches
-    @param original_dataset: dataframe with original data
-    @return:
-    """
-    original_dataset['index'] = original_dataset.index
-    train_data = pd.read_csv('train_data.csv')
-    test_data = pd.read_csv('test_data.csv')
-    train_test_data = pd.concat([train_data, test_data])
-    predicted_pairs = train_test_data.join(original_dataset, on='index1', how='left')
-    joined_datasets = predicted_pairs.drop(['index1', 'index'], 1)
-    fn_train = joined_datasets[(joined_datasets['match'] == 1) & (joined_datasets['predicted_match'] == 0)]
-    fp_train = joined_datasets[(joined_datasets['match'] == 0) & (joined_datasets['predicted_match'] == 1)]
-    fn_train.to_csv(f'fn_dataset.csv', index=False)
-    fp_train.to_csv(f'fp_dataset.csv', index=False)

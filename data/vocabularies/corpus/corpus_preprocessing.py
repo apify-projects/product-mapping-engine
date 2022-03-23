@@ -12,7 +12,7 @@ import click
 @click.option('--cz_vocabulary_file', '-c',
               default='data/vocabularies/corpus/preprocessed/cz_dict.csv',
               required=False,
-              help='Output Czech vocabulary wile after preprocessing')
+              help='Output Czech vocabulary file after preprocessing')
 def load_and_split_corpus(corpus_file, separator='\t'):
     """
     Load corpus file and split Czech and English sentences
