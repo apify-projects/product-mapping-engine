@@ -1,39 +1,42 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-SAVE_PREPROCESSED_PAIRS = True
-SAVE_SIMILARITIES = True
+LOAD_PREPROCESSED_DATA = False
+SAVE_PREPROCESSED_DATA = False
+SAVE_COMPUTED_SIMILARITIES = True
 
 # TEXT PREPROCESSING SETTING
-COLUMNS = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
-SIMILARITY_NAMES = ['id', 'brand', 'words', 'cos', 'descriptives', 'units']
+# Text column names that should be preprocessed and used for similarity computations
+COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
+# Elements
+SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units', 'numbers']
+# Specification for each column name separately which keywords not to detect and which similarities not to compute
+KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_description': ['id', 'brand', 'color', 'words'],
+                                                                  'specification_text': ['descriptives', 'cos',
+                                                                                         'words'],
+                                                                  'all_texts': ['id', 'brand', 'color', 'numbers',
+                                                                                'words', 'units']}
+ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-TEXT_LEMMATIZER = None
-
+LANGUAGE = 'czech'  # can be one of {czech, english}
 
 # KEYWORDS DETECTION SETTING
-ID_MARK = '#id#'
-BRAND_MARK = '#bnd#'
-COLOR_MARK = '#col#'
-UNIT_MARK = '#unit#'
-MARKS = [ID_MARK, BRAND_MARK, COLOR_MARK, UNIT_MARK]
-SIZE_UNITS = ['XXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
-
 PERFORM_ID_DETECTION = True
 PERFORM_COLOR_DETECTION = True
 PERFORM_BRAND_DETECTION = True
 PERFORM_UNITS_DETECTION = True
+PERFORM_NUMBERS_DETECTION = True
 
 # TEXT FILTERING SETTING
-MINIMAL_DETECTABLE_ID_LENGTH = 5
+MINIMAL_DETECTABLE_ID_LENGTH = 4
 NUMBER_OF_TOP_DESCRIPTIVE_WORDS = 50
-MAX_WORD_OCCURRENCES_IN_TEXTS = 0.5
+MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS = 0.5
 MIN_DESCRIPTIVE_WORDS_FOR_MATCH = 0
-MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 0
-MIN_MATCH_PRICE_RATIO = 0.67
-MAX_MATCH_PRICE_RATIO = 1.33
+MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
+MIN_MATCH_PRICE_RATIO = 0.5
+MAX_MATCH_PRICE_RATIO = 2
 
 # IMAGE PREPROCESSING SETTING
-IMAGE_HASHES_SIZE = 8 #TODO: call from js somehow
+IMAGE_HASHES_SIZE = 8  # TODO: call from js somehow
 IMAGE_RESIZE_WIDTH = 1024
 IMAGE_RESIZE_HEIGHT = 1024
 IMAGE_FILTERING = True
@@ -45,12 +48,18 @@ KEY_SIMILARITY_LIMIT = 0.9
 NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
+COMPUTE_TEXT_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION SETTING
-TEST_DATA_PROPORTION = 0.25
+TEST_DATA_PROPORTION = 0.2
+PRINCIPAL_COMPONENT_COUNT = 20
+PERFORM_PCA_ANALYSIS = False
+EQUALIZE_CLASS_IMPORTANCE = False
+POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION_CONFIGURATION SETTING
-THRESHHOLD_SETTING = True
-NUMBER_OF_THRESHS = 100
-NUMBER_OF_THRESHS_FOR_AUC = 10
-MAX_FP_RATE = 0.05
+NUMBER_OF_THRESHES = 10
+NUMBER_OF_THRESHES_FOR_AUC = 10
+MAX_FP_RATE = 0.1
+PRINT_ROC_AND_STATISTICS = True

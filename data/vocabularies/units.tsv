@@ -93,3 +93,8 @@ bit	bits		b	k,M,G,T,Ki,Mi,Gi,Ti
 byte	bytes		B,By	k,M,G,T,Ki,Mi,Gi,Ti
 standard atmosphere		atmosféra	ATM	
 percent	percents	procento	%
+piece	pieces	kus	pcs,ks
+koruna	koruny		Kč,Kc
+euro	euros	euro EUR,€
+dollar	dollars dolar USD,$
+pound	pounds	libra	GBP,£
