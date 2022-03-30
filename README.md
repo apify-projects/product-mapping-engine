@@ -106,4 +106,3 @@ This folder contains all results after runs of scripts.
 
 ### `ReadMe.md`
 - File you should definitely read!
-
