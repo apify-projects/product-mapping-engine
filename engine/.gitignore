@@ -3,7 +3,9 @@ scripts/dataset_handler/preprocessing/datasets/wdc_dataset/*
 venv/*
 data/wdc_dataset/data_files/*
 data/wdc_dataset/dataset/*
-**/__pycache__/*
+__pycache__/*
 *.pdf
 *.csv
 .idea/*
+scripts/dataset_handler/preprocessing/images/image_hash_creator/node_modules/*
+
