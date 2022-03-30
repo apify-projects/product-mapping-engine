@@ -24,13 +24,13 @@ This folder contains all necessary data for text preprocessing and keywords dete
 ### Folder `scripts`
 This folder contains all the necessary scripts for product mapping
 - Folder `classifier_handler`
-    This folder contains configurable parameters for model classificators
+    - This folder contains configurable parameters for model classificators
     - `classifiers.py`
       - Contains all possible models to be trained to find matching products
     - `evaluate_classifier.py`
       - Contains all necessary functions for evaluation of classifiers
 - Folder `dataset_handler`
-    This folder contains all the necessary scripts for dataset preprocessing and similarity computations
+    - This folder contains all the necessary scripts for dataset preprocessing and similarity computations
     -  Folder `dataset_upload`
         This folder contains all the necessary scripts for uploading the dataset from platform and its scraping
         - `combine_initial_datasets.py`
@@ -44,21 +44,21 @@ This folder contains all the necessary scripts for product mapping
         - `upload_dataset.py`
           - TODO:
     - Folder `preprocessing` 
-        This folder contains all the necessary scripts for images and texts preprocessing
+        - This folder contains all the necessary scripts for images and texts preprocessing
         - Folder `images`
-            This folder contains all the necessary scripts for images preprocessing
+            - This folder contains all the necessary scripts for images preprocessing
             - folder image_hash_creator
               - This folder contains javascript code to create hashes from images using apify run from cmd call main.js which creates hashes of images in given folder
               - `image_preprocessing.py`
                 - Preprocess images: crop and if necessary resize them, detect objects in them 
         - Folder `texts`
-            This folder contains all the necessary scripts for texts preprocessing
+            - This folder contains all the necessary scripts for texts preprocessing
             - `text_preprocessing.py`
               - Preprocess all texts characterising the products
             - `keywords_detection.py`
               - Detect all important words in products - ids, colors, brands, units, parameters, unspecified numbers, words out of vocabularies
     - Folder `similarity_computation`
-        This folder contains all the necessary scripts for similarity score computation
+        - This folder contains all the necessary scripts for similarity score computation
         - folder *images*
           - This folder contains all the necessary scripts for comparison images of the products
           - `compute_hashes_similarity.py`
