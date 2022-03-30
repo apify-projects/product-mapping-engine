@@ -1,6 +1,13 @@
 venv/*
-__pycache__/*
+**/__pycache__/*
 *.pdf
 *.csv
 .idea/*
-
+actors/trainer/product_mapping_engine
+actors/executor/product_mapping_engine
+actors/trainer/images_cropped_*/
+actors/trainer/hashes_cropped_*.json
+actors/trainer/images/
+actors/trainer/results/
+actors/executor/images/
+actors/executor/results/
