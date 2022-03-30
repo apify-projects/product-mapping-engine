@@ -92,7 +92,7 @@ This folder contains all results after runs of scripts.
   - Contains saved model parameters
 
 
-### `ReadMe.md`
+### [`ReadMe.md`](https://github.com/apify-projects/product-mapping-engine/blob/master/README.md)
 - File you should definitely read!
 
 
