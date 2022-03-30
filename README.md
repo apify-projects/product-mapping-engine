@@ -23,20 +23,13 @@ This folder contains all necessary data for text preprocessing and keywords dete
 
 ### Folder `scripts`
 This folder contains all the necessary scripts for product mapping
-<details>
-  <summary>Folder `classifier_handler`</summary>
-  <p>
+- Folder `classifier_handler`
     This folder contains configurable parameters for model classificators
     - `classifiers.py`
       - Contains all possible models to be trained to find matching products
     - `evaluate_classifier.py`
       - Contains all necessary functions for evaluation of classifiers
-  </p>
-</details>
-
-<details>
-  <summary>Folder `dataset_handler`</summary>
-  <p>
+- Folder `dataset_handler`
     This folder contains all the necessary scripts for dataset preprocessing and similarity computations
     -  Folder `dataset_upload`
         This folder contains all the necessary scripts for uploading the dataset from platform and its scraping
@@ -84,11 +77,6 @@ This folder contains all the necessary scripts for product mapping
         - Interface for product-mapping-trainer and product-mapping-executor that are used to preprocess datasets to train and save the model and to load trained model and predict possibly matching pairs
     - `congfiguration.py`
         - Contains all parameters and other configuration stuff that can be configured for model training and data preprocessing 
-  </p>
-</details>
-  
-- 
-
  
 ### Folder `results`
 This folder contains all results after runs of scripts.
@@ -106,3 +94,4 @@ This folder contains all results after runs of scripts.
 
 ### `ReadMe.md`
 - File you should definitely read!
+- 
