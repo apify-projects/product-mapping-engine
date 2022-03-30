@@ -1,0 +1,286 @@
+[
+  {
+    'key': 'SSD Kapacita',
+    'value': '512 GB (0,51 TB)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tVelikost operační paměti RAM\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': '8 GB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tČip grafické karty\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': 'NVIDIA GeForce MX450'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tModelové označení procesoru\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Intel Core i5 11300H Tiger Lake'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tFrekvence procesoru\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': '3,1 GHz (3\xa0100 MHz)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tTyp úložiště\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': 'SSD'
+  },
+  {
+    'key': 'Úhlopříčka displeje',
+    'value': '14"'
+  },
+  {
+    'key': 'Kapacita úložiště',
+    'value': '512 GB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tVýbava\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Podsvícená klávesnice  Podsvícené klávesy oceníte při práci v noci. V závislosti na výrobci nebo modelu klávesnice se můžeme setkat s různými barvami podsvícení, možností nastavení intenzity, barevnými efekty apod., Čtečka otisků prstůK zabezpečeným datům se dostanete jen po načtení otisku prstu oprávněného uživatele., Čtečka paměťových karet, Operační systém'
+  },
+  {
+    'key': 'Úhlopříčka displeje',
+    'value': '14"'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tPoměr stran\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '16:9'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tTyp panelu\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'VA'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tMaximální rozlišení\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '1920 × 1080 px'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tObnovovací frekvence displeje\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '60 Hz'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tTyp displeje\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'AntireflexníAntireflexní displeje představují kompromis mezi matnými a lesklými displeji. Redukují odlesky osvětlení a zároveň mají kvalitní obraz.\xa0'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tSvítivost\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '300 Nits'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tZemě\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Česko, Slovensko, Maďarsko, Německo, Rusko, Rakousko, Chorvatsko, Francie, Polsko, Rumunsko, Slovinsko'
+  },
+  {
+    'key': 'Typ procesoru',
+    'value': 'Intel Core i5'
+  },
+  {
+    'key': 'Počet jader procesoru',
+    'value': '4 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tGenerace procesoru Intel\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Tiger Lake (11. generace)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tModelové označení procesoru\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Intel Core i5 11300H Tiger Lake'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tFrekvence procesoru\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '3,1 GHz (3\xa0100 MHz)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCore Boost Frekvence\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '4,4 GHz (4\xa0400 MHz)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tTDP\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '35 W'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCache procesoru\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '8 MB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tFunkce procesoru\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Automatické přetaktováníFunkce zajišťující navýšení výkonu počítače přetaktováním bez složitého nastavování v BIOSu. Přetaktování se provádí prostřednictvím specializovaného softwaru, který celý proces ulehčuje a minimalizuje riziko poškození počítače. Taktovací potenciál se u jednotlivých procesorů liší. Přetaktování navyšuje produkci vedlejšího tepla a zvyšuje spotřebu. \xa0 \xa0 \xa0, HyperThreadingJedná se o funkci zajišťující vícevláknové paralelní zpracování instrukcí – z jednoho fyzického procesoru se vytvoří dva procesory virtuální. V praxi to znamená, že se výrazně snižuje odezva systému a zároveň se urychlují operace, které po procesoru požadujete. \xa0, Podpora VirtualizaceSchopnost procesoru hardwarově podpořit plnou virtualizaci což znamená, že\xa0na jednom procesoru může běžet více programů zdánlivě současně. \xa0 \xa0'
+  },
+  {
+    'key': 'Typ',
+    'value': 'DedikovanáDedikovaná grafická karta je jasným znamením toho, že takový počítač nebo notebook poskytuje velmi dobrý grafický výkon. Jaké jsou hlavní rozdíly vůči integrované grafice? A jak se vlastně zjišťuje typ grafické karty v počítači?'
+  },
+  {
+    'key': 'Paměť grafické karty',
+    'value': '2 GB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tČip grafické karty\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'NVIDIA GeForce MX450'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tVelikost operační paměti RAM\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '8 GB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tTyp paměti\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'DDR4Typ paměti představuje určitý standard (např. DDR4 má dvojnásobnou prostupnost dat oproti DDR3), který vymezuje rozsah jejich vlastností. \xa0'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tFrekvence paměti\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '3\xa0200 MHz (3,2 GHz)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tPočet osazených slotů\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '1 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCelkový počet slotů\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '2×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tBarva\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Šedá  '
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tOperační systém\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Windows 10 Pro'
+  },
+  {
+    'key': 'Kapacita úložiště',
+    'value': '512 GB'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tTyp úložiště\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'SSD'
+  },
+  {
+    'key': 'Rozhraní disku',
+    'value': 'M.2Standard M.2 pro připojení interních komponent. Nahrazuje starší snandard mSATA. SSD připojené přes M.2 dosahují vysokých rychlostí čtení a zápisu.'
+  },
+  {
+    'key': 'SSD Kapacita',
+    'value': '512 GB (0,51 TB)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tPočet osazených slotů 2.5"\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '0 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCelkový počet slotů 2.5"\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '0 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tPočet osazených slotů M.2\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '1 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCelkový počet slotů M.2\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '2 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tCertifikace\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Windows 11 kompatibilní'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tVýbava\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Podsvícená klávesnice  Podsvícené klávesy oceníte při práci v noci. V závislosti na výrobci nebo modelu klávesnice se můžeme setkat s různými barvami podsvícení, možností nastavení intenzity, barevnými efekty apod., Čtečka otisků prstůK zabezpečeným datům se dostanete jen po načtení otisku prstu oprávněného uživatele., Čtečka paměťových karet, Operační systém'
+  },
+  {
+    'key': 'Webkamera',
+    'value': '720 px'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tHmotnost\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '1,44 kg'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tNabíjení přes USB-C\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Lze nabíjet přes USB-C'
+  },
+  {
+    'key': 'Kapacita baterie',
+    'value': '54 Wh'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tPočet článků\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '4ks'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tNabíjecí konektor\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '4,5/3,0 mm'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tNabíjecí příkon\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '65 W'
+  },
+  {
+    'key': 'Konvertibilita',
+    'value': 'Pevný (klasický notebook)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tMateriál konstrukce\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Celokovový (unibody)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tUSB-C\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '1 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tUSB 3.2 Gen 1 (USB 3.0)\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '2 ×'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tGrafické výstupy\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'HDMIHigh-Definition Multi-media Interface, digitální výstup s integrovaným zvukem (případně síťovým přenosem), je často využívaný například u televizorů. Umožňuje přenos 3D obrazu, vícekanálového zvuku a zvládá až 4K rozlišení (HDMI 2.0).'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tAudio\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Combo Audio Jack'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tSíťové\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'RJ-45 (LAN)'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tBluetooth\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Bluetooth v5.1'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tWiFi\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': '802.11ax'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tVerze WiFi\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'WiFi 6'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tOptická mechanika\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Bez mechaniky'
+  },
+  {
+    'key': 'Šířka',
+    'value': '321,27 mm'
+  },
+  {
+    'key': 'Výška maximální',
+    'value': '17,99 mm'
+  },
+  {
+    'key': 'Hloubka',
+    'value': '212,8 mm'
+  },
+  {
+    'key': 'Jazyk klávesnice',
+    'value': 'CZ, SK'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tŘada notebooku\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Dell Vostro'
+  },
+  {
+    'key': '\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tRozšířená záruka\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t',
+    'value': 'Servis u zákazníka (NBD)'
+  },
+  {
+    'key': 'Balení obsahuje ',
+    'value': 'Napájecí adaptér'
+  }
+]
