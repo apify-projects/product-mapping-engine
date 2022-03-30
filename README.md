@@ -59,11 +59,11 @@ This folder contains all the necessary scripts for product mapping
               - Detect all important words in products - ids, colors, brands, units, parameters, unspecified numbers, words out of vocabularies
     - Folder `similarity_computation`
         - This folder contains all the necessary scripts for similarity score computation
-        - folder *images*
+        - Folder *images*
           - This folder contains all the necessary scripts for comparison images of the products
           - `compute_hashes_similarity.py`
             - Compares created hashes using bit distance (comparison of % of bits that differs) and select the most similar images - they have the highest similarity of hashes
-        - folder `texts`
+        - Folder `texts`
           - This folder contains all the necessary scripts for comparison names of the products
           - `compute_texts_similarity.py`
             - Compute similarity between two texts according to the ids, colors, brands, units, parameters, unspecified numbers, words out of vocabularies and selected descriptive and the most characterising words and according to the cosine similarity of vectors created from all words by tf.idf
@@ -80,15 +80,15 @@ This folder contains all the necessary scripts for product mapping
  
 ### Folder `results`
 This folder contains all results after runs of scripts.
-- folder `classifier_visualization`
+- Folder `classifier_visualization`
   - Contains images of visualised classifiers
-- folder `mismatches`
+- Folder `mismatches`
   - Contains mismatched pair from datasets
-  - folder `data`
+  - Folder `data`
     - Contains wrongly predicted pairs of every classificator 
   - `compare_missclassification.py`
     - Loads misclassified pairs from all classificators and analyses them
-- folder `models`
+- Folder `models`
   - Contains saved model parameters
 
 
