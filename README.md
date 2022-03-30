@@ -47,7 +47,7 @@ This folder contains all the necessary scripts for product mapping
         - This folder contains all the necessary scripts for images and texts preprocessing
         - Folder `images`
             - This folder contains all the necessary scripts for images preprocessing
-            - folder image_hash_creator
+            - Folder `image_hash_creator`
               - This folder contains javascript code to create hashes from images using apify run from cmd call main.js which creates hashes of images in given folder
               - `image_preprocessing.py`
                 - Preprocess images: crop and if necessary resize them, detect objects in them 
