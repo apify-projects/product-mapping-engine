@@ -102,12 +102,13 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     return pd.concat([name_similarities, image_similarities['hash_similarity']], axis=1)
 
 
-def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_kvs2_client,
+def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client, images_kvs2_client,
                                 filter_data):
     """
     Preprocess data, possibly filter data pairs and compute similarities
     @param dataset1: Source dataframe of products
     @param dataset2: Target dataframe with products to be searched in for the same products
+    @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param filter_data: True whether filtering during similarity computations should be performed
@@ -153,6 +154,9 @@ def prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client, images_k
         pairs_dataset_idx = {}
         for i in range(0, len(dataset1)):
             pairs_dataset_idx[i] = [i]
+
+    # remove pairs their matches were already precomputed
+    #TODO: dataset_precomputed_matchesa
 
     # create image and text similarities
     print("Similarities creation started")
@@ -206,6 +210,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
 def load_model_create_dataset_and_predict_matches(
         dataset1,
         dataset2,
+        dataset_precomputed_matches,
         images_kvs1_client,
         images_kvs2_client,
         classifier_type,
@@ -217,6 +222,7 @@ def load_model_create_dataset_and_predict_matches(
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
+    @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param classifier_type: Classifier used for product matching
@@ -233,9 +239,10 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PREPROCESSED_DATA and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, images_kvs1_client,
+        preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client,
                                                          images_kvs2_client,
                                                          filter_data=True)
+
     if not is_on_platform and SAVE_PREPROCESSED_DATA:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
 

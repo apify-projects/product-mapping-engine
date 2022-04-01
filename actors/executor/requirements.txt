@@ -8,3 +8,5 @@ matplotlib
 opencv-contrib-python
 pydot
 majka
+nltk
+seaborn
