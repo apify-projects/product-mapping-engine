@@ -8,5 +8,3 @@ __pycache__/*
 *.csv
 .idea/*
 scripts/dataset_handler/preprocessing/images/image_hash_creator/node_modules/*
-actors/executor/hashes_cropped_*
-actors/executor/images_cropped_*
