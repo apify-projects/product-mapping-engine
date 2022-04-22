@@ -13,7 +13,7 @@ from ...preprocessing.images.image_preprocessing import compute_image_hashes, lo
 
 def hex_to_dec(hex_val):
     """
-    Takes every groups of BIT_GROUPS characters and converts them from hex to dec
+    Takes every group of BIT_GROUPS characters and converts them from hex to dec
     @param hex_val: hex value of the hash
     @return: decimal value of the hash
     """

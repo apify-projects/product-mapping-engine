@@ -375,8 +375,11 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
                                          range(0, len(dataset1_subsets))])
     df_all_similarities = pd.concat(df_all_similarities_list, ignore_index=True)
 
-    # for each column compute the similarity of product pairs selected after filtering
+    # in case no new similarities were computed
+    if len(df_all_similarities) == 0:
+        return df_all_similarities
 
+    # for each column compute the similarity of product pairs selected after filtering
     # specification comparison with units and values preprocessed as specification
     df_all_similarities['specification_key_matches'] = 0
     df_all_similarities['specification_key_value_matches'] = 0
@@ -401,13 +404,18 @@ def create_empty_dataframe_with_ids(dataset1, dataset2):
     """
     dataset1_ids = []
     dataset2_ids = []
-    ids1 = dataset1['id'].values
-    for i, id1 in enumerate(ids1):
+    dataset1_hashes = []
+    dataset2_hashes= []
+    for i, (id1, hash1) in enumerate(zip(dataset1['id'].values, dataset1['all_texts_hash'].values)):
         dataset1_ids += [id1] * len(dataset2[i])
         dataset2_ids += list(dataset2[i]['id'].values)
-    df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
+        dataset1_hashes += [hash1] * len(dataset2[i])
+        dataset2_hashes += list(dataset2[i]['all_texts_hash'].values)
+    df_all_similarities = pd.DataFrame(columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2'])
     df_all_similarities['id1'] = dataset1_ids
     df_all_similarities['id2'] = dataset2_ids
+    df_all_similarities['all_texts_hash1'] = dataset1_hashes
+    df_all_similarities['all_texts_hash2'] = dataset2_hashes
     return df_all_similarities
 
 

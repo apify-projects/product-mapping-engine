@@ -19,6 +19,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
 LANGUAGE = 'czech'  # can be one of {czech, english}
+TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION SETTING
 PERFORM_ID_DETECTION = True

@@ -1,12 +1,13 @@
+import hashlib
 import os
 import sys
 from multiprocessing import Pool
 
 import pandas as pd
 
+from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
-from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ""))
@@ -17,7 +18,7 @@ from .dataset_handler.similarity_computation.texts.compute_texts_similarity impo
 from .configuration import IS_ON_PLATFORM, LOAD_PREPROCESSED_DATA, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_PREPROCESSED_DATA, \
     SAVE_COMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 
 
@@ -35,9 +36,8 @@ def split_dataframes(dataset):
 
 
 def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, dataset2_starting_index, pool,
-                                       num_cpu,
+                                       num_cpu, product_pairs_idxs_dict,
                                        dataset_folder='',
-                                       dataset_dataframe=None,
                                        dataset_images_kvs1=None,
                                        dataset_images_kvs2=None
                                        ):
@@ -50,24 +50,23 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     @param pool: parallelling object
     @param num_cpu: number of processes
     @param dataset_folder: folder containing data to be preprocessed
-    @param dataset_dataframe: dataframe of pairs to be compared
+    @param product_pairs_idxs_dict: dictionary of indices of product pairs to be compared
     @param dataset_images_kvs1: key-value-store client where the images for the source dataset are stored
     @param dataset_images_kvs2: key-value-store client where the images for the target dataset are stored
     @param dataset2_starting_index: size of the dataset1 used for indexing values of second dataset in tf_idfs and
                                     descriptive_words which contains joint dataset1 nad dataset2 into one dataset
     @return: list of dataframes with image and text similarities
     """
-    product_pairs_idx = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
-        os.path.join(dataset_folder, "product_pairs.csv"))
 
     if not COMPUTE_IMAGE_SIMILARITIES and not COMPUTE_TEXT_SIMILARITIES:
         print(
-            'No similarities to be computed. Check value of COMPUTE_IMAGE_SIMILARITIES and COMPUTE_TEXT_SIMILARITIES.')
+            'No similarities to be computed. Check value of COMPUTE_IMAGE_SIMILARITIES and COMPUTE_TEXT_SIMILARITIES '
+            'in your configuration file.')
         exit()
 
     if COMPUTE_TEXT_SIMILARITIES:
         print("Text similarities computation started")
-        name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs,
+        name_similarities = create_text_similarities_data(dataset1, dataset2, product_pairs_idxs_dict, tf_idfs,
                                                           descriptive_words, dataset2_starting_index,
                                                           pool, num_cpu)
         print("Text similarities computation finished")
@@ -77,7 +76,7 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     if COMPUTE_IMAGE_SIMILARITIES:
         print("Image similarities computation started")
         pair_identifications = []
-        for source_id, target_ids in product_pairs_idx.items():
+        for source_id, target_ids in product_pairs_idxs_dict.items():
             for target_id in target_ids:
                 pair_identifications.append({
                     'id1': dataset1['id'][source_id],
@@ -95,11 +94,63 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     else:
         image_similarities = pd.DataFrame()
 
+    if len(name_similarities) == 0 and len(image_similarities) == 0:
+        print('No new pairs to compute similarities were found.')
+        sys.exit(os.EX_OK)
     if len(name_similarities) == 0:
         return image_similarities
     if len(image_similarities) == 0:
         return name_similarities
     return pd.concat([name_similarities, image_similarities['hash_similarity']], axis=1)
+
+
+def hash_text(text):
+    """
+    Hash text
+    @param text: text to be hashed
+    @return: hashed text
+    """
+    return int(hashlib.sha256(text.encode('utf-8')).hexdigest(), TEXT_HASH_SIZE)
+
+
+def create_hashes_from_all_texts(dataset):
+    """
+    Create hashes from all texts column to identify changes in products and products
+    @param dataset: dataframe with products
+    @return: array with hashes computed from all texts describing products
+    """
+    all_text_column = [''.join(text) for text in dataset['all_texts'].values] + dataset['price'].astype(str).values
+    hashes = [hash_text(text) for text in all_text_column]
+    return hashes
+
+
+def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pairs_dataset_idx, dataset_hashes1,
+                                                dataset_hashes2):
+    """
+    Remove already precomputed matches not to compute them again an extract them
+    @param dataset_precomputed_matches: dataframe with products with precomputed matches
+    @param pairs_dataset_idx: dictionary of pairs to be compared
+    @param dataset_hashes1: array with hashes of all texts of products from first dataset
+    @param dataset_hashes2: array with hashes of all texts of products from second dataset
+    @return: filtered dictionary of pairs to be compared, dictionary of pairs already compared
+    """
+    pairs_dataset_idx_new = {}
+    dataset_precomputed_matches['joined_hashes'] = dataset_precomputed_matches["all_texts_hash1"].astype(str) + \
+                                                   dataset_precomputed_matches["all_texts_hash2"].astype(str)
+    dataset_precomputed_matches_new = pd.DataFrame(columns=dataset_precomputed_matches.columns)
+    for first_idx, second_idxs in pairs_dataset_idx.items():
+        pairs_dataset_idx_new[first_idx] = []
+        for second_idx in second_idxs:
+            combined_hashes = str(dataset_hashes1[first_idx]) + str(dataset_hashes2[second_idx])
+            if combined_hashes in dataset_precomputed_matches['joined_hashes'].values:
+                dataset_precomputed_matches_new = dataset_precomputed_matches_new.append(
+                    dataset_precomputed_matches.loc[dataset_precomputed_matches['joined_hashes'] == combined_hashes],
+                    ignore_index=True
+                )
+            else:
+                pairs_dataset_idx_new[first_idx].append(second_idx)
+    dataset_precomputed_matches_new.drop('joined_hashes', inplace=True, axis=1)
+    return pairs_dataset_idx_new, dataset_precomputed_matches_new
 
 
 def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client, images_kvs2_client,
@@ -112,7 +163,7 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param filter_data: True whether filtering during similarity computations should be performed
-    @return: dataframe with image and text similarities
+    @return: dataframe with image and text similarities, dataset with precomputed similarities (for executor only)
     """
     # setup parallelling stuff
     pool = Pool()
@@ -139,6 +190,10 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
     tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)
     print("Text preprocessing finished")
 
+    # create hashes from all texts
+    dataset1_all_texts_hashes = create_hashes_from_all_texts(dataset1_without_marks)
+    dataset2_all_texts_hashes = create_hashes_from_all_texts(dataset2_without_marks)
+
     if filter_data:
         # filter product pairs
         print("Filtering started")
@@ -156,20 +211,25 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
             pairs_dataset_idx[i] = [i]
 
     # remove pairs their matches were already precomputed
-    #TODO: dataset_precomputed_matchesa
+    if dataset_precomputed_matches is not None and len(dataset_precomputed_matches) != 0:
+        pairs_dataset_idx, dataset_precomputed_matches = remove_precomputed_matches_and_extract_them(
+            dataset_precomputed_matches, pairs_dataset_idx, dataset1_all_texts_hashes, dataset2_all_texts_hashes
+        )
 
     # create image and text similarities
     print("Similarities creation started")
+    dataset1['all_texts_hash'] = dataset1_all_texts_hashes
+    dataset2['all_texts_hash'] = dataset2_all_texts_hashes
     image_and_text_similarities = create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words,
                                                                      dataset2_starting_index, pool, num_cpu,
+                                                                     pairs_dataset_idx,
                                                                      dataset_folder='.',
-                                                                     dataset_dataframe=pairs_dataset_idx,
                                                                      dataset_images_kvs1=images_kvs1_client,
                                                                      dataset_images_kvs2=images_kvs2_client
                                                                      )
 
     print("Similarities creation ended")
-    return image_and_text_similarities
+    return image_and_text_similarities, dataset_precomputed_matches
 
 
 def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
@@ -180,7 +240,15 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     @param task_id: unique identification of the currently evaluated Product Mapping task
     """
     print('{}_unlabeled_data.csv'.format(task_id))
-    labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
+    try:
+        labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
+    except OSError as e:
+        print(e)
+        print(
+            'To solve this error run trainer and before calling load_data_and_train_model function save labeled dataset'
+            ', eg by running: labeled_dataset.to_csv("Alpha-Complete-CZ-small-sample_unlabeled_data.csv")'
+        )
+        exit(e.errno)
     print("Labeled dataset")
     print(labeled_dataset.shape)
 
@@ -229,7 +297,7 @@ def load_model_create_dataset_and_predict_matches(
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
-    @return: List of same products for every given product
+    @return: List of same products for every given product, list of precomputed product pairs matches
     """
     classifier = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
@@ -239,9 +307,11 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PREPROCESSED_DATA and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs = prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client,
-                                                         images_kvs2_client,
-                                                         filter_data=True)
+        preprocessed_pairs, dataset_precomputed_matches = prepare_data_for_classifier(dataset1, dataset2,
+                                                                                      dataset_precomputed_matches,
+                                                                                      images_kvs1_client,
+                                                                                      images_kvs2_client,
+                                                                                      filter_data=True)
 
     if not is_on_platform and SAVE_PREPROCESSED_DATA:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
@@ -250,7 +320,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
-        preprocessed_pairs.drop(['id1', 'id2'], axis=1))
+        preprocessed_pairs.drop(['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2'], axis=1))
 
     if not is_on_platform:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
@@ -258,7 +328,14 @@ def load_model_create_dataset_and_predict_matches(
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
         ['id1', 'id2', 'predicted_scores']
     ]
-    return predicted_matches
+    precomputed_product_pairs = preprocessed_pairs[
+        ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores']]
+
+    # Append dataset_precomputed_matches to predicted_matches
+    if dataset_precomputed_matches is not None:
+        predicted_matches = predicted_matches + dataset_precomputed_matches
+
+    return predicted_matches, precomputed_product_pairs
 
 
 def load_data_and_train_model(
@@ -296,8 +373,8 @@ def load_data_and_train_model(
         product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
         product_pairs2 = product_pairs.filter(regex='2')
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-        preprocessed_pairs = prepare_data_for_classifier(product_pairs1, product_pairs2, images_kvs1_client,
-                                                         images_kvs2_client, filter_data=False)
+        preprocessed_pairs, _ = prepare_data_for_classifier(product_pairs1, product_pairs2, None, images_kvs1_client,
+                                                            images_kvs2_client, filter_data=False)
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
         similarities_to_concat = [preprocessed_pairs]

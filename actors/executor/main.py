@@ -4,8 +4,8 @@ from math import ceil
 
 import pandas as pd
 from apify_client import ApifyClient
+
 from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
-from slugify import slugify
 from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES
 
 CHUNK_SIZE = 1000
@@ -53,13 +53,15 @@ if __name__ == '__main__':
     classifier_type = parameters['classifier_type']
 
     # Load precomputed matches
-    dataset_precomputed_matches = pd.DataFrame()
+    dataset_precomputed_matches = None
     if LOAD_PRECOMPUTED_MATCHES:
         dataset_collection_client = client.datasets()
         precomputed_matches_collection_client = dataset_collection_client.get_or_create(
             name=task_id + '-precomputed-matches')
         precomputed_matches_client = client.dataset(precomputed_matches_collection_client['id'])
         dataset_precomputed_matches = pd.DataFrame(precomputed_matches_client.list_items().items)
+        if not is_on_platform and os.path.isfile(task_id + '-precomputed-matches' + '.csv'):
+            dataset_precomputed_matches = pd.read_csv(task_id + '-precomputed-matches' + '.csv')
 
     # Prepare storages and read data
     dataset_1_client = client.dataset(parameters['dataset_1'])
@@ -100,7 +102,7 @@ if __name__ == '__main__':
 
         dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
 
-        predicted_matches = load_model_create_dataset_and_predict_matches(
+        predicted_matches, precomputed_product_pairs = load_model_create_dataset_and_predict_matches(
             dataset1_chunk,
             dataset2,
             dataset_precomputed_matches,
@@ -117,13 +119,14 @@ if __name__ == '__main__':
         # TODO remove upon resolution
         predicted_matches = predicted_matches.drop_duplicates(subset=['url1', 'url2'])
 
+        # TODO: save precomputed matches
+        if not is_on_platform:
+            precomputed_product_pairs.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
         # TODO investigate
         predicted_matches = predicted_matches[predicted_matches['url1'].notna()]
-        predicted_matches.to_csv("debug.csv", index=False)
+        predicted_matches.to_csv("predicted_matches.csv", index=False)
         default_dataset_client.push_items(
             predicted_matches.to_dict(orient='records'))
-
-        #TODO: append already precomputed matches
 
         if is_on_platform:
             default_kvs_client.set_record(
