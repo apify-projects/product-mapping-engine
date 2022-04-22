@@ -3,4 +3,5 @@ __pycache__/*
 *.pdf
 *.csv
 .idea/*
-
+hashes_cropped_*
+images_cropped_*
