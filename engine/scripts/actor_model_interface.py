@@ -246,7 +246,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
         print(e)
         print(
             'To solve this error run trainer and before calling load_data_and_train_model function save labeled dataset'
-            ', eg by running: labeled_dataset.to_csv("Alpha-Complete-CZ-small-sample_unlabeled_data.csv")'
+            ', eg by running: labeled_dataset.to_csv(dataset_name)'
         )
         exit(e.errno)
     print("Labeled dataset")
@@ -377,6 +377,8 @@ def load_data_and_train_model(
                                                             images_kvs2_client, filter_data=False)
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
+        if 'all_texts_hash1' in preprocessed_pairs.columns and 'all_texts_hash2' in preprocessed_pairs.columns:
+            preprocessed_pairs = preprocessed_pairs.drop(columns=['all_texts_hash1', 'all_texts_hash2'])
         similarities_to_concat = [preprocessed_pairs]
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])

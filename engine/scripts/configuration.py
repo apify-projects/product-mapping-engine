@@ -3,7 +3,7 @@ IS_ON_PLATFORM = False
 LOAD_PREPROCESSED_DATA = False
 SAVE_PREPROCESSED_DATA = False
 SAVE_COMPUTED_SIMILARITIES = True
-LOAD_PRECOMPUTED_MATCHES = True
+LOAD_PRECOMPUTED_MATCHES = False
 
 # TEXT PREPROCESSING SETTING
 # Text column names that should be preprocessed and used for similarity computations

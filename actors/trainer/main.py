@@ -14,7 +14,7 @@ if __name__ == '__main__':
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
     if not is_on_platform:
-        full_dataset = False
+        full_dataset = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
