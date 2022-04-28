@@ -25,7 +25,6 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     @param num_cpu: number of processes
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
-    @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
     @param descriptive_words: dictionary of descriptive words for each text column in products
     @return dict with key as indices of products from the first dataset and
             values as indices of filtered possible matching products from second dataset
