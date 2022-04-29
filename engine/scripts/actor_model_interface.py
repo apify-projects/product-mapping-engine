@@ -15,10 +15,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ""))
 from .dataset_handler.preprocessing.texts.text_preprocessing import parallel_text_preprocessing
 from .dataset_handler.similarity_computation.texts.compute_texts_similarity import \
     create_tf_idfs_and_descriptive_words, create_text_similarities_data
-from .configuration import IS_ON_PLATFORM, LOAD_PREPROCESSED_DATA, PERFORM_ID_DETECTION, \
-    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, SAVE_PREPROCESSED_DATA, \
-    SAVE_COMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE
+from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
+    PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
+    SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
 
 
@@ -304,7 +304,7 @@ def load_model_create_dataset_and_predict_matches(
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
-    if LOAD_PREPROCESSED_DATA and preprocessed_pairs_file_exists:
+    if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
         preprocessed_pairs, dataset_precomputed_matches = prepare_data_for_classifier(dataset1, dataset2,
@@ -313,7 +313,7 @@ def load_model_create_dataset_and_predict_matches(
                                                                                       images_kvs2_client,
                                                                                       filter_data=True)
 
-    if not is_on_platform and SAVE_PREPROCESSED_DATA:
+    if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
 
     if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
@@ -363,7 +363,7 @@ def load_data_and_train_model(
     similarities_file_path = "similarities_{}.csv".format(task_id)
     similarities_file_exists = os.path.exists(similarities_file_path)
 
-    if LOAD_PREPROCESSED_DATA and similarities_file_exists:
+    if LOAD_PRECOMPUTED_SIMILARITIES and similarities_file_exists:
         similarities = pd.read_csv(similarities_file_path)
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
@@ -383,7 +383,7 @@ def load_data_and_train_model(
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
         similarities = pd.concat(similarities_to_concat, axis=1)
-        if not is_on_platform and SAVE_COMPUTED_SIMILARITIES:
+        if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
 
     classifier = setup_classifier(classifier_type)
