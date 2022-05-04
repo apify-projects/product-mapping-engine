@@ -6,7 +6,7 @@ import pandas as pd
 from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
-from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES
+from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
 
 CHUNK_SIZE = 1000
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
@@ -119,11 +119,12 @@ if __name__ == '__main__':
         # TODO remove upon resolution
         predicted_matches = predicted_matches.drop_duplicates(subset=['url1', 'url2'])
 
-        if not is_on_platform:
-            precomputed_product_pairs.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
-        else:
-            precomputed_matches_client.push_items(precomputed_product_pairs.to_dict(orient='records'))
-        # TODO investigate
+        if SAVE_PRECOMPUTED_MATCHES:
+            if not is_on_platform:
+                precomputed_product_pairs.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
+            else:
+                precomputed_matches_client.push_items(precomputed_product_pairs.to_dict(orient='records'))
+            # TODO investigate
         predicted_matches = predicted_matches[predicted_matches['url1'].notna()]
         predicted_matches.to_csv("predicted_matches.csv", index=False)
         default_dataset_client.push_items(
