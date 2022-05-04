@@ -56,9 +56,9 @@ if __name__ == '__main__':
     dataset_precomputed_matches = None
     if LOAD_PRECOMPUTED_MATCHES:
         dataset_collection_client = client.datasets()
-        precomputed_matches_collection_client = dataset_collection_client.get_or_create(
+        precomputed_matches_collection = dataset_collection_client.get_or_create(
             name=task_id + '-precomputed-matches')
-        precomputed_matches_client = client.dataset(precomputed_matches_collection_client['id'])
+        precomputed_matches_client = client.dataset(precomputed_matches_collection['id'])
         dataset_precomputed_matches = pd.DataFrame(precomputed_matches_client.list_items().items)
         if not is_on_platform and os.path.isfile(task_id + '-precomputed-matches' + '.csv'):
             dataset_precomputed_matches = pd.read_csv(task_id + '-precomputed-matches' + '.csv')
@@ -119,9 +119,10 @@ if __name__ == '__main__':
         # TODO remove upon resolution
         predicted_matches = predicted_matches.drop_duplicates(subset=['url1', 'url2'])
 
-        # TODO: save precomputed matches
         if not is_on_platform:
             precomputed_product_pairs.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
+        else:
+            precomputed_matches_client.push_items(precomputed_product_pairs.to_dict(orient='records'))
         # TODO investigate
         predicted_matches = predicted_matches[predicted_matches['url1'].notna()]
         predicted_matches.to_csv("predicted_matches.csv", index=False)

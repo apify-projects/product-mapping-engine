@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sys
+from datetime import datetime
 from multiprocessing import Pool
 
 import pandas as pd
@@ -28,15 +29,21 @@ def split_dataframes(dataset):
     @param dataset: preprocessed dataframe
     @return: two dataframes with detected keywords and without them
     """
-    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'price']
-    dataset_without_marks = dataset[[col for col in columns_without_marks]]
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts']
+    dataset_without_marks = dataset[[col for col in columns_without_marks + ['price']]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
     dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks]]
     return dataset, dataset_without_marks
 
 
-def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words, dataset2_starting_index, pool,
-                                       num_cpu, product_pairs_idxs_dict,
+def create_image_and_text_similarities(dataset1,
+                                       dataset2,
+                                       tf_idfs,
+                                       descriptive_words,
+                                       dataset2_starting_index,
+                                       pool,
+                                       num_cpu,
+                                       product_pairs_idxs_dict,
                                        dataset_folder='',
                                        dataset_images_kvs1=None,
                                        dataset_images_kvs2=None
@@ -94,19 +101,20 @@ def create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_
     else:
         image_similarities = pd.DataFrame()
 
+    name_similarities['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(name_similarities)
     if len(name_similarities) == 0 and len(image_similarities) == 0:
-        print('No new pairs to compute similarities were found.')
-        sys.exit(os.EX_OK)
+        raise 'No new pairs to compute similarities were found.'
     if len(name_similarities) == 0:
+        image_similarities['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(image_similarities)
         return image_similarities
     if len(image_similarities) == 0:
         return name_similarities
     return pd.concat([name_similarities, image_similarities['hash_similarity']], axis=1)
 
 
-def hash_text(text):
+def hash_text_using_sha256(text):
     """
-    Hash text
+    Hash text using sha256 hash
     @param text: text to be hashed
     @return: hashed text
     """
@@ -115,42 +123,53 @@ def hash_text(text):
 
 def create_hashes_from_all_texts(dataset):
     """
-    Create hashes from all texts column to identify changes in products and products
+    Create hashes from all texts column and price to identify changes in products
     @param dataset: dataframe with products
     @return: array with hashes computed from all texts describing products
     """
-    all_text_column = [''.join(text) for text in dataset['all_texts'].values] + dataset['price'].astype(str).values
-    hashes = [hash_text(text) for text in all_text_column]
+    columns_to_join = ['name', 'short_description', 'long_description', 'specification_text']
+    all_texts = dataset.apply(lambda x: flatten(list(x[c] for c in columns_to_join)), axis=1)
+    all_text_column = [''.join(text) for text in all_texts.values] + dataset['price'].astype(str).values
+    hashes = [hash_text_using_sha256(text) for text in all_text_column]
     return hashes
+
+
+def flatten(list):
+    """
+    Flattens list of litst into one list
+    @param list: List to be flattened
+    @return: flattened list
+    """
+    return [item for sublist in list for item in sublist]
 
 
 def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pairs_dataset_idx, dataset_hashes1,
                                                 dataset_hashes2):
     """
-    Remove already precomputed matches not to compute them again an extract them
+    Remove already precomputed matches not to compute them again and return them separately
     @param dataset_precomputed_matches: dataframe with products with precomputed matches
     @param pairs_dataset_idx: dictionary of pairs to be compared
     @param dataset_hashes1: array with hashes of all texts of products from first dataset
     @param dataset_hashes2: array with hashes of all texts of products from second dataset
     @return: filtered dictionary of pairs to be compared, dictionary of pairs already compared
     """
-    pairs_dataset_idx_new = {}
+    unseen_pairs_dataset_idx = {}
     dataset_precomputed_matches['joined_hashes'] = dataset_precomputed_matches["all_texts_hash1"].astype(str) + \
                                                    dataset_precomputed_matches["all_texts_hash2"].astype(str)
-    dataset_precomputed_matches_new = pd.DataFrame(columns=dataset_precomputed_matches.columns)
+    dataset_precomputed_matches_filtered = pd.DataFrame(columns=dataset_precomputed_matches.columns)
     for first_idx, second_idxs in pairs_dataset_idx.items():
-        pairs_dataset_idx_new[first_idx] = []
+        unseen_pairs_dataset_idx[first_idx] = []
         for second_idx in second_idxs:
             combined_hashes = str(dataset_hashes1[first_idx]) + str(dataset_hashes2[second_idx])
-            if combined_hashes in dataset_precomputed_matches['joined_hashes'].values:
-                dataset_precomputed_matches_new = dataset_precomputed_matches_new.append(
-                    dataset_precomputed_matches.loc[dataset_precomputed_matches['joined_hashes'] == combined_hashes],
+            if combined_hashes in dataset_precomputed_matches['combined_hashes'].values:
+                dataset_precomputed_matches_filtered = dataset_precomputed_matches_filtered.append(
+                    dataset_precomputed_matches.loc[dataset_precomputed_matches['combined_hashes'] == combined_hashes],
                     ignore_index=True
                 )
             else:
-                pairs_dataset_idx_new[first_idx].append(second_idx)
-    dataset_precomputed_matches_new.drop('joined_hashes', inplace=True, axis=1)
-    return pairs_dataset_idx_new, dataset_precomputed_matches_new
+                unseen_pairs_dataset_idx[first_idx].append(second_idx)
+    dataset_precomputed_matches_filtered.drop('combined_hashes', inplace=True, axis=1)
+    return unseen_pairs_dataset_idx, dataset_precomputed_matches_filtered
 
 
 def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client, images_kvs2_client,
@@ -191,8 +210,10 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
     print("Text preprocessing finished")
 
     # create hashes from all texts
-    dataset1_all_texts_hashes = create_hashes_from_all_texts(dataset1_without_marks)
-    dataset2_all_texts_hashes = create_hashes_from_all_texts(dataset2_without_marks)
+    dataset1_all_texts_hashes = create_hashes_from_all_texts(dataset1)
+    dataset2_all_texts_hashes = create_hashes_from_all_texts(dataset2)
+    dataset1.drop(columns=['price'])
+    dataset2.drop(columns=['price'])
 
     if filter_data:
         # filter product pairs
@@ -210,7 +231,7 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
         for i in range(0, len(dataset1)):
             pairs_dataset_idx[i] = [i]
 
-    # remove pairs their matches were already precomputed
+    # remove pairs whose matches were already precomputed
     if dataset_precomputed_matches is not None and len(dataset_precomputed_matches) != 0:
         pairs_dataset_idx, dataset_precomputed_matches = remove_precomputed_matches_and_extract_them(
             dataset_precomputed_matches, pairs_dataset_idx, dataset1_all_texts_hashes, dataset2_all_texts_hashes
@@ -320,7 +341,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
     preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
-        preprocessed_pairs.drop(['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2'], axis=1))
+        preprocessed_pairs.drop(['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'birthdate'], axis=1))
 
     if not is_on_platform:
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
@@ -375,6 +396,8 @@ def load_data_and_train_model(
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
         preprocessed_pairs, _ = prepare_data_for_classifier(product_pairs1, product_pairs2, None, images_kvs1_client,
                                                             images_kvs2_client, filter_data=False)
+        if 'birthdate' in preprocessed_pairs.columns:
+            preprocessed_pairs = preprocessed_pairs.drop(columns=['birthdate'])
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
         if 'all_texts_hash1' in preprocessed_pairs.columns and 'all_texts_hash2' in preprocessed_pairs.columns:
