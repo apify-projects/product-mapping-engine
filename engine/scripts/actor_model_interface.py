@@ -134,13 +134,13 @@ def create_hashes_from_all_texts(dataset):
     return hashes
 
 
-def flatten(list):
+def flatten(list_of_lists):
     """
-    Flattens list of litst into one list
-    @param list: List to be flattened
+    Flattens list of lists into one list
+    @param list_of_lists: List to be flattened
     @return: flattened list
     """
-    return [item for sublist in list for item in sublist]
+    return [item for sublist in list_of_lists for item in sublist]
 
 
 def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pairs_dataset_idx, dataset_hashes1,
