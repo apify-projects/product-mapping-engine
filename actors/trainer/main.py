@@ -55,6 +55,7 @@ if __name__ == '__main__':
     output_key_value_store_client = client.key_value_store(output_key_value_store_info['id'])
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
+
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,

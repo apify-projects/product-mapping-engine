@@ -25,6 +25,7 @@ class Classifier:
         self.model = None
         self.name = None
         self.pca = None
+        self.predict_probability = True
 
     def fit(self, data):
         if self.use_pca:
@@ -46,7 +47,7 @@ class Classifier:
         if 'match' in data.columns:
             data = data.drop(columns=['match'])
 
-        if hasattr(self.model, 'predict_probability'):
+        if self.predict_probability:
             scores = self.model.predict_proba(data)
             scores = [s[1] for s in scores]
         else:
@@ -125,6 +126,8 @@ class LinearRegressionClassifier(Classifier):
         super().__init__(weights)
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
+        self.predict_probability = False
+
 
     def predict(self, data, predict_outputs=True):
         scores = self.model.predict(data.drop(columns=['match']))
@@ -227,12 +230,15 @@ class RandomForestsClassifier(Classifier):
         self.model = RandomForests(max_depth=5, n_estimators=3)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
-    def print_feature_importance(self, feature_names):
+    def print_feature_importance(self, feature_names, visualize=False):
         print(f'Feature importance for {self.name} \n '
               f'{dict(zip(feature_names, ["{:.6f}".format(x) for x in self.model.feature_importances_]))}')
-        for i, one_tree in enumerate(self.model.estimators_):
-            dot_data = StringIO()
-            tree.export_graphviz(one_tree, out_file=dot_data, filled=True, rounded=True, special_characters=False,
-                                 impurity=False, feature_names=feature_names)
-            graph = pydot.graph_from_dot_data(dot_data.getvalue())
-            graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
+        if visualize:
+            if not os.path.exists('random_forest_visualization'):
+                os.makedirs('random_forest_visualization')
+            for i, one_tree in enumerate(self.model.estimators_):
+                dot_data = StringIO()
+                tree.export_graphviz(one_tree, out_file=dot_data, filled=True, rounded=True, special_characters=False,
+                                     impurity=False, feature_names=feature_names)
+                graph = pydot.graph_from_dot_data(dot_data.getvalue())
+                graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
