@@ -347,14 +347,14 @@ def load_model_create_dataset_and_predict_matches(
         evaluate_executor_results(classifier, preprocessed_pairs, task_id)
 
     predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
-        ['id1', 'id2', 'predicted_scores']
+        ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2','predicted_scores']
     ]
     precomputed_product_pairs = preprocessed_pairs[
         ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores']]
 
     # Append dataset_precomputed_matches to predicted_matches
     if dataset_precomputed_matches is not None:
-        predicted_matches = predicted_matches + dataset_precomputed_matches
+        predicted_matches = pd.concat([predicted_matches, dataset_precomputed_matches], ignore_index=True)
 
     return predicted_matches, precomputed_product_pairs
 
