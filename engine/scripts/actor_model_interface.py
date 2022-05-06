@@ -172,10 +172,11 @@ def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pai
     return unseen_pairs_dataset_idx, dataset_precomputed_matches_filtered
 
 
-def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client, images_kvs2_client,
+def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client, images_kvs2_client,
                                 filter_data):
     """
     Preprocess data, possibly filter data pairs and compute similarities
+    @param is_on_platform: True if this is running on the platform
     @param dataset1: Source dataframe of products
     @param dataset2: Target dataframe with products to be searched in for the same products
     @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
@@ -187,6 +188,8 @@ def prepare_data_for_classifier(dataset1, dataset2, dataset_precomputed_matches,
     # setup parallelling stuff
     pool = Pool()
     num_cpu = os.cpu_count()
+    if not is_on_platform:
+        num_cpu -= 2
 
     # preprocess data
     print("Text preprocessing started")
@@ -331,7 +334,7 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs, dataset_precomputed_matches = prepare_data_for_classifier(dataset1, dataset2,
+        preprocessed_pairs, dataset_precomputed_matches = prepare_data_for_classifier(is_on_platform, dataset1, dataset2,
                                                                                       dataset_precomputed_matches,
                                                                                       images_kvs1_client,
                                                                                       images_kvs2_client,
@@ -397,7 +400,7 @@ def load_data_and_train_model(
         product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
         product_pairs2 = product_pairs.filter(regex='2')
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-        preprocessed_pairs, _ = prepare_data_for_classifier(product_pairs1, product_pairs2, None, images_kvs1_client,
+        preprocessed_pairs, _ = prepare_data_for_classifier(is_on_platform, product_pairs1, product_pairs2, None, images_kvs1_client,
                                                             images_kvs2_client, filter_data=False)
         if 'birthdate' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['birthdate'])
