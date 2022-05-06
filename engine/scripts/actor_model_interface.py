@@ -273,7 +273,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     print("Labeled dataset")
     print(labeled_dataset.shape)
 
-    matching_pairs = labeled_dataset[['id1', 'id2', 'name1', 'name2', 'url1', 'url2', 'match', 'price1', 'price2']]
+    matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
 
     print("Predicted pairs")
@@ -291,7 +291,10 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id):
     merged_data_to_save = merged_data_to_save[merged_data_to_save['predicted_match'] == 0]
     merged_data_to_save.to_csv("merged.csv")
 
-    merged_data = merged_data.drop(['id1', 'id2', 'url1', 'url2', 'price1', 'price2'], axis=1)
+    columns_to_drop = ['id1', 'id2', 'url1', 'url2', 'price1', 'price2']
+    for column in columns_to_drop:
+        if column in merged_data:
+            merged_data = merged_data.drop(column, axis=1)
     stats = evaluate_classifier(classifier, merged_data, merged_data, False)
     print(stats)
 
