@@ -154,7 +154,7 @@ def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pai
     @return: filtered dictionary of pairs to be compared, dictionary of pairs already compared
     """
     unseen_pairs_dataset_idx = {}
-    dataset_precomputed_matches['joined_hashes'] = dataset_precomputed_matches["all_texts_hash1"].astype(str) + \
+    dataset_precomputed_matches['combined_hashes'] = dataset_precomputed_matches["all_texts_hash1"].astype(str) + \
                                                    dataset_precomputed_matches["all_texts_hash2"].astype(str)
     dataset_precomputed_matches_filtered = pd.DataFrame(columns=dataset_precomputed_matches.columns)
     for first_idx, second_idxs in pairs_dataset_idx.items():
