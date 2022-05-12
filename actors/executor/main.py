@@ -19,7 +19,7 @@ if __name__ == '__main__':
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
     if not is_on_platform:
-        full_dataset = True
+        full_dataset = False
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -36,12 +36,12 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ-small-sample",
+                    "task_id": "Alpha-Complete-CZ-middle-sample",
                     "classifier_type": "LogisticRegression",
-                    "dataset_1": "lgauPs4mStE7xbBBI",
-                    "images_kvs_1": "umL7yd2tOj89PjeIS",
-                    "dataset_2": "G6VRD7vxbB4WGZtBE",
-                    "images_kvs_2": "UJBtLP9Ak5MRqI58x"
+                    "dataset_1": "jK6ZlalZBOMyZzVyA",
+                    "images_kvs_1": "coKhaQXSyj2kPqzyM",
+                    "dataset_2": "nzE3itcUfBzQQtmgy",
+                    "images_kvs_2": "wb001Kh9JAGpFvpaG"
                 }
             )
 
