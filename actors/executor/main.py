@@ -61,6 +61,7 @@ if __name__ == '__main__':
         precomputed_matches_client = client.dataset(precomputed_matches_collection['id'])
         dataset_precomputed_matches = pd.DataFrame(precomputed_matches_client.list_items().items)
         if not is_on_platform and os.path.isfile(task_id + '-precomputed-matches' + '.csv'):
+            print(task_id + '-precomputed-matches' + '.csv')
             dataset_precomputed_matches = pd.read_csv(task_id + '-precomputed-matches' + '.csv')
 
     # Prepare storages and read data
@@ -102,33 +103,36 @@ if __name__ == '__main__':
 
         dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
 
-        predicted_matches, precomputed_product_pairs = load_model_create_dataset_and_predict_matches(
-            dataset1_chunk,
-            dataset2,
-            dataset_precomputed_matches,
-            images_kvs_1_client,
-            images_kvs_2_client,
-            classifier_type,
-            model_key_value_store_client=model_key_value_store,
-            task_id=task_id,
-            is_on_platform=is_on_platform
-        )
+        predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
+            load_model_create_dataset_and_predict_matches(
+                dataset1_chunk,
+                dataset2,
+                dataset_precomputed_matches,
+                images_kvs_1_client,
+                images_kvs_2_client,
+                classifier_type,
+                model_key_value_store_client=model_key_value_store,
+                task_id=task_id,
+                is_on_platform=is_on_platform
+            )
 
-        predicted_matches = predicted_matches.merge(dataset1_chunk.rename(columns={"id": "id1"}), on='id1', how='left') \
+        predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
+                                                                  on='id1', how='left') \
             .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
         # TODO remove upon resolution
-        predicted_matches = predicted_matches.drop_duplicates(subset=['url1', 'url2'])
+        predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
 
         if SAVE_PRECOMPUTED_MATCHES:
             if not is_on_platform:
-                precomputed_product_pairs.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
+                if len(new_product_pairs_matching_scores) != 0:
+                    new_product_pairs_matching_scores.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
             else:
-                precomputed_matches_client.push_items(precomputed_product_pairs.to_dict(orient='records'))
+                precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
             # TODO investigate
-        predicted_matches = predicted_matches[predicted_matches['url1'].notna()]
-        predicted_matches.to_csv("predicted_matches.csv", index=False)
+        predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
+        predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
         default_dataset_client.push_items(
-            predicted_matches.to_dict(orient='records'))
+            predicted_matching_pairs.to_dict(orient='records'))
 
         if is_on_platform:
             default_kvs_client.set_record(

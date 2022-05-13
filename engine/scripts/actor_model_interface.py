@@ -257,13 +257,14 @@ def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_prec
     return image_and_text_similarities, dataset_precomputed_matches
 
 
-def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type):
+def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type, data_to_remove):
     """
     Evaluate results of executors predictions and filtering
     @param classifier: classifier used for predicting pairs
     @param preprocessed_pairs: dataframe with predicted and filtered pairs
     @param task_id: unique identification of the currently evaluated Product Mapping task
     @param data_type: string value specifying the evaluated data type
+    @param data_to_remove: dataframe with pairs to be removed from labeled_dataset
     """
     print('{}_unlabeled_data.csv'.format(task_id))
     try:
@@ -280,8 +281,11 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
 
     if 'birthdate' not in labeled_dataset.columns:
         labeled_dataset['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(labeled_dataset)
-    matching_pairs = labeled_dataset[['id1', 'id2', 'match', 'birthdate']]
-    predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match', 'birthdate']]
+
+    # TODO: here remove data_to_remove from labeled_dataset
+
+    matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
+    predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
 
     print("Predicted pairs")
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
@@ -310,7 +314,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
 def load_model_create_dataset_and_predict_matches(
         dataset1,
         dataset2,
-        dataset_precomputed_matches,
+        precomputed_pairs_matching_scores,
         images_kvs1_client,
         images_kvs2_client,
         classifier_type,
@@ -322,14 +326,16 @@ def load_model_create_dataset_and_predict_matches(
     For each product in first dataset find same products in the second dataset
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
-    @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
+    @param precomputed_pairs_matching_scores: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
     @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
-    @return: List of same products for every given product, list of precomputed product pairs matches
+    @return: dataframe with matching products for every given product
+             dataframe with all precomputed and newly computed product pairs matching scores
+             dataframe with newly computed product pairs matching scores
     """
     classifier = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
@@ -339,12 +345,12 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs, dataset_precomputed_matches = prepare_data_for_classifier(is_on_platform, dataset1,
-                                                                                      dataset2,
-                                                                                      dataset_precomputed_matches,
-                                                                                      images_kvs1_client,
-                                                                                      images_kvs2_client,
-                                                                                      filter_data=True)
+        preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(is_on_platform, dataset1,
+                                                                                            dataset2,
+                                                                                            precomputed_pairs_matching_scores,
+                                                                                            images_kvs1_client,
+                                                                                            images_kvs2_client,
+                                                                                            filter_data=True)
 
     if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES and len(preprocessed_pairs) != 0:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
@@ -362,37 +368,48 @@ def load_model_create_dataset_and_predict_matches(
         )
 
         if not is_on_platform:
-            evaluate_executor_results(classifier, preprocessed_pairs, task_id, 'new executor data')
+            evaluate_executor_results(classifier, preprocessed_pairs, task_id, 'new executor data',
+                                      precomputed_pairs_matching_scores)
 
-        predicted_matches = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
+        predicted_matching_pairs = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
             ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
         ]
 
-        precomputed_product_pairs = preprocessed_pairs[
+        new_product_pairs_matching_scores = preprocessed_pairs[
             ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
         ]
     else:
-        predicted_matches = pd.DataFrame(
-            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
+        predicted_matching_pairs = pd.DataFrame(
+            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match',
+                     'birthdate']
         )
-        precomputed_product_pairs = pd.DataFrame(
-            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
+        new_product_pairs_matching_scores = pd.DataFrame(
+            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match',
+                     'birthdate']
         )
-    # Append dataset_precomputed_matches to predicted_matches
-    if dataset_precomputed_matches is not None and len(dataset_precomputed_matches) != 0:
-        dataset_precomputed_matches['predicted_match'] = [0] * len(dataset_precomputed_matches)
-        dataset_precomputed_matches['predicted_match'] = dataset_precomputed_matches['predicted_match'].mask(
-            dataset_precomputed_matches['predicted_scores'] >= classifier.weights['threshold'], 1
+    # Append dataset_precomputed_matches to predicted_matching_pairs
+    if precomputed_pairs_matching_scores is not None and len(precomputed_pairs_matching_scores) != 0:
+        precomputed_pairs_matching_scores['predicted_match'] = [0] * len(precomputed_pairs_matching_scores)
+        precomputed_pairs_matching_scores['predicted_match'] = precomputed_pairs_matching_scores[
+            'predicted_match'].mask(
+            precomputed_pairs_matching_scores['predicted_scores'] >= classifier.weights['threshold'], 1
         )
-        precomputed_product_pairs = pd.concat([precomputed_product_pairs, dataset_precomputed_matches],
-                                              ignore_index=True)
+        all_product_pairs_matching_scores = pd.concat(
+            [new_product_pairs_matching_scores, precomputed_pairs_matching_scores],
+            ignore_index=True)
 
-        predicted_matches = pd.concat([predicted_matches, dataset_precomputed_matches[dataset_precomputed_matches['predicted_match'] == 1]],
-                                              ignore_index=True)
+        predicted_matching_pairs = pd.concat(
+            [predicted_matching_pairs,
+             precomputed_pairs_matching_scores[precomputed_pairs_matching_scores['predicted_match'] == 1]],
+            ignore_index=True)
+    else:
+        all_product_pairs_matching_scores = new_product_pairs_matching_scores
     if not is_on_platform:
-        evaluate_executor_results(classifier, precomputed_product_pairs, task_id, 'all executor data')
+        evaluate_executor_results(classifier, all_product_pairs_matching_scores, task_id, 'all executor data', None)
 
-    return predicted_matches.drop('predicted_match', axis=1), precomputed_product_pairs.drop('predicted_match', axis=1)
+    return predicted_matching_pairs.drop('predicted_match', axis=1), \
+           all_product_pairs_matching_scores.drop('predicted_match', axis=1), \
+           new_product_pairs_matching_scores.drop('predicted_match', axis=1),
 
 
 def load_data_and_train_model(
