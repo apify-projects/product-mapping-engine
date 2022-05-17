@@ -276,13 +276,13 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
             ', eg by running: labeled_dataset.to_csv(dataset_name)'
         )
         exit(e.errno)
-    print("Labeled dataset")
-    print(labeled_dataset.shape)
 
     if 'birthdate' not in labeled_dataset.columns:
         labeled_dataset['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(labeled_dataset)
 
-    # TODO: here remove data_to_remove from labeled_dataset
+    # remove data_to_remove from labeled_dataset
+    labeled_dataset = labeled_dataset.merge(data_to_remove[['id1', 'id2']], on=['id1', 'id2'], how='left', indicator=True)
+    labeled_dataset = labeled_dataset[labeled_dataset['_merge'] == 'left_only'].drop(columns='_merge')
 
     matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
