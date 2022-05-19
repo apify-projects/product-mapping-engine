@@ -15,8 +15,9 @@ BRANDS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'brands.json')
 VOCABULARY_EN_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'corpus/preprocessed/en_dict_cleaned.csv')
 VOCABULARY_CZ_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'corpus/preprocessed/cz_dict_cleaned.csv')
 
-UNITS_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'units.tsv')
-PREFIXES_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'prefixes.tsv')
+UNITS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'units.tsv')
+PREFIXES_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'prefixes.tsv')
+CURRENCIES_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'currencies.tsv')
 UNITS_IMPERIAL_TO_METRIC_PATH = os.path.join(CURRENT_SCRIPT_FOLDER, 'unit_conversion_us-eu.tsv')
 NUMBER_MARK = '#num#'
 ID_MARK = '#id#'
@@ -65,6 +66,34 @@ def load_vocabulary(vocabulary_file):
     with open(vocabulary_file, encoding='utf-8') as f:
         return [line.rstrip() for line in f]
 
+def create_currencies_dict():
+    """
+    Load files with currencies and their possible shortcuts and symbols and create dict from them
+    @return: Dataset with currencies names (without spaces) and values for conversion to basic form,
+             list of original unit names without removing spaces in them
+    """
+    currencies_df = pd.read_csv(CURRENCIES_FILE, sep='\t', keep_default_na=True)
+    currencies_df['merged'] = currencies_df[currencies_df.columns[1:]].apply(
+        lambda x: ','.join(x.dropna().astype(str)),
+        axis=1
+    )
+    currencies_df['name'] = currencies_df['name'].str.lower()
+    currencies_df['merged'] = currencies_df['merged'].str.lower()
+    currencies_df = currencies_df.drop(columns=['other_name', 'shortcut', 'symbol'])
+    currencies_dict = currencies_df.set_index('name').T.to_dict('list')
+    original_currencies_names = [k.lower() for k in list(currencies_dict.keys())]
+
+    currencies_merged = currencies_df[currencies_df.columns].apply(
+        lambda x: ','.join(x.dropna().astype(str)),
+        axis=1
+    ).values
+    currencies_dict = {}
+    for currency in currencies_merged:
+        currency_name_list = currency.split(',')
+        for currency_name in currency_name_list:
+            currencies_dict[currency_name] = {'value':1, 'basic': currency_name}
+    return currencies_dict, original_currencies_names
+
 
 def create_unit_dict():
     """
@@ -73,8 +102,8 @@ def create_unit_dict():
     @return: Dataset with units names (without spaces) and values for conversion to basic form,
              list of original unit names without removing spaces in them
     """
-    prefixes_df = pd.read_csv(PREFIXES_PATH, sep='\t', keep_default_na=False)
-    units_df = pd.read_csv(UNITS_PATH, sep='\t', keep_default_na=False)
+    prefixes_df = pd.read_csv(PREFIXES_FILE, sep='\t', keep_default_na=False)
+    units_df = pd.read_csv(UNITS_FILE, sep='\t', keep_default_na=False)
     units_dict = {}
 
     for idx, row in units_df.iterrows():
@@ -109,6 +138,7 @@ def create_unit_dict():
                         units_dict[
                             f'{prefixes_df.loc[prefixes_df.prefix == p, "czech"].values[0].lower()}{name.lower()}'] = {
                             'value': value, 'basic': basic_shortcut}
+
     original_unit_names = [k for k in list(units_dict.keys())]
     units_dict = {k.replace(' ', ''): v for k, v in units_dict.items()}
     return units_dict, original_unit_names
@@ -128,7 +158,10 @@ BRANDS, BRANDS_JOINED = load_brands()
 COLORS = load_colors()
 VOCABULARY_CZ = load_vocabulary(VOCABULARY_CZ_FILE)
 VOCABULARY_EN = load_vocabulary(VOCABULARY_EN_FILE)
+CURRENCIES_DICT, ORIGINAL_CURRENCIES_NAMES = create_currencies_dict()
 UNITS_DICT, ORIGINAL_UNIT_NAMES = create_unit_dict()
+ORIGINAL_UNIT_NAMES = ORIGINAL_UNIT_NAMES + ORIGINAL_CURRENCIES_NAMES
+UNITS_DICT = {**UNITS_DICT, **CURRENCIES_DICT}
 UNITS_IMPERIAL_TO_METRIC = load_imperial_to_metric_units_conversion_file()
 
 
@@ -188,7 +221,6 @@ def is_word_in_unit_list(word):
     @return: true if the word is in the dictionary of units
     """
     return word in UNITS_DICT.keys()
-
 
 def is_unit_mark_in_word(word):
     """

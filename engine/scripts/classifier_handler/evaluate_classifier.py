@@ -48,13 +48,14 @@ def train_classifier(classifier, data):
         classifier,
         train_data,
         test_data,
-        True
+        True,
+        'trainer data'
     )
     classifier.save()
     return train_stats, test_stats
 
 
-def evaluate_classifier(classifier, train_data, test_data, set_threshold):
+def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
     """
     Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
     @param classifier: classifier to train and evaluate
@@ -62,6 +63,7 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold):
     @param test_data: testing data to evaluate classifier
     @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
     @return: train and test accuracy, recall, specificity, precision
+    @param data_type: string value specifying the evaluated data type
     """
     threshes = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHES)
     out_train = []
@@ -96,7 +98,8 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold):
             test_data['match'].tolist(),
             out_test,
             threshes,
-            classifier.name
+            classifier.name,
+            data_type
         )
         data = pd.concat([train_data, test_data])
         correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
@@ -174,7 +177,8 @@ def plot_train_test_roc(
         true_test_labels,
         predicted_test_labels_list,
         threshes,
-        classifier
+        classifier,
+        data_type
 ):
     """
     Plot roc curve
@@ -184,6 +188,7 @@ def plot_train_test_roc(
     @param predicted_test_labels_list: predicted test labels
     @param threshes: threshold to evaluate accuracy of similarities
     @param classifier: classifier name to whose plot should be created
+    @param data_type: string value specifying the evaluated data type
     @return:
     """
     true_positive_rates_test, false_positive_rates_test = create_roc_curve_points(true_test_labels,
@@ -193,7 +198,7 @@ def plot_train_test_roc(
     plt.plot(false_positive_rates_train, true_positive_rates_train, marker='.', label='train', color='green')
     plt.plot(false_positive_rates_test, true_positive_rates_test, marker='.', label='test', color='red')
     plt.plot([0, 1], [0, 1], 'b--')
-    plt.title(f'ROC curve for {classifier}')
+    plt.title(f'ROC curve for {classifier} for {data_type}')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(['train', 'test'])
