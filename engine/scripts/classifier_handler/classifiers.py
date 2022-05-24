@@ -4,7 +4,8 @@ from io import StringIO
 
 import pandas as pd
 import pydot
-
+from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
+    PERFORM_PCA_ANALYSIS, SVM_CLASSIFIER_PARAMETERS
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
@@ -12,8 +13,6 @@ from sklearn.ensemble import RandomForestClassifier as RandomForests
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
-from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
-    PERFORM_PCA_ANALYSIS
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
@@ -128,7 +127,6 @@ class LinearRegressionClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
         self.predict_probability = False
 
-
     def predict(self, data, predict_outputs=True):
         scores = self.model.predict(data.drop(columns=['match']))
         if predict_outputs:
@@ -157,29 +155,10 @@ class LogisticRegressionClassifier(Classifier):
         )
 
 
-class SvmLinearClassifier(Classifier):
+class SupportVectorMachineClassifier(Classifier):
     def __init__(self, weights):
         super().__init__(weights)
-        self.kernel = 'linear'
-        self.model = svm.SVC(kernel=self.kernel, probability=True)
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-    def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, self.model.coef_[0]))}')
-
-
-class SvmRbfClassifier(Classifier):
-    def __init__(self, weights):
-        super().__init__(weights)
-        self.kernel = 'rbf'
-        self.model = svm.SVC(kernel=self.kernel, probability=True)
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-
-class SvmPolyClassifier(Classifier):
-    def __init__(self, weights):
-        super().__init__(weights)
-        self.kernel = 'poly'
+        self.kernel = SVM_CLASSIFIER_PARAMETERS['kernel']
         self.model = svm.SVC(kernel=self.kernel, probability=True)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
@@ -188,7 +167,7 @@ class NeuralNetworkClassifier(Classifier):
     def __init__(self, weights):
         super().__init__(weights)
         self.model = MLPClassifier(
-            hidden_layer_sizes=(15, 10),
+            hidden_layer_sizes=(30, 20, 30),
             activation='relu',
             solver='adam',
             max_iter=300

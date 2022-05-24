@@ -5,7 +5,7 @@ from datetime import datetime
 from multiprocessing import Pool
 
 import pandas as pd
-
+from sklearn.model_selection import GridSearchCV
 from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
@@ -472,3 +472,11 @@ def load_data_and_train_model(
     if not classifier.use_pca:
         classifier.print_feature_importance(feature_names)
     return train_stats, test_stats
+""" GRID
+    parameters_grid = {'C': [0.1, 1, 10, 100], 'gamma': [1, 0.1, 0.01, 0.001],
+                       'kernel': }
+    grid = GridSearchCV(SVC(), parameters_grid, refit=True, verbose=2)
+    grid.fit(X_train, y_train)
+    print(grid.best_estimator_)
+    grid_predictions = grid.predict(X_test)
+"""

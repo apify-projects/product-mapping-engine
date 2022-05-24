@@ -31,7 +31,7 @@ if __name__ == '__main__':
                     'INPUT',
                     {
                         "task_id": "Alpha-Complete-CZ-middle-sample",
-                        "classifier_type": "LogisticRegression",
+                        "classifier_type": "SupportVectorMachine",
                         "dataset_id": "bI50cdPwQXmcvhfcZ",
                         "images_kvs_1": "coKhaQXSyj2kPqzyM",
                         "images_kvs_2": "wb001Kh9JAGpFvpaG"
@@ -44,7 +44,6 @@ if __name__ == '__main__':
 
     task_id = parameters['task_id']
     classifier_type = parameters['classifier_type']
-
     # Prepare storages and read data
     labeled_dataset_client = client.dataset(parameters['dataset_id'])
     images_kvs_1_client = client.key_value_store(parameters['images_kvs_1'])
