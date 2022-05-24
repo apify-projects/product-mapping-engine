@@ -67,7 +67,11 @@ MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = True
 
 # CLASSIFIER PARAMETERS
-SVM_CLASSIFIER_PARAMETERS = {'kernel': 'linear'}  # value one of: [linear, poly, rbf]
-DT_CLASSIFIER_PARAMETERS = {}
-RF_CLASSIFIER_PARAMETERS = {}
-NN_CLASSIFIER_PARAMETERS = {}
+SVM_CLASSIFIER_PARAMETERS = {'C': 1.0, 'kernel': 'poly', 'degree': 3, 'gamma': 'scale',
+                             'probability': True}  # kernel values:linear,poly,rbf
+DT_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'max_leaf_nodes': None,
+                            'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 5}
+RF_CLASSIFIER_PARAMETERS = {'n_estimators': 100, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
+                            'min_samples_leaf': 1, 'max_leaf_nodes': None, 'max_features': 5, 'bootstrap': True,
+                            'n_jobs': None}
+NN_CLASSIFIER_PARAMETERS = {'hidden_layers_sizes': (30, 2, 30), 'activation': 'relu', 'solver': 'adam', 'max_iter': 300}

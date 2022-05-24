@@ -31,7 +31,7 @@ if __name__ == '__main__':
                     'INPUT',
                     {
                         "task_id": "Alpha-Complete-CZ-middle-sample",
-                        "classifier_type": "SupportVectorMachine",
+                        "classifier_type": "RandomForests",
                         "dataset_id": "bI50cdPwQXmcvhfcZ",
                         "images_kvs_1": "coKhaQXSyj2kPqzyM",
                         "images_kvs_2": "wb001Kh9JAGpFvpaG"
