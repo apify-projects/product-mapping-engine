@@ -28,14 +28,14 @@ if __name__ == '__main__':
             )
         else:
             default_kvs_client.set_record(
-                    'INPUT',
-                    {
-                        "task_id": "Alpha-Complete-CZ-middle-sample",
-                        "classifier_type": "RandomForests",
-                        "dataset_id": "bI50cdPwQXmcvhfcZ",
-                        "images_kvs_1": "coKhaQXSyj2kPqzyM",
-                        "images_kvs_2": "wb001Kh9JAGpFvpaG"
-                     }
+                'INPUT',
+                {
+                    "task_id": "Alpha-Complete-CZ-middle-sample",
+                    "classifier_type": "RandomForests",
+                    "dataset_id": "bI50cdPwQXmcvhfcZ",
+                    "images_kvs_1": "coKhaQXSyj2kPqzyM",
+                    "images_kvs_2": "wb001Kh9JAGpFvpaG"
+                }
             )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']

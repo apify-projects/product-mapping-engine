@@ -5,8 +5,7 @@ from io import StringIO
 import pandas as pd
 import pydot
 from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
-    PERFORM_PCA_ANALYSIS, SVM_CLASSIFIER_PARAMETERS, NN_CLASSIFIER_PARAMETERS, DT_CLASSIFIER_PARAMETERS, \
-    RF_CLASSIFIER_PARAMETERS
+    PERFORM_PCA_ANALYSIS
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
@@ -157,23 +156,16 @@ class LogisticRegressionClassifier(Classifier):
 
 
 class SupportVectorMachineClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, params):
         super().__init__(weights)
-        self.model = svm.SVC(kernel=SVM_CLASSIFIER_PARAMETERS['kernel'], degree=SVM_CLASSIFIER_PARAMETERS['degree'],
-                             C=SVM_CLASSIFIER_PARAMETERS['C'], gamma=SVM_CLASSIFIER_PARAMETERS['gamma'],
-                             probability=SVM_CLASSIFIER_PARAMETERS['probability'])
+        self.model = svm.SVC(**params)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
 
 class NeuralNetworkClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, params):
         super().__init__(weights)
-        self.model = MLPClassifier(
-            hidden_layer_sizes=NN_CLASSIFIER_PARAMETERS['hidden_layers_sizes'],
-            activation=NN_CLASSIFIER_PARAMETERS['activation'],
-            solver=NN_CLASSIFIER_PARAMETERS['solver'],
-            max_iter=NN_CLASSIFIER_PARAMETERS['max_iter']
-        )
+        self.model = MLPClassifier(**params)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -188,14 +180,9 @@ class NeuralNetworkClassifier(Classifier):
 
 
 class DecisionTreeClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, params):
         super().__init__(weights)
-        self.model = DecisionTree(criterion=DT_CLASSIFIER_PARAMETERS['criterion'],
-                                  max_depth=DT_CLASSIFIER_PARAMETERS['max_depth'],
-                                  max_leaf_nodes=DT_CLASSIFIER_PARAMETERS['max_leaf_nodes'],
-                                  min_samples_split=DT_CLASSIFIER_PARAMETERS['min_samples_split'],
-                                  min_samples_leaf=DT_CLASSIFIER_PARAMETERS['min_samples_leaf'],
-                                  max_features=DT_CLASSIFIER_PARAMETERS['max_features'])
+        self.model = DecisionTree(**params)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -211,17 +198,9 @@ class DecisionTreeClassifier(Classifier):
 
 
 class RandomForestsClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, params):
         super().__init__(weights)
-        self.model = RandomForests(n_estimators=RF_CLASSIFIER_PARAMETERS['n_estimators'],
-                                   criterion=RF_CLASSIFIER_PARAMETERS['criterion'],
-                                   max_depth=RF_CLASSIFIER_PARAMETERS['max_depth'],
-                                   max_leaf_nodes=RF_CLASSIFIER_PARAMETERS['max_leaf_nodes'],
-                                   min_samples_split=RF_CLASSIFIER_PARAMETERS['min_samples_split'],
-                                   min_samples_leaf=RF_CLASSIFIER_PARAMETERS['min_samples_leaf'],
-                                   max_features=RF_CLASSIFIER_PARAMETERS['max_features'],
-                                   bootstrap=RF_CLASSIFIER_PARAMETERS['bootstrap'],
-                                   n_jobs=RF_CLASSIFIER_PARAMETERS['n_jobs'])
+        self.model = RandomForests(**params)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names, visualize=False):

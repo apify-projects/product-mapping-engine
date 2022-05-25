@@ -5,7 +5,7 @@ from datetime import datetime
 from multiprocessing import Pool
 
 import pandas as pd
-from sklearn.model_selection import GridSearchCV
+
 from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
@@ -19,8 +19,9 @@ from .dataset_handler.similarity_computation.texts.compute_texts_similarity impo
 from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES
-from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORM_GRID_SEARCH
+from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
+    grid_search_and_best_model_training
 
 
 def split_dataframes(dataset):
@@ -267,6 +268,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     @param data_to_remove: dataframe with pairs to be removed from labeled_dataset
     """
     print('{}_unlabeled_data.csv'.format(task_id))
+    labeled_dataset = None
     try:
         labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
     except OSError as e:
@@ -347,12 +349,15 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(is_on_platform, dataset1,
-                                                                                            dataset2,
-                                                                                            precomputed_pairs_matching_scores,
-                                                                                            images_kvs1_client,
-                                                                                            images_kvs2_client,
-                                                                                            filter_data=True)
+        preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(
+            is_on_platform,
+            dataset1,
+            dataset2,
+            precomputed_pairs_matching_scores,
+            images_kvs1_client,
+            images_kvs2_client,
+            filter_data=True
+        )
 
     if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES and len(preprocessed_pairs) != 0:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
@@ -464,19 +469,13 @@ def load_data_and_train_model(
         similarities = pd.concat(similarities_to_concat, axis=1)
         if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
-
-    classifier = setup_classifier(classifier_type)
-    train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+    if PERFORM_GRID_SEARCH:
+        classifier, train_stats, test_stats = grid_search_and_best_model_training(similarities, classifier_type)
+    else:
+        classifier = setup_classifier(classifier_type)
+        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
     classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
     if not classifier.use_pca:
         classifier.print_feature_importance(feature_names)
     return train_stats, test_stats
-""" GRID
-    parameters_grid = {'C': [0.1, 1, 10, 100], 'gamma': [1, 0.1, 0.01, 0.001],
-                       'kernel': }
-    grid = GridSearchCV(SVC(), parameters_grid, refit=True, verbose=2)
-    grid.fit(X_train, y_train)
-    print(grid.best_estimator_)
-    grid_predictions = grid.predict(X_test)
-"""

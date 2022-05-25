@@ -1,4 +1,4 @@
-import json
+import itertools
 from math import ceil
 
 import numpy as np
@@ -8,27 +8,37 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
+
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS
+    PRINT_ROC_AND_STATISTICS, PERFORM_GRID_SEARCH
 
 
-def setup_classifier(classifier_type, classifier_parameters_file=None):
+def setup_classifier(classifier_type):
     """
-    Setup particular classifier
+    Setup particular classifier or more classifiers if grid search is performed
     @param classifier_type: type of classifier
-    @param classifier_parameters_file: file with classifier params
-    @return: set up classifier
+    @return: set up classifier(s)
     """
     classifier_class_name = classifier_type + 'Classifier'
+    classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                               classifier_class_name)
+    classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS'
 
-    classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]), classifier_class_name)
-    classifier_parameters = {}
-    if classifier_parameters_file is not None:
-        classifier_parameters_path = classifier_parameters_file
-        with open(classifier_parameters_path, 'r') as classifier_parameters_file:
-            classifier_parameters_json = classifier_parameters_file.read()
-        classifier_parameters = json.loads(classifier_parameters_json)
-    classifier = classifier_class(classifier_parameters)
+    if PERFORM_GRID_SEARCH:
+        classifier = []
+        classifier_parameters_grid = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
+                                             classifier_parameters_name)
+        for parameter_name in classifier_parameters_grid:
+            if not isinstance(classifier_parameters_grid[parameter_name], list):
+                classifier_parameters_grid[parameter_name] = [classifier_parameters_grid[parameter_name]]
+        keys, values = zip(*classifier_parameters_grid.items())
+        classifier_parameters_permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
+        for classifier_parameters in classifier_parameters_permutations:
+            classifier.append(classifier_class({}, classifier_parameters))
+    else:
+        classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
+                                        classifier_parameters_name)
+        classifier = classifier_class({}, classifier_parameters)
     return classifier
 
 
@@ -53,6 +63,36 @@ def train_classifier(classifier, data):
     )
     classifier.save()
     return train_stats, test_stats
+
+
+def grid_search_and_best_model_training(similarities, classifier_type):
+    """
+    Setup classifier and perform grid search to find the best parameters for given type of model
+    @param similarities: precomputed similarities used as training data
+    @param classifier_type: classifier type
+    @return: classifier with the highest test accuracy and its train and test stats
+    """
+    classifiers = setup_classifier(classifier_type)
+
+    best_classifier = None
+    best_classifier_accuracy = -1
+    best_train_stats = None
+    best_test_stats = None
+    for classifier in classifiers:
+        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        if test_stats['accuracy'] > best_classifier_accuracy:
+            best_classifier = classifier
+            best_classifier_accuracy = test_stats['accuracy']
+            best_train_stats = train_stats
+            best_test_stats = test_stats
+    best_classifier_parameter_names = list(best_classifier.model.estimator_params)
+    print('GRID SEARCH PERFORMED')
+    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
+    print(f'Best classifier parameters')
+    for name in best_classifier_parameter_names:
+        print(f'{name}: {getattr(best_classifier.model, name)}')
+    print('----------------------------')
+    return best_classifier, best_train_stats, best_test_stats
 
 
 def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
@@ -182,8 +222,8 @@ def plot_train_test_roc(
 ):
     """
     Plot roc curve
-    @param true_positive_rates_train: true positive rates for thresholds from the threshes parameter
-    @param false_positive_rates_train: false positive rates for thresholds from the threshes parameter
+    @param true_positive_rates_train: true positive rates for thresholds from the threshes' parameter
+    @param false_positive_rates_train: false positive rates for thresholds from the threshes' parameter
     @param true_test_labels:  true test labels
     @param predicted_test_labels_list: predicted test labels
     @param threshes: threshold to evaluate accuracy of similarities
