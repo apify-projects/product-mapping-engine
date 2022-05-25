@@ -121,7 +121,7 @@ class Classifier:
 
 
 class LinearRegressionClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
@@ -143,7 +143,7 @@ class LinearRegressionClassifier(Classifier):
 
 
 class LogisticRegressionClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
         self.model = LogisticRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
