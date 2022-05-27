@@ -31,7 +31,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ-middle-sample",
-                    "classifier_type": "LinearRegression",
+                    "classifier_type": "LogisticRegression", #LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
                     "dataset_id": "bI50cdPwQXmcvhfcZ",
                     "images_kvs_1": "coKhaQXSyj2kPqzyM",
                     "images_kvs_2": "wb001Kh9JAGpFvpaG"

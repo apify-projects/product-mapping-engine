@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from math import ceil
 
 import numpy as np
@@ -17,29 +18,27 @@ def setup_classifier(classifier_type):
     """
     Setup particular classifier or more classifiers if grid search is performed
     @param classifier_type: type of classifier
-    @return: set up classifier(s)
+    @return: set up classifier(s) and its set up parameters
     """
     classifier_class_name = classifier_type + 'Classifier'
     classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
                                classifier_class_name)
     classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS'
 
-    if PERFORM_GRID_SEARCH:
+    classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
+                                    classifier_parameters_name)
+    if PERFORM_GRID_SEARCH and classifier_parameters != {}:
         classifier = []
-        classifier_parameters_grid = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
-                                             classifier_parameters_name)
-        for parameter_name in classifier_parameters_grid:
-            if not isinstance(classifier_parameters_grid[parameter_name], list):
-                classifier_parameters_grid[parameter_name] = [classifier_parameters_grid[parameter_name]]
-        keys, values = zip(*classifier_parameters_grid.items())
+        for parameter_name in classifier_parameters:
+            if not isinstance(classifier_parameters[parameter_name], list):
+                classifier_parameters[parameter_name] = [classifier_parameters[parameter_name]]
+        keys, values = zip(*classifier_parameters.items())
         classifier_parameters_permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
         for classifier_parameters in classifier_parameters_permutations:
             classifier.append(classifier_class({}, classifier_parameters))
     else:
-        classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
-                                        classifier_parameters_name)
         classifier = classifier_class({}, classifier_parameters)
-    return classifier
+    return classifier, classifier_parameters
 
 
 def train_classifier(classifier, data):
@@ -72,12 +71,15 @@ def grid_search_and_best_model_training(similarities, classifier_type):
     @param classifier_type: classifier type
     @return: classifier with the highest test accuracy and its train and test stats
     """
-    classifiers = setup_classifier(classifier_type)
-
+    classifiers, classifier_parameters = setup_classifier(classifier_type)
     best_classifier = None
     best_classifier_accuracy = -1
     best_train_stats = None
     best_test_stats = None
+    if not isinstance(classifiers, list):
+        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
+        warnings.warn("Warning: Grid search not performed as there is only one model to train")
+        return classifiers, train_stats, test_stats
     for classifier in classifiers:
         train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
         if test_stats['accuracy'] > best_classifier_accuracy:
@@ -85,12 +87,11 @@ def grid_search_and_best_model_training(similarities, classifier_type):
             best_classifier_accuracy = test_stats['accuracy']
             best_train_stats = train_stats
             best_test_stats = test_stats
-    best_classifier_parameter_names = list(best_classifier.model.estimator_params)
     print('GRID SEARCH PERFORMED')
     print(f'Best classifier test accuracy: {best_classifier_accuracy}')
     print(f'Best classifier parameters')
-    for name in best_classifier_parameter_names:
-        print(f'{name}: {getattr(best_classifier.model, name)}')
+    for parameter in classifier_parameters:
+        print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
     return best_classifier, best_train_stats, best_test_stats
 
@@ -265,12 +266,15 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     print('----------------------------')
     for thresh, predicted_labels in zip(threshes, predicted_labels_list):
         # calculate auc score and roc curve
-        auc = roc_auc_score(true_labels, predicted_labels)
+        try:
+            auc = roc_auc_score(true_labels, predicted_labels)
+            if threshes_counter % gap_between_auc_scores_outputs == 0:
+                print(f'thresh={round(thresh, 3)} AUC={round(auc, 3)}')
+        except ValueError as e:
+            warnings.warn(str(e))
         false_positive_rate, true_positive_rate, _ = roc_curve(true_labels, predicted_labels)
         false_positive_rates.append(false_positive_rate[1])
         true_positive_rates.append(true_positive_rate[1])
-        if threshes_counter % gap_between_auc_scores_outputs == 0:
-            print(f'thresh={round(thresh, 3)} AUC={round(auc, 3)}')
         threshes_counter += 1
     print('----------------------------')
     print('\n\n')

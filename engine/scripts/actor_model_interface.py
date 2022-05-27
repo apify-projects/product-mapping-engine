@@ -341,7 +341,7 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
-    classifier = setup_classifier(classifier_type)
+    classifier, _ = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
@@ -472,7 +472,7 @@ def load_data_and_train_model(
     if PERFORM_GRID_SEARCH:
         classifier, train_stats, test_stats = grid_search_and_best_model_training(similarities, classifier_type)
     else:
-        classifier = setup_classifier(classifier_type)
+        classifier, _ = setup_classifier(classifier_type)
         train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
     classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
