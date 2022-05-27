@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
+    # LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
     if not is_on_platform:
         full_dataset = False
         if full_dataset:
@@ -31,7 +32,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ-middle-sample",
-                    "classifier_type": "LogisticRegression", #LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
+                    "classifier_type": "LogisticRegression",
                     "dataset_id": "bI50cdPwQXmcvhfcZ",
                     "images_kvs_1": "coKhaQXSyj2kPqzyM",
                     "images_kvs_2": "wb001Kh9JAGpFvpaG"
