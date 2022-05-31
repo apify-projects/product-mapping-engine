@@ -1,7 +1,7 @@
 import itertools
 import warnings
 from math import ceil
-
+import random
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -11,8 +11,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS, PERFORM_GRID_SEARCH
-
+    PRINT_ROC_AND_STATISTICS, PERFORM_GRID_SEARCH, PERFORM_RANDOM_SEARCH, RANDOM_SEARCH_ITERATIONS
 
 def setup_classifier(classifier_type):
     """
@@ -36,6 +35,16 @@ def setup_classifier(classifier_type):
         classifier_parameters_permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
         for classifier_parameters in classifier_parameters_permutations:
             classifier.append(classifier_class({}, classifier_parameters))
+    elif PERFORM_RANDOM_SEARCH and classifier_parameters != {}:
+        classifier = []
+        for _ in range(RANDOM_SEARCH_ITERATIONS):
+            classifier_parameters_random = {}
+            for parameter_name in classifier_parameters:
+                if isinstance(classifier_parameters[parameter_name], list):
+                    classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
+                else:
+                    classifier_parameters_random[parameter_name] = classifier_parameters[parameter_name]
+            classifier.append(classifier_class({}, classifier_parameters_random))
     else:
         classifier = classifier_class({}, classifier_parameters)
     return classifier, classifier_parameters
@@ -62,6 +71,46 @@ def train_classifier(classifier, data):
     )
     classifier.save()
     return train_stats, test_stats
+
+
+def parameters_search_and_best_model_training(similarities, classifier_type):
+    """
+    Setup classifier and perform grid of random search to find the best parameters for given type of model
+    @param similarities: precomputed similarities used as training data
+    @param classifier_type: classifier type
+    @return: classifier with the highest test accuracy and its train and test stats
+    """
+    search_type = ''
+    if PERFORM_RANDOM_SEARCH:
+        search_type = 'Random'
+    if PERFORM_GRID_SEARCH:
+        search_type = 'Grid'
+
+    classifiers, classifier_parameters = setup_classifier(classifier_type)
+    best_classifier = None
+    best_classifier_accuracy = -1
+    best_train_stats = None
+    best_test_stats = None
+    if not isinstance(classifiers, list) or len(classifiers) == 1:
+        if len(classifiers) == 1:
+            classifiers = classifiers[0]
+        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
+        warnings.warn(f"Warning: {search_type} search not performed as there is only one model to train")
+        return classifiers, train_stats, test_stats
+    for classifier in classifiers:
+        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        if test_stats['accuracy'] > best_classifier_accuracy:
+            best_classifier = classifier
+            best_classifier_accuracy = test_stats['accuracy']
+            best_train_stats = train_stats
+            best_test_stats = test_stats
+    print(f'{search_type.upper()} SEARCH PERFORMED')
+    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
+    print(f'Best classifier parameters')
+    for parameter in classifier_parameters:
+        print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
+    print('----------------------------')
+    return best_classifier, best_train_stats, best_test_stats
 
 
 def grid_search_and_best_model_training(similarities, classifier_type):

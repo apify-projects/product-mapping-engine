@@ -80,4 +80,15 @@ NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (30, 2, 30), 'activ
                                        'beta_2': 0.999, 'epsilon': 0.00000001}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 LogisticRegression_CLASSIFIER_PARAMETERS = {}
+
 PERFORM_GRID_SEARCH = False
+PERFORM_RANDOM_SEARCH = True
+RANDOM_SEARCH_ITERATIONS = 10
+
+# For Random Search
+import numpy as np
+RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [int(x) for x in np.linspace(start=1, stop=20, num=20)], 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': [2, 6, 10],
+                                       'min_samples_leaf': [1, 3, 4], 'max_leaf_nodes': None, 'max_features': [5, 10, 15, 20],
+                                       'bootstrap': [True, False], 'n_jobs': None}
+
+
