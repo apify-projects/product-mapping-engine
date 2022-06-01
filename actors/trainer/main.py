@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
     if not is_on_platform:
-        full_dataset = False
+        full_dataset = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',

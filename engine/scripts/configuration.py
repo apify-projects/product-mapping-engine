@@ -1,8 +1,8 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = True
+LOAD_PRECOMPUTED_SIMILARITIES = False
 SAVE_PRECOMPUTED_SIMILARITIES = True
-LOAD_PRECOMPUTED_MATCHES = True
+LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = True
 
 # TEXT PREPROCESSING SETTING
@@ -51,7 +51,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = False
+COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.2
@@ -78,17 +78,15 @@ NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (30, 2, 30), 'activ
                                        'alpha': 0.0001, 'batch_size': 'auto', 'learning_rate': 'constant',
                                        'learning_rate_init': 0.001, 'max_iter': 200, 'momentum': 0.9, 'beta_1': 0.9,
                                        'beta_2': 0.999, 'epsilon': 0.00000001}
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'C': 1.0, 'solver': 'lbfgs', 'max_iter': 100}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
-LogisticRegression_CLASSIFIER_PARAMETERS = {}
 
 PERFORM_GRID_SEARCH = False
-PERFORM_RANDOM_SEARCH = True
+PERFORM_RANDOM_SEARCH = False
 RANDOM_SEARCH_ITERATIONS = 10
 
 # For Random Search
-import numpy as np
-RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [int(x) for x in np.linspace(start=1, stop=20, num=20)], 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': [2, 6, 10],
-                                       'min_samples_leaf': [1, 3, 4], 'max_leaf_nodes': None, 'max_features': [5, 10, 15, 20],
-                                       'bootstrap': [True, False], 'n_jobs': None}
-
-
+# import numpy as np
+# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [int(x) for x in np.linspace(start=1, stop=20, num=20)], 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': [2, 6, 10],
+#                                       'min_samples_leaf': [1, 3, 4], 'max_leaf_nodes': None, 'max_features': [5, 10, 15, 20],
+#                                       'bootstrap': [True, False], 'n_jobs': None}
