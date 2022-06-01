@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
     if not is_on_platform:
-        full_dataset = True
+        full_dataset = False
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -31,11 +31,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ-middle-sample",
-                    "classifier_type": "RandomForests",
-                    "dataset_id": "bI50cdPwQXmcvhfcZ",
-                    "images_kvs_1": "coKhaQXSyj2kPqzyM",
-                    "images_kvs_2": "wb001Kh9JAGpFvpaG"
+                    "task_id": "Alpha-Complete-CZ-middle-sample-2",
+                    "classifier_type": "LogisticRegression",
+                    "dataset_id": "pLZzrRhMUzfvtVNSS",
+                    "images_kvs_1": "dQip6CvOBvAtINFDv",
+                    "images_kvs_2": "PqZ3WGsA5cnKVxRh3"
                 }
             )
 
