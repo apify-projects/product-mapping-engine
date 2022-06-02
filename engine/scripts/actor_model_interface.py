@@ -189,7 +189,7 @@ def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_prec
     """
     # setup parallelling stuff
     pool = Pool()
-    num_cpu = os.cpu_count()
+    num_cpu = os.cpu_count()-1
     if not is_on_platform:
         num_cpu -= 2
 

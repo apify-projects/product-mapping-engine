@@ -1,7 +1,9 @@
 import itertools
+import os
+import random
 import warnings
 from math import ceil
-import random
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -12,6 +14,7 @@ from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
     PRINT_ROC_AND_STATISTICS, PERFORM_GRID_SEARCH, PERFORM_RANDOM_SEARCH, RANDOM_SEARCH_ITERATIONS
+
 
 def setup_classifier(classifier_type):
     """
@@ -97,8 +100,15 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
         train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
         warnings.warn(f"Warning: {search_type} search not performed as there is only one model to train")
         return classifiers, train_stats, test_stats
+    rows_to_dataframe = []
     for classifier in classifiers:
         train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        row_to_dataframe = []
+        for parameter in classifier_parameters:
+            row_to_dataframe.append(getattr(classifier.model, parameter))
+        row_to_dataframe.append(train_stats['accuracy'])
+        row_to_dataframe.append(test_stats['accuracy'])
+        rows_to_dataframe.append(row_to_dataframe)
         if test_stats['accuracy'] > best_classifier_accuracy:
             best_classifier = classifier
             best_classifier_accuracy = test_stats['accuracy']
@@ -110,6 +120,9 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
+    models_results = pd.DataFrame(rows_to_dataframe, columns=list(classifier_parameters.keys()) + ['train_accuracy', 'test_accuracy'])
+    models_results = models_results.sort_values(by=['test_accuracy'], ascending=False)
+    models_results.to_csv(f'results/{classifier_type}models_comparison.csv')
     return best_classifier, best_train_stats, best_test_stats
 
 
