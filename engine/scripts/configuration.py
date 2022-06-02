@@ -67,25 +67,30 @@ MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = True
 
 # CLASSIFIER PARAMETERS
-SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly', 'degree': 3, 'max_iter': 10,
-                                              'class_weight': 'balanced'}  # kernel values:linear,poly,rbf
-DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
+SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed'],
+                                              'degree': [2, 3, 4, 5],
+                                              'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                              'class_weight': 'balanced'}
+DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': ['gini', 'entropy', 'log_loss'], 'max_depth': [5, 8, 12, 15, 18, 21],
+                                      'min_samples_split': [2, 5, 8, 11, 14, 17],
                                       'class_weight': 'balanced'}
-RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
+RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [50, 100, 150, 200, 250, 300, 400, 500],
+                                       'criterion': ['gini', 'entropy', 'log_loss'],
+                                       'max_depth': [5, 8, 12, 15, 18, 21], 'min_samples_split': [2, 5, 8, 11, 14, 17],
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (30, 2, 30), 'activation': 'relu', 'solver': 'adam',
-                                       'batch_size': 'auto', 'learning_rate': 'constant',
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (200), (10, 10), (50, 50), (100, 100),
+                                                              (200, 200), (10, 10, 10), (50, 50, 50), (100, 100, 100),
+                                                              (50, 10, 50), (100, 50, 100), (200, 100, 200)],
+                                       'activation': ['relu', 'logistic', 'tanh', 'identity'],
+                                       'solver': ['adam', 'sgd', 'lbfgs'],
+                                       'batch_size': 'auto', 'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                        'learning_rate_init': 0.001, 'max_iter': 200}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'solver': 'lbfgs', 'max_iter': 100,
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
+                                            'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
+                                            'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
                                             'class_weight': 'balanced'}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 PERFORM_GRID_SEARCH = False
 PERFORM_RANDOM_SEARCH = False
 RANDOM_SEARCH_ITERATIONS = 10
-
-# For Random Search
-# import numpy as np
-# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [int(x) for x in np.linspace(start=1, stop=20, num=20)], 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': [2, 6, 10],
-#                                       'min_samples_leaf': [1, 3, 4], 'max_leaf_nodes': None, 'max_features': [5, 10, 15, 20],
-#                                       'bootstrap': [True, False], 'n_jobs': None}
