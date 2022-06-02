@@ -67,18 +67,17 @@ MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = True
 
 # CLASSIFIER PARAMETERS
-SupportVectorMachine_CLASSIFIER_PARAMETERS = {'C': 1.0, 'kernel': 'poly', 'degree': 3, 'gamma': 'scale',
-                                              'probability': True}  # kernel values:linear,poly,rbf
-DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'max_leaf_nodes': None,
-                                      'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 5}
+SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly', 'degree': 3, 'max_iter': 10,
+                                              'class_weight': 'balanced'}  # kernel values:linear,poly,rbf
+DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
+                                      'class_weight': 'balanced'}
 RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
-                                       'min_samples_leaf': 1, 'max_leaf_nodes': None, 'max_features': 5,
-                                       'bootstrap': True, 'n_jobs': None}
+                                       'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (30, 2, 30), 'activation': 'relu', 'solver': 'adam',
-                                       'alpha': 0.0001, 'batch_size': 'auto', 'learning_rate': 'constant',
-                                       'learning_rate_init': 0.001, 'max_iter': 200, 'momentum': 0.9, 'beta_1': 0.9,
-                                       'beta_2': 0.999, 'epsilon': 0.00000001}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'C': 1.0, 'solver': 'lbfgs', 'max_iter': 100}
+                                       'batch_size': 'auto', 'learning_rate': 'constant',
+                                       'learning_rate_init': 0.001, 'max_iter': 200}
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'solver': 'lbfgs', 'max_iter': 100,
+                                            'class_weight': 'balanced'}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 PERFORM_GRID_SEARCH = False
