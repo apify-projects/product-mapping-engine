@@ -1,5 +1,4 @@
 import itertools
-import os
 import random
 import warnings
 from math import ceil
@@ -106,8 +105,8 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
         row_to_dataframe = []
         for parameter in classifier_parameters:
             row_to_dataframe.append(getattr(classifier.model, parameter))
-        row_to_dataframe.append(train_stats['accuracy'])
-        row_to_dataframe.append(test_stats['accuracy'])
+        row_to_dataframe = row_to_dataframe + [train_stats['accuracy'], train_stats['precision'], train_stats['recall'],
+                                               test_stats['accuracy'], test_stats['precision'], test_stats['recall']]
         rows_to_dataframe.append(row_to_dataframe)
         if test_stats['accuracy'] > best_classifier_accuracy:
             best_classifier = classifier
@@ -120,41 +119,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
-    models_results = pd.DataFrame(rows_to_dataframe, columns=list(classifier_parameters.keys()) + ['train_accuracy', 'test_accuracy'])
+    models_results = pd.DataFrame(rows_to_dataframe,
+                                  columns=list(classifier_parameters.keys()) + ['train_accuracy', 'train_precision',
+                                                                                'train_recall', 'test_accuracy',
+                                                                                'test_precision', 'test_recall'])
     models_results = models_results.sort_values(by=['test_accuracy'], ascending=False)
     models_results.to_csv(f'results/{classifier_type}models_comparison.csv')
-    return best_classifier, best_train_stats, best_test_stats
-
-
-def grid_search_and_best_model_training(similarities, classifier_type):
-    """
-    Setup classifier and perform grid search to find the best parameters for given type of model
-    @param similarities: precomputed similarities used as training data
-    @param classifier_type: classifier type
-    @return: classifier with the highest test accuracy and its train and test stats
-    """
-    classifiers, classifier_parameters = setup_classifier(classifier_type)
-    best_classifier = None
-    best_classifier_accuracy = -1
-    best_train_stats = None
-    best_test_stats = None
-    if not isinstance(classifiers, list):
-        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
-        warnings.warn("Warning: Grid search not performed as there is only one model to train")
-        return classifiers, train_stats, test_stats
-    for classifier in classifiers:
-        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-        if test_stats['accuracy'] > best_classifier_accuracy:
-            best_classifier = classifier
-            best_classifier_accuracy = test_stats['accuracy']
-            best_train_stats = train_stats
-            best_test_stats = test_stats
-    print('GRID SEARCH PERFORMED')
-    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
-    print(f'Best classifier parameters')
-    for parameter in classifier_parameters:
-        print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
-    print('----------------------------')
     return best_classifier, best_train_stats, best_test_stats
 
 

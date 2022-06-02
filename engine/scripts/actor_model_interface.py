@@ -21,7 +21,7 @@ from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORM_GRID_SEARCH, PERFORM_RANDOM_SEARCH
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    grid_search_and_best_model_training, parameters_search_and_best_model_training
+    parameters_search_and_best_model_training
 
 
 def split_dataframes(dataset):
@@ -189,7 +189,7 @@ def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_prec
     """
     # setup parallelling stuff
     pool = Pool()
-    num_cpu = os.cpu_count()-1
+    num_cpu = os.cpu_count() - 1
     if not is_on_platform:
         num_cpu -= 2
 
