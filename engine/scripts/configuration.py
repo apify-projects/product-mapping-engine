@@ -1,9 +1,9 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = False
+LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
-SAVE_PRECOMPUTED_MATCHES = True
+SAVE_PRECOMPUTED_MATCHES = False
 
 # TEXT PREPROCESSING SETTING
 # Text column names that should be preprocessed and used for similarity computations
@@ -64,33 +64,33 @@ POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 NUMBER_OF_THRESHES = 10
 NUMBER_OF_THRESHES_FOR_AUC = 10
 MAX_FP_RATE = 0.1
-PRINT_ROC_AND_STATISTICS = True
+PRINT_ROC_AND_STATISTICS = False
 
 # CLASSIFIER PARAMETERS
-SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed'],
+SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                                               'degree': [2, 3, 4, 5],
                                               'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
-                                              'class_weight': 'balanced'}
-DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': ['gini', 'entropy', 'log_loss'], 'max_depth': [5, 8, 12, 15, 18, 21],
+                                              'class_weight': 'balanced', 'probability': True}
+DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': ['gini', 'entropy'], 'max_depth': [5, 8, 12, 15, 18, 21],
                                       'min_samples_split': [2, 5, 8, 11, 14, 17],
                                       'class_weight': 'balanced'}
 RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [50, 100, 150, 200, 250, 300, 400, 500],
-                                       'criterion': ['gini', 'entropy', 'log_loss'],
+                                       'criterion': ['gini', 'entropy'],
                                        'max_depth': [5, 8, 12, 15, 18, 21], 'min_samples_split': [2, 5, 8, 11, 14, 17],
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (200), (10, 10), (50, 50), (100, 100),
                                                               (200, 200), (10, 10, 10), (50, 50, 50), (100, 100, 100),
                                                               (50, 10, 50), (100, 50, 100), (200, 100, 200)],
-                                       'activation': ['relu', 'logistic', 'tanh', 'identity'],
+                                       'activation': ['relu', 'logistic', 'tanh'],
                                        'solver': ['adam', 'sgd', 'lbfgs'],
                                        'batch_size': 'auto', 'learning_rate': ['constant', 'invscaling', 'adaptive'],
-                                       'learning_rate_init': 0.001, 'max_iter': 200}
+                                       'learning_rate_init': [0.01, 0.001, 0.0001],
+                                       'max_iter': [50, 100, 200, 500]}
 LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                                             'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                             'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
                                             'class_weight': 'balanced'}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
-PERFORM_GRID_SEARCH = False
-PERFORM_RANDOM_SEARCH = True
-RANDOM_SEARCH_ITERATIONS = 2
+PERFORMED_PARAMETERS_SEARCH = 'grid'  # grid random None
+RANDOM_SEARCH_ITERATIONS = 10
