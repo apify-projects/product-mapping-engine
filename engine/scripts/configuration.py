@@ -78,14 +78,14 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [50, 100, 150, 200, 250, 
                                        'criterion': ['gini', 'entropy'],
                                        'max_depth': [5, 8, 12, 15, 18, 21], 'min_samples_split': [2, 5, 8, 11, 14, 17],
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (200), (10, 10), (50, 50), (100, 100),
-                                                              (200, 200), (10, 10, 10), (50, 50, 50), (100, 100, 100),
-                                                              (50, 10, 50), (100, 50, 100), (200, 100, 200)],
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (10, 10), (50, 50), (100, 100),
+                                                             (10, 10, 10), (50, 50, 50), (100, 100, 100),
+                                                              (50, 10, 50), (100, 50, 100)],
                                        'activation': ['relu', 'logistic', 'tanh'],
                                        'solver': ['adam', 'sgd', 'lbfgs'],
                                        'batch_size': 'auto', 'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                        'learning_rate_init': [0.01, 0.001, 0.0001],
-                                       'max_iter': [50, 100, 200, 500]}
+                                       'max_iter': [50, 100, 500]}
 LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                                             'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                             'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
