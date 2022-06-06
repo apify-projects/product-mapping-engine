@@ -3,7 +3,7 @@ IS_ON_PLATFORM = False
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
-SAVE_PRECOMPUTED_MATCHES = True
+SAVE_PRECOMPUTED_MATCHES = False
 
 # TEXT PREPROCESSING SETTING
 # Text column names that should be preprocessed and used for similarity computations
@@ -51,7 +51,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION SETTING
 TEST_DATA_PROPORTION = 0.2
@@ -61,29 +61,37 @@ EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION_CONFIGURATION SETTING
-NUMBER_OF_THRESHES = 20
-NUMBER_OF_THRESHES_FOR_AUC = 20
-MAX_FP_RATE = 0.2
-PRINT_ROC_AND_STATISTICS = True
+NUMBER_OF_THRESHES = 10
+NUMBER_OF_THRESHES_FOR_AUC = 10
+MAX_FP_RATE = 0.1
+PRINT_ROC_AND_STATISTICS = False
 
 # CLASSIFIER PARAMETERS
-SupportVectorMachine_CLASSIFIER_PARAMETERS = {'C': 1.0, 'kernel': 'poly', 'degree': 3, 'gamma': 'scale',
-                                              'probability': True}  # kernel values:linear,poly,rbf
-DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'max_leaf_nodes': None,
-                                      'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 5}
-RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
-                                       'min_samples_leaf': 1, 'max_leaf_nodes': None, 'max_features': 5,
-                                       'bootstrap': True, 'n_jobs': None}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (10), 'activation': 'relu', 'solver': 'adam', 'max_iter': 100}
-LogisticRegression_CLASSIFIER_PARAMETERS = { 'class_weight': 'balanced'}
+SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+                                              'degree': [2, 3, 4, 5],
+                                              'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                              'class_weight': 'balanced', 'probability': True}
+DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': ['gini', 'entropy'], 'max_depth': [5, 8, 12, 15, 18, 21],
+                                      'min_samples_split': [2, 5, 8, 11, 14, 17],
+                                      'class_weight': 'balanced'}
+RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [50, 100, 150, 200, 250, 300, 400, 500],
+                                       'criterion': ['gini', 'entropy'],
+                                       'max_depth': [5, 8, 12, 15, 18, 21], 'min_samples_split': [2, 5, 8, 11, 14, 17],
+                                       'class_weight': 'balanced'}
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (10, 10), (50, 50), (100, 100),
+                                                             (10, 10, 10), (50, 50, 50), (100, 100, 100),
+                                                              (50, 10, 50), (100, 50, 100)],
+                                       'activation': ['relu', 'logistic', 'tanh'],
+                                       'solver': ['adam', 'sgd', 'lbfgs'],
+                                       'batch_size': 'auto', 'learning_rate': ['constant', 'invscaling', 'adaptive'],
+                                       'learning_rate_init': [0.01, 0.001, 0.0001],
+                                       'max_iter': [50, 100, 500]}
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
+                                            'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
+                                            'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                            'class_weight': 'balanced'}
+
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
-PERFORM_GRID_SEARCH = False
-PERFORM_RANDOM_SEARCH = False
+PERFORMED_PARAMETERS_SEARCH = 'grid'  # grid random None
 RANDOM_SEARCH_ITERATIONS = 10
-
-# For Random Search
-# import numpy as np
-# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [int(x) for x in np.linspace(start=1, stop=20, num=20)], 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': [2, 6, 10],
-#                                       'min_samples_leaf': [1, 3, 4], 'max_leaf_nodes': None, 'max_features': [5, 10, 15, 20],
-#                                       'bootstrap': [True, False], 'n_jobs': None}

@@ -121,7 +121,7 @@ class Classifier:
 
 
 class LinearRegressionClassifier(Classifier):
-    def __init__(self, weights, parameters):
+    def __init__(self, weights, _):
         super().__init__(weights)
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
@@ -145,7 +145,7 @@ class LinearRegressionClassifier(Classifier):
 class LogisticRegressionClassifier(Classifier):
     def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = LogisticRegression()
+        self.model = LogisticRegression(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -156,16 +156,16 @@ class LogisticRegressionClassifier(Classifier):
 
 
 class SupportVectorMachineClassifier(Classifier):
-    def __init__(self, weights, params):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = svm.SVC(**params)
+        self.model = svm.SVC(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
 
 class NeuralNetworkClassifier(Classifier):
-    def __init__(self, weights, params):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = MLPClassifier(**params)
+        self.model = MLPClassifier(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -180,9 +180,9 @@ class NeuralNetworkClassifier(Classifier):
 
 
 class DecisionTreeClassifier(Classifier):
-    def __init__(self, weights, params):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = DecisionTree(**params)
+        self.model = DecisionTree(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -198,9 +198,9 @@ class DecisionTreeClassifier(Classifier):
 
 
 class RandomForestsClassifier(Classifier):
-    def __init__(self, weights, params):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = RandomForests(**params)
+        self.model = RandomForests(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names, visualize=False):

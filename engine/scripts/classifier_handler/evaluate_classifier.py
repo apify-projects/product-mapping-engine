@@ -1,7 +1,8 @@
 import itertools
+import random
 import warnings
 from math import ceil
-import random
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -11,7 +12,8 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS, PERFORM_GRID_SEARCH, PERFORM_RANDOM_SEARCH, RANDOM_SEARCH_ITERATIONS
+    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS
+
 
 def setup_classifier(classifier_type):
     """
@@ -26,7 +28,7 @@ def setup_classifier(classifier_type):
 
     classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
                                     classifier_parameters_name)
-    if PERFORM_GRID_SEARCH and classifier_parameters != {}:
+    if PERFORMED_PARAMETERS_SEARCH == 'grid' and classifier_parameters != {}:
         classifier = []
         for parameter_name in classifier_parameters:
             if not isinstance(classifier_parameters[parameter_name], list):
@@ -34,8 +36,9 @@ def setup_classifier(classifier_type):
         keys, values = zip(*classifier_parameters.items())
         classifier_parameters_permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
         for classifier_parameters in classifier_parameters_permutations:
-            classifier.append(classifier_class({}, classifier_parameters))
-    elif PERFORM_RANDOM_SEARCH and classifier_parameters != {}:
+            if is_valid_combination_of_parameters(classifier_type, classifier_parameters):
+                classifier.append(classifier_class({}, classifier_parameters))
+    elif PERFORMED_PARAMETERS_SEARCH == 'random' and classifier_parameters != {}:
         classifier = []
         for _ in range(RANDOM_SEARCH_ITERATIONS):
             classifier_parameters_random = {}
@@ -44,10 +47,30 @@ def setup_classifier(classifier_type):
                     classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
                 else:
                     classifier_parameters_random[parameter_name] = classifier_parameters[parameter_name]
-            classifier.append(classifier_class({}, classifier_parameters_random))
+            if is_valid_combination_of_parameters(classifier_type, classifier_parameters_random):
+                classifier.append(classifier_class({}, classifier_parameters_random))
     else:
         classifier = classifier_class({}, classifier_parameters)
     return classifier, classifier_parameters
+
+
+def is_valid_combination_of_parameters(classifier_type, parameters):
+    """
+    Check whether the created combination of parameters is valid
+    @param classifier_type: type of classifier
+    @param parameters: parameters fo the classifier
+    @return:
+    """
+    if classifier_type == 'LogisticRegression':
+        if parameters['solver'] in ['lbfgs', 'newton-cg', 'sag'] and parameters['penalty'] == 'l1':
+            return False
+        if parameters['solver'] in ['lbfgs', 'newton-cg'] and parameters['penalty'] == 'elasticnet':
+            return False
+        if parameters['penalty'] == 'elasticnet' and parameters['penalty'] != 'saga':
+            return False
+        if parameters['penalty'] == 'none' and parameters['solver'] == 'liblinear':
+            return False
+    return True
 
 
 def train_classifier(classifier, data):
@@ -78,81 +101,64 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     Setup classifier and perform grid of random search to find the best parameters for given type of model
     @param similarities: precomputed similarities used as training data
     @param classifier_type: classifier type
-    @return: classifier with the highest test accuracy and its train and test stats
+    @return: classifier with the highest test f1 score and its train and test stats
     """
-    search_type = ''
-    if PERFORM_RANDOM_SEARCH:
-        search_type = 'Random'
-    if PERFORM_GRID_SEARCH:
-        search_type = 'Grid'
-
     classifiers, classifier_parameters = setup_classifier(classifier_type)
     best_classifier = None
+    best_classifier_f1_score = -1
     best_classifier_accuracy = -1
     best_train_stats = None
     best_test_stats = None
+
     if not isinstance(classifiers, list) or len(classifiers) == 1:
-        if len(classifiers) == 1:
+        if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
         train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
-        warnings.warn(f"Warning: {search_type} search not performed as there is only one model to train")
+        warnings.warn(
+            f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
         return classifiers, train_stats, test_stats
+    rows_to_dataframe = []
     for classifier in classifiers:
         train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-        if test_stats['accuracy'] > best_classifier_accuracy:
+        row_to_dataframe = []
+        for parameter in classifier_parameters:
+            row_to_dataframe.append(getattr(classifier.model, parameter))
+        row_to_dataframe = row_to_dataframe + [train_stats['f1_score'], train_stats['accuracy'],
+                                               train_stats['precision'], train_stats['recall'],
+                                               test_stats['f1_score'], test_stats['accuracy'],
+                                               test_stats['precision'], test_stats['recall']]
+        rows_to_dataframe.append(row_to_dataframe)
+        if test_stats['f1_score'] > best_classifier_f1_score:
             best_classifier = classifier
+            best_classifier_f1_score = test_stats['f1_score']
             best_classifier_accuracy = test_stats['accuracy']
             best_train_stats = train_stats
             best_test_stats = test_stats
-    print(f'{search_type.upper()} SEARCH PERFORMED')
+    print(f'{PERFORMED_PARAMETERS_SEARCH.upper()} SEARCH PERFORMED')
+    print(f'Best classifier test F1 score: {best_classifier_f1_score}')
     print(f'Best classifier test accuracy: {best_classifier_accuracy}')
     print(f'Best classifier parameters')
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
-    return best_classifier, best_train_stats, best_test_stats
-
-
-def grid_search_and_best_model_training(similarities, classifier_type):
-    """
-    Setup classifier and perform grid search to find the best parameters for given type of model
-    @param similarities: precomputed similarities used as training data
-    @param classifier_type: classifier type
-    @return: classifier with the highest test accuracy and its train and test stats
-    """
-    classifiers, classifier_parameters = setup_classifier(classifier_type)
-    best_classifier = None
-    best_classifier_accuracy = -1
-    best_train_stats = None
-    best_test_stats = None
-    if not isinstance(classifiers, list):
-        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
-        warnings.warn("Warning: Grid search not performed as there is only one model to train")
-        return classifiers, train_stats, test_stats
-    for classifier in classifiers:
-        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-        if test_stats['accuracy'] > best_classifier_accuracy:
-            best_classifier = classifier
-            best_classifier_accuracy = test_stats['accuracy']
-            best_train_stats = train_stats
-            best_test_stats = test_stats
-    print('GRID SEARCH PERFORMED')
-    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
-    print(f'Best classifier parameters')
-    for parameter in classifier_parameters:
-        print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
-    print('----------------------------')
+    models_results = pd.DataFrame(rows_to_dataframe,
+                                  columns=list(classifier_parameters.keys()) + ['train_f1_score', 'train_accuracy',
+                                                                                'train_precision', 'train_recall',
+                                                                                'test_f1_score', 'test_accuracy',
+                                                                                'test_precision', 'test_recall'])
+    models_results = models_results.sort_values(by=['test_f1_score'], ascending=False)
+    models_results.to_csv(f'results/{classifier_type}_models_comparison.csv')
     return best_classifier, best_train_stats, best_test_stats
 
 
 def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
     """
-    Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
+    Compute f1 score, accuracy, recall, specificity and precision + plot ROC curve, print feature importance
     @param classifier: classifier to train and evaluate
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
     @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
-    @return: train and test accuracy, recall, specificity, precision
+    @return: train and test  f1 score, accuracy, recall, specificity, precision
     @param data_type: string value specifying the evaluated data type
     """
     threshes = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHES)
@@ -214,10 +220,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
 
 def compute_prediction_accuracies(data, data_type):
     """
-    Compute accuracy, precision, recall and show confusion matrix
+    Compute  f1 score, accuracy, precision, recall and show confusion matrix
     @param data: all dataset used for training and prediction
     @param data_type: whether data are train or test
-    @return: accuracy, recall, specificity, precision
+    @return:  f1 score, accuracy, recall, specificity, precision
     """
     data_count = data.shape[0]
     mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
@@ -233,9 +239,11 @@ def compute_prediction_accuracies(data, data_type):
     precision = true_positive_count / (
             true_positive_count + false_positive_count) if true_positive_count + false_positive_count != 0 else 0
     conf_matrix = confusion_matrix(data['match'], data['predicted_match'])
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
 
     print(f'Classifier results for {data_type} data')
     print('----------------------------')
+    print(f'F1 score: {f1_score}')
     print(f'Accuracy: {accuracy}')
     print(f'Recall: {recall}')
     print(f'Specificity: {specificity}')
@@ -245,8 +253,8 @@ def compute_prediction_accuracies(data, data_type):
     print('----------------------------')
     print('\n\n')
 
-    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision,
-            "confusion_matrix": conf_matrix}
+    return {'f1_score': f1_score, 'accuracy': accuracy, 'recall': recall, 'specificity': specificity,
+            'precision': precision, 'confusion_matrix': conf_matrix}
 
 
 def create_thresh(scores, intervals):
@@ -330,81 +338,3 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     false_positive_rates.append(0)
     true_positive_rates.append(0)
     return true_positive_rates, false_positive_rates
-
-
-# OTHER UNUSED METHODS
-def compute_mean_values(statistics):
-    """
-    Compute mean values of accuracy, recall, specificity and precision after several runs
-    @param statistics: accuracy, recall, specificity and precision from all the runs
-    @return:
-    """
-    mean_train_accuracy = statistics['train_accuracy'].mean()
-    mean_train_recall = statistics['train_recall'].mean()
-    mean_train_specificity = statistics['train_specificity'].mean()
-    mean_train_precision = statistics['train_precision'].mean()
-    mean_test_accuracy = statistics['test_accuracy'].mean()
-    mean_test_recall = statistics['test_recall'].mean()
-    mean_test_specificity = statistics['test_specificity'].mean()
-    mean_test_precision = statistics['test_precision'].mean()
-    print(f'Evaluation results after {statistics.shape[0]} runs:')
-    print("----------------------------")
-    print(f"Mean Train Accuracy: \t{round(mean_train_accuracy * 100, 2)}")
-    print(f"Mean Train Recall: \t{round(mean_train_recall * 100, 2)}")
-    print(f"Mean Train Specificity: \t{round(mean_train_specificity * 100, 2)}")
-    print(f"Mean Train Precision: \t{round(mean_train_precision * 100, 2)}")
-    print(f"Mean Test Accuracy: \t{round(mean_test_accuracy * 100, 2)}")
-    print(f"Mean Test Recall: \t{round(mean_test_recall * 100, 2)}")
-    print(f"Mean Test Specificity: \t{round(mean_test_specificity * 100, 2)}")
-    print(f"Mean Test Precision: \t{round(mean_test_precision * 100, 2)}")
-    print("----------------------------")
-    print("\n\n")
-
-
-def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
-    """
-    Compute number of FP and FN and plot their distribution
-    @param classifier_class_name: name of the classifier
-    @param train_data: train data
-    @param test_data: test data
-    @return:
-    """
-    for data, data_type in zip([train_data, test_data], ['train_data', 'test_data']):
-        print(data_type)
-        mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
-        tp_data = data[(data['predicted_match'] == 1) & (data['match'] == 1)]
-        fp_data = data[(data['predicted_match'] == 1) & (data['match'] == 0)]
-        tn_data = data[(data['predicted_match'] == 0) & (data['match'] == 0)]
-        fn_data = data[(data['predicted_match'] == 0) & (data['match'] == 1)]
-
-        print(f'Number of mismatching values for {data} is: {mismatched_count}')
-        print('----------------------------')
-        print(f'Number of FPs is: {len(fp_data)}')
-        print(f'Number of FNs is: {len(fn_data)}')
-        print('----------------------------')
-        print('\n\n')
-
-        visualize_outliers(tp_data, fp_data, ['TP', 'FP', data_type])
-        visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
-
-        mismatched = data[data['predicted_match'] != data['match']]
-        mismatched.to_csv(f'results/mismatches/data/{classifier_class_name}_{data_type}.csv')
-
-
-def visualize_outliers(correct_data, wrong_data, labels):
-    """
-    Plot outliers according to the feature values
-    @param correct_data: correctly predicted data
-    @param wrong_data: wrongly predicted data
-    @param labels: labels whether iit is TP+FP or TN+FN
-    @return:
-    """
-    for column in correct_data.iloc[:, :-3]:
-        plt.scatter(np.arange(0, len(correct_data)), correct_data[column], color='green')
-        plt.scatter(np.arange(0, len(wrong_data)), wrong_data[column], color='red')
-        plt.title(f'{labels[0]} and {labels[1]} distribution on {labels[2]} by {column} match')
-        plt.xlabel(f'{labels[2]}')
-        plt.ylabel(f'{column} data match value')
-        plt.legend(labels)
-        plt.show()
-        plt.clf()

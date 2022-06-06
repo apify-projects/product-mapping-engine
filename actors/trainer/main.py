@@ -13,15 +13,15 @@ if __name__ == '__main__':
 
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
-    # LogisticRegression LinearRegression NeuralNetwork RandomForests DecisionTree SupportVectorMachine
+    # LinearRegression LogisticRegression SupportVectorMachine DecisionTree RandomForests NeuralNetwork
     if not is_on_platform:
-        full_dataset = False
+        full_dataset = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ",
-                    "classifier_type": "LogisticRegression",
+                    "classifier_type": "NeuralNetwork",
                     "dataset_id": "cfKxr20fm88KfhBDg",
                     "images_kvs_1": "iNNZxJhjAatupQSV0",
                     "images_kvs_2": "NNZ40CQnWh4KofXJB"
