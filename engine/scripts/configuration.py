@@ -1,6 +1,6 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = False
+LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = True
@@ -18,7 +18,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # can be one of {czech, english}
+LANGUAGE = 'english'  # can be one of {czech, english}
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION SETTING
@@ -61,9 +61,9 @@ EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION_CONFIGURATION SETTING
-NUMBER_OF_THRESHES = 10
-NUMBER_OF_THRESHES_FOR_AUC = 10
-MAX_FP_RATE = 0.1
+NUMBER_OF_THRESHES = 20
+NUMBER_OF_THRESHES_FOR_AUC = 20
+MAX_FP_RATE = 0.2
 PRINT_ROC_AND_STATISTICS = True
 
 # CLASSIFIER PARAMETERS
@@ -74,11 +74,8 @@ DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'gini', 'max_depth': 5, 'max_
 RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2,
                                        'min_samples_leaf': 1, 'max_leaf_nodes': None, 'max_features': 5,
                                        'bootstrap': True, 'n_jobs': None}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (30, 2, 30), 'activation': 'relu', 'solver': 'adam',
-                                       'alpha': 0.0001, 'batch_size': 'auto', 'learning_rate': 'constant',
-                                       'learning_rate_init': 0.001, 'max_iter': 200, 'momentum': 0.9, 'beta_1': 0.9,
-                                       'beta_2': 0.999, 'epsilon': 0.00000001}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'C': 1.0, 'solver': 'lbfgs', 'max_iter': 100}
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (10), 'activation': 'relu', 'solver': 'adam', 'max_iter': 100}
+LogisticRegression_CLASSIFIER_PARAMETERS = { 'class_weight': 'balanced'}
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 PERFORM_GRID_SEARCH = False
