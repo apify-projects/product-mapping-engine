@@ -18,7 +18,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # can be one of {czech, english}
+LANGUAGE = 'english'  # can be one of {czech, english}
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION SETTING
@@ -90,6 +90,7 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
                                             'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                             'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
                                             'class_weight': 'balanced'}
+
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 PERFORMED_PARAMETERS_SEARCH = 'grid'  # grid random None

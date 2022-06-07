@@ -303,6 +303,7 @@ def parse_specifications(dataset):
         product_specification = json.loads(product_specification)
         specification_dict = {}
         for item in product_specification:
+            item['value'] = str(item['value'])
             item['key'] = re.sub('\n', '', item['key'])
             item['value'] = re.sub('\n', '', item['value'])
             item['key'] = re.sub('\t', '', item['key'])

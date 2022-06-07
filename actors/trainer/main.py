@@ -31,11 +31,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ-middle-sample-2",
-                    "classifier_type": "LogisticRegression",
-                    "dataset_id": "pLZzrRhMUzfvtVNSS",
-                    "images_kvs_1": "dQip6CvOBvAtINFDv",
-                    "images_kvs_2": "PqZ3WGsA5cnKVxRh3"
+                    "task_id": "extra-xcite-mapping",
+                    "classifier_type": "NeuralNetwork",
+                    "dataset_id": "AzT4gUuFh6EaismqR",
+                    "images_kvs_1": "iCdo7OawbdUx8MJVk",
+                    "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
                 }
             )
 
