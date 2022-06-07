@@ -12,7 +12,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS
+    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, NUMBER_OF_TRAINING_REPETITIONS
 
 
 def setup_classifier(classifier_type):
@@ -119,7 +119,17 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
         return classifiers, train_stats, test_stats
     rows_to_dataframe = []
     for classifier in classifiers:
-        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        if NUMBER_OF_TRAINING_REPETITIONS == 1:
+            train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        else:
+            train_stats_array = []
+            test_stats_array = []
+            for i in range(NUMBER_OF_TRAINING_REPETITIONS):
+                train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+                train_stats_array.append(train_stats)
+                test_stats_array.append(test_stats)
+            train_stats = average_statistics_from_several_runs(train_stats_array)
+            test_stats = average_statistics_from_several_runs(test_stats_array)
         row_to_dataframe = []
         for parameter in classifier_parameters:
             row_to_dataframe.append(getattr(classifier.model, parameter))
@@ -149,6 +159,21 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     models_results = models_results.sort_values(by=['test_f1_score'], ascending=False)
     models_results.to_csv(f'results/{classifier_type}_models_comparison.csv')
     return best_classifier, best_train_stats, best_test_stats
+
+
+def average_statistics_from_several_runs(statistics_from_runs):
+    """
+    Average statistical values from several runs
+    @param statistics_from_runs: List with dicts of statistical values from several runs
+    @return: Dict with average values
+    """
+    statistics_average = {}
+    for stats in statistics_from_runs:
+        for key, value in stats.items():
+            statistics_average.setdefault(key, []).append(value)
+    for key in statistics_average:
+        statistics_average[key] = sum(statistics_average[key]) / len(statistics_average[key])
+    return statistics_average
 
 
 def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
