@@ -21,7 +21,7 @@ from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    parameters_search_and_best_model_training
+    parameters_search_and_best_model_training, ensembling_models_training
 
 
 def split_dataframes(dataset):
@@ -469,7 +469,9 @@ def load_data_and_train_model(
         similarities = pd.concat(similarities_to_concat, axis=1)
         if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
-    if PERFORMED_PARAMETERS_SEARCH is not None:
+    if classifier_type == 'EnsembleModelling':
+        classifier, train_stats, test_stats = ensembling_models_training(similarities, classifier_type)
+    elif PERFORMED_PARAMETERS_SEARCH is not None:
         classifier, train_stats, test_stats = parameters_search_and_best_model_training(similarities, classifier_type)
     else:
         classifier, _ = setup_classifier(classifier_type)

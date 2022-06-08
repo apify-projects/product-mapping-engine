@@ -2,6 +2,7 @@ import os
 import pickle
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 import pydot
 from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
@@ -215,3 +216,48 @@ class RandomForestsClassifier(Classifier):
                                      impurity=False, feature_names=feature_names)
                 graph = pydot.graph_from_dot_data(dot_data.getvalue())
                 graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
+
+
+class EnsembleModellingClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = []
+        self.name = 'EnsembleModellingClassifier'
+        for classifier_type in parameters:
+            for model_params in parameters[classifier_type]:
+                classifier_class_name = classifier_type + 'Classifier'
+                classifier_class = getattr(
+                    __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                    classifier_class_name)
+                classifier = classifier_class({}, model_params)
+                self.model.append(classifier)
+
+    def combine_predictions_from_classifiers(self, predicted_values, combination_type):
+        predicted_values = np.array(predicted_values)
+        if combination_type == 'score':
+            return np.mean(predicted_values, axis=0)
+        else:
+            predicted_values = np.mean(predicted_values, axis=0)
+            return [1 if output >= 0.5 else 0 for output in predicted_values]
+
+    def predict(self, data, predict_outputs=True):
+        if self.use_pca:
+            data = self.perform_pca(data, False)
+        outputs_array = []
+        scores_array = []
+        for classifier in self.model:
+            if 'match' in data.columns:
+                data = data.drop(columns=['match'])
+
+            if self.predict_probability:
+                scores = classifier.model.predict_proba(data)
+                scores = [s[1] for s in scores]
+            else:
+                scores = classifier.model.predict(data)
+
+            if predict_outputs:
+                outputs_array.append([0 if score < self.weights['threshold'] else 1 for score in scores])
+            scores_array.append(scores)
+        outputs = self.combine_predictions_from_classifiers(outputs_array, 'output')
+        scores = self.combine_predictions_from_classifiers(scores_array, 'score')
+        return outputs, scores

@@ -21,7 +21,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ",
-                    "classifier_type": "NeuralNetwork",
+                    "classifier_type": "EnsembleModelling",
                     "dataset_id": "cfKxr20fm88KfhBDg",
                     "images_kvs_1": "iNNZxJhjAatupQSV0",
                     "images_kvs_2": "NNZ40CQnWh4KofXJB"

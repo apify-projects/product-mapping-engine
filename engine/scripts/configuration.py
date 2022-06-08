@@ -60,13 +60,13 @@ PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
-# EVALUATION_CONFIGURATION SETTING
+# EVALUATION CONFIGURATION
 NUMBER_OF_THRESHES = 10
 NUMBER_OF_THRESHES_FOR_AUC = 10
 MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = False
 
-# CLASSIFIER PARAMETERS
+# CLASSIFIER PARAMETERS CONFIGURATION
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                                               'degree': [2, 3, 4, 5],
                                               'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
@@ -79,7 +79,7 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': [50, 100, 150, 200, 250, 
                                        'max_depth': [5, 8, 12, 15, 18, 21], 'min_samples_split': [2, 5, 8, 11, 14, 17],
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100), (10, 10), (50, 50), (100, 100),
-                                                             (10, 10, 10), (50, 50, 50), (100, 100, 100),
+                                                              (10, 10, 10), (50, 50, 50), (100, 100, 100),
                                                               (50, 10, 50), (100, 50, 100)],
                                        'activation': ['relu', 'logistic', 'tanh'],
                                        'solver': ['adam', 'sgd', 'lbfgs'],
@@ -93,6 +93,32 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
 
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
-PERFORMED_PARAMETERS_SEARCH = 'grid'  # grid random None
+EnsembleModelling_CLASSIFIER_PARAMETERS = {
+    'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'},
+                     {'criterion': 'gini', 'max_depth':  12, 'min_samples_split': 14, 'class_weight': 'balanced'},
+                     {'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 14, 'class_weight': 'balanced'}],
+    'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
+                       'class_weight': 'balanced'},
+                      {'n_estimators': 50, 'criterion': 'entropy', 'max_depth': 12, 'min_samples_split': 11,
+                       'class_weight': 'balanced'},
+                      {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 5, 'min_samples_split': 14,
+                       'class_weight': 'balanced'}],
+    'NeuralNetwork': [
+        {'hidden_layer_sizes': (100, 50, 100), 'activation': 'relu', 'solver': 'lbfgs', 'batch_size': 'auto',
+         'learning_rate': 'constant', 'learning_rate_init': 0.0001, 'max_iter': 100},
+        {'hidden_layer_sizes': (50), 'activation': 'tanh', 'solver': 'adam', 'batch_size': 'auto',
+         'learning_rate': 'adaptive', 'learning_rate_init': 0.001, 'max_iter': 500},
+        {'hidden_layer_sizes': (50, 50), 'activation': 'tanh', 'solver': 'lbfgs', 'batch_size': 'auto',
+         'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 50}]
+}
+
+PERFORMED_PARAMETERS_SEARCH = 'None'  # grid random None
 RANDOM_SEARCH_ITERATIONS = 10
-NUMBER_OF_TRAINING_REPETITIONS = 5
+NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
+
+# BEST PARAMS
+# SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly', 'degree': 4, 'max_iter': 500, 'class_weight': 'balanced', 'probability': True}
+# DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}
+# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8,'min_samples_split': 14, 'class_weight': 'balanced'}
+# NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (100, 50, 100), 'activation': 'relu', 'solver': 'lbfgs','batch_size': 'auto', 'learning_rate': 'constant', 'learning_rate_init': 0.0001,'max_iter': 100}
+# LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'solver': 'saga', 'max_iter': 300,'class_weight': 'balanced'}

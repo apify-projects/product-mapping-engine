@@ -12,7 +12,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, NUMBER_OF_TRAINING_REPETITIONS
+    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS
 
 
 def setup_classifier(classifier_type):
@@ -78,7 +78,7 @@ def train_classifier(classifier, data):
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
-    @return: train and test datasets with predictions
+    @return: train and test datasets with predictions and statistics
     """
     train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
     classifier.fit(train_data)
@@ -96,6 +96,36 @@ def train_classifier(classifier, data):
     return train_stats, test_stats
 
 
+def ensembling_models_training(similarities, classifier_type):
+    """
+    Training of classifier ensembling several models
+    @param similarities: dataframe with precomputed similarities
+    @param classifier_type: type of the classifier
+    @return: combined classifier and its train and test stats
+    """
+    classifiers, _ = setup_classifier(classifier_type)
+    data = similarities.drop(columns=['id1', 'id2'])
+    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+    predicted_scores_train = []
+    predicted_scores_test = []
+
+    for classifier in classifiers.model:
+        classifier.fit(train_data)
+        predicted_scores_train.append(classifier.predict(train_data, predict_outputs=False))
+        predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
+    train_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
+    test_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_test, 'score')
+    train_stats, test_stats = evaluate_classifier(
+        classifiers,
+        train_data,
+        test_data,
+        True,
+        'trainer data'
+    )
+    classifiers.save()
+    return classifiers, train_stats, test_stats
+
+
 def parameters_search_and_best_model_training(similarities, classifier_type):
     """
     Setup classifier and perform grid of random search to find the best parameters for given type of model
@@ -109,7 +139,6 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     best_classifier_accuracy = -1
     best_train_stats = None
     best_test_stats = None
-
     if not isinstance(classifiers, list) or len(classifiers) == 1:
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
@@ -119,12 +148,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
         return classifiers, train_stats, test_stats
     rows_to_dataframe = []
     for classifier in classifiers:
-        if NUMBER_OF_TRAINING_REPETITIONS == 1:
+        if NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS == 1:
             train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
         else:
             train_stats_array = []
             test_stats_array = []
-            for i in range(NUMBER_OF_TRAINING_REPETITIONS):
+            for i in range(NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS):
                 train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
                 train_stats_array.append(train_stats)
                 test_stats_array.append(test_stats)
