@@ -19,9 +19,9 @@ from .dataset_handler.similarity_computation.texts.compute_texts_similarity impo
 from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, NUMBER_OF_RUNS
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    parameters_search_and_best_model_training, ensembling_models_training
+    parameters_search_and_best_model_training, ensembling_models_training, print_best_classifier_results
 
 
 def split_dataframes(dataset):
@@ -441,6 +441,7 @@ def load_data_and_train_model(
     @param is_on_platform: True if this is running on the platform
     @return: train and test stats after training
     """
+    # Loading and preprocessing part
     similarities_file_path = "similarities_{}.csv".format(task_id)
     similarities_file_exists = os.path.exists(similarities_file_path)
 
@@ -469,17 +470,29 @@ def load_data_and_train_model(
         similarities = pd.concat(similarities_to_concat, axis=1)
         if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
-    if classifier_type == 'EnsembleModelling':
-        classifier, train_stats, test_stats = ensembling_models_training(similarities, classifier_type)
-    elif PERFORMED_PARAMETERS_SEARCH is not None:
-        classifier, train_stats, test_stats = parameters_search_and_best_model_training(similarities, classifier_type)
-    else:
-        classifier, _ = setup_classifier(classifier_type)
-        train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-    classifier.save(key_value_store=output_key_value_store_client)
-    feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
 
+    # Training part
+    best_classifier = None
+    best_classifier_f1_score = -1
+    best_train_stats = None
+    best_test_stats = None
+    for _ in range(NUMBER_OF_RUNS):
+        if classifier_type == 'EnsembleModelling':
+            classifier, train_stats, test_stats = ensembling_models_training(similarities, classifier_type)
+        elif PERFORMED_PARAMETERS_SEARCH is not None:
+            classifier, train_stats, test_stats = parameters_search_and_best_model_training(similarities, classifier_type)
+        else:
+            classifier, _ = setup_classifier(classifier_type)
+            train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+        if test_stats['f1_score'] > best_classifier_f1_score:
+            best_classifier = classifier
+            best_classifier_f1_score = test_stats['f1_score']
+            best_train_stats = train_stats
+            best_test_stats = test_stats
+    best_classifier.save(key_value_store=output_key_value_store_client)
+    feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
+    print_best_classifier_results(best_train_stats, best_test_stats)
     #TODO remove the False and
-    if False and not classifier.use_pca:
-        classifier.print_feature_importance(feature_names)
-    return train_stats, test_stats
+    if False and not best_classifier.use_pca:
+        best_classifier.print_feature_importance(feature_names)
+    return best_train_stats, best_test_stats

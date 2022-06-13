@@ -1,5 +1,6 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
+NUMBER_OF_RUNS = 10
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
@@ -18,7 +19,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'english'  # can be one of {czech, english}
+LANGUAGE = 'czech'  # can be one of {czech, english}
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION SETTING
@@ -64,7 +65,7 @@ POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 NUMBER_OF_THRESHES = 30
 NUMBER_OF_THRESHES_FOR_AUC = 30
 MAX_FP_RATE = 0.1
-PRINT_ROC_AND_STATISTICS = True
+PRINT_ROC_AND_STATISTICS = False
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],

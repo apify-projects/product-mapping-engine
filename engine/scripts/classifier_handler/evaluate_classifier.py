@@ -12,7 +12,8 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS
+    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
+    NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS
 
 
 def setup_classifier(classifier_type):
@@ -392,3 +393,29 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     false_positive_rates.append(0)
     true_positive_rates.append(0)
     return true_positive_rates, false_positive_rates
+
+
+def print_best_classifier_results(best_train_stats, best_test_stats):
+    """
+    Print best classifier results
+    @param best_train_stats: Best classifier training statistics
+    @param best_test_stats: Best classifier training statistics
+    @return:
+    """
+    print('BEST CLASSIFIER')
+    print(f'Best classifier train F1 score: {best_train_stats["f1_score"]}')
+    print(f'Best classifier train accuracy: {best_train_stats["accuracy"]}')
+    print(f'Best classifier train F1 score: {best_train_stats["precision"]}')
+    print(f'Best classifier train accuracy: {best_train_stats["recall"]}')
+    print('Confusion matrix:')
+    print(best_train_stats["confusion_matrix"])
+
+    print(f'Best classifier test F1 score: {best_test_stats["f1_score"]}')
+    print(f'Best classifier test accuracy: {best_test_stats["accuracy"]}')
+    print(f'Best classifier test F1 score: {best_test_stats["precision"]}')
+    print(f'Best classifier test accuracy: {best_test_stats["recall"]}')
+    print('Confusion matrix:')
+    print(best_test_stats["confusion_matrix"])
+    print('----------------------------')
+    print('\n\n')
+    pass
