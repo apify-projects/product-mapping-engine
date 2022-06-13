@@ -61,10 +61,10 @@ EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION CONFIGURATION
-NUMBER_OF_THRESHES = 10
-NUMBER_OF_THRESHES_FOR_AUC = 10
+NUMBER_OF_THRESHES = 30
+NUMBER_OF_THRESHES_FOR_AUC = 30
 MAX_FP_RATE = 0.1
-PRINT_ROC_AND_STATISTICS = False
+PRINT_ROC_AND_STATISTICS = True
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
@@ -94,22 +94,15 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 EnsembleModelling_CLASSIFIER_PARAMETERS = {
-    'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'},
-                     {'criterion': 'gini', 'max_depth':  12, 'min_samples_split': 14, 'class_weight': 'balanced'},
-                     {'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 14, 'class_weight': 'balanced'}],
+    'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
+    'LogisticRegression':[{'class_weight': 'balanced'}],
+    'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
     'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
-                       'class_weight': 'balanced'},
-                      {'n_estimators': 50, 'criterion': 'entropy', 'max_depth': 12, 'min_samples_split': 11,
-                       'class_weight': 'balanced'},
-                      {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 5, 'min_samples_split': 14,
                        'class_weight': 'balanced'}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (100, 50, 100), 'activation': 'relu', 'solver': 'lbfgs', 'batch_size': 'auto',
-         'learning_rate': 'constant', 'learning_rate_init': 0.0001, 'max_iter': 100},
-        {'hidden_layer_sizes': (50), 'activation': 'tanh', 'solver': 'adam', 'batch_size': 'auto',
-         'learning_rate': 'adaptive', 'learning_rate_init': 0.001, 'max_iter': 500},
         {'hidden_layer_sizes': (50, 50), 'activation': 'tanh', 'solver': 'lbfgs', 'batch_size': 'auto',
-         'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 50}]
+         'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 200}
+    ]
 }
 
 PERFORMED_PARAMETERS_SEARCH = 'None'  # grid random None
