@@ -395,6 +395,28 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     return true_positive_rates, false_positive_rates
 
 
+def f(classifier, best_compared_value, best_minimal_value):
+    if BEST_MODEL_SELECTION_CRITERION == 'max_precision':
+        compared_parameter_type = 'precision'
+        minimal_parameter_type = 'recall'
+        minimal_parameter_value = MINIMAL_RECALL
+    elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
+        compared_parameter_type = 'recall'
+        minimal_parameter_type = 'precision'
+        minimal_parameter_value = MINIMAL_PRECISION
+    else:
+        pass
+    if (classifier['test_stats'][compared_parameter_type] > best_compared_value and classifier['test_stats'][
+        minimal_parameter_type] > minimal_parameter_value) or (
+            classifier['test_stats']['precision'] == best_compared_value and classifier['test_stats'][
+        'recall'] > best_minimal_value):
+        best_classifier = classifier['classifier']
+        best_train_stats = classifier['train_stats']
+        best_test_stats = classifier['test_stats']
+        best_value = classifier['test_stats'][compared_parameter_type]
+        best_minimal_value = classifier['test_stats'][minimal_parameter_type]
+
+
 def select_best_classifier(classifiers):
     """
     Select best classifier from several training runs according o given criterion
@@ -404,32 +426,52 @@ def select_best_classifier(classifiers):
     best_classifier = None
     best_train_stats = None
     best_test_stats = None
-    best_value = -1
-    if BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-        for classifier in classifiers:
-            if classifier['test_stats']['precision'] > best_value and classifier['test_stats'][
-                'recall'] > MINIMAL_PRECISION:
+    best_compared_value = -1
+    best_minimal_value = -1
+
+    for classifier in classifiers:
+        if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+            if classifier['test_stats']['f1_score'] > best_compared_value:
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
                 best_test_stats = classifier['test_stats']
-                best_value = classifier['test_stats']['precision']
-    elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
-        for classifier in classifiers:
-            if classifier['test_stats']['recall'] > best_value and classifier['test_stats'][
-                'precision'] > MINIMAL_RECALL:
-                best_classifier = classifier['classifier']
-                best_train_stats = classifier['train_stats']
-                best_test_stats = classifier['test_stats']
-                best_value = classifier['test_stats']['recall']
-    else:  # balanced
-        for classifier in classifiers:
-            if classifier['test_stats']['f1_score'] > best_value:
-                best_classifier = classifier['classifier']
-                best_train_stats = classifier['train_stats']
-                best_test_stats = classifier['test_stats']
-                best_value = classifier['test_stats']['f1_score']
+                best_compared_value = classifier['test_stats']['f1_score']
+        elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
+            compared_parameter_type = 'precision'
+            minimal_parameter_type = 'recall'
+            minimal_parameter_value = MINIMAL_RECALL
+            best_classifier, best_test_stats, best_train_stats, best_compared_value, best_minimal_value = update_best_classifier(
+                best_classifier, best_compared_value, best_minimal_value, best_test_stats, best_train_stats, best_compared_value,
+                classifier, compared_parameter_type, minimal_parameter_type, minimal_parameter_value)
+        elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
+            compared_parameter_type = 'recall'
+            minimal_parameter_type = 'precision'
+            minimal_parameter_value = MINIMAL_PRECISION
+            best_classifier, best_test_stats, best_train_stats, best_compared_value, best_minimal_value = update_best_classifier(
+                best_classifier, best_compared_value, best_minimal_value, best_test_stats, best_train_stats, best_compared_value,
+                classifier, compared_parameter_type, minimal_parameter_type, minimal_parameter_value)
+        else:
+            raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
+
+    if best_classifier is None:
+        raise SystemExit('No classifier satisfying requested parameters for best model selection process was found.')
     print_best_classifier_results(best_train_stats, best_test_stats)
     return best_classifier, best_train_stats, best_test_stats
+
+
+def update_best_classifier(best_classifier, best_compared_value, best_minimal_value, best_test_stats, best_train_stats,
+                           best_value, classifier, compared_parameter_type, minimal_parameter_type,
+                           minimal_parameter_value):
+    if (classifier['test_stats'][compared_parameter_type] > best_compared_value and classifier['test_stats'][
+        minimal_parameter_type] > minimal_parameter_value) or (
+            classifier['test_stats']['precision'] == best_compared_value and classifier['test_stats'][
+        'recall'] > best_minimal_value):
+        best_classifier = classifier['classifier']
+        best_train_stats = classifier['train_stats']
+        best_test_stats = classifier['test_stats']
+        best_value = classifier['test_stats'][compared_parameter_type]
+        best_minimal_value = classifier['test_stats'][minimal_parameter_type]
+    return best_classifier, best_test_stats, best_train_stats, best_value, best_minimal_value
 
 
 def print_best_classifier_results(best_train_stats, best_test_stats):
