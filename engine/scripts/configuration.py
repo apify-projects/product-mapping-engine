@@ -68,7 +68,7 @@ MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = False
 MINIMAL_PRECISION = 0.2
 MINIMAL_RECALL = 0.2
-BEST_MODEL_SELECTION_CRITERION = 'balanced_precision_recall'  # max_precision, max_recall, balanced_precision_recall
+BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
