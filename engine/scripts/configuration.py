@@ -1,6 +1,6 @@
 # RUNNING CONFIGURATION SETTING
 IS_ON_PLATFORM = False
-NUMBER_OF_RUNS = 10
+NUMBER_OF_RUNS = 3
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
@@ -66,6 +66,9 @@ NUMBER_OF_THRESHES = 30
 NUMBER_OF_THRESHES_FOR_AUC = 30
 MAX_FP_RATE = 0.1
 PRINT_ROC_AND_STATISTICS = False
+MINIMAL_PRECISION = 0.2
+MINIMAL_RECALL = 0.2
+BEST_MODEL_SELECTION_CRITERION = 'balanced_precision_recall'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
@@ -91,12 +94,10 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
                                             'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                             'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
                                             'class_weight': 'balanced'}
-
 LinearRegression_CLASSIFIER_PARAMETERS = {}
-
 EnsembleModelling_CLASSIFIER_PARAMETERS = {
     'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
-    'LogisticRegression':[{'class_weight': 'balanced'}],
+    'LogisticRegression': [{'class_weight': 'balanced'}],
     'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
     'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
                        'class_weight': 'balanced'}],
@@ -106,13 +107,7 @@ EnsembleModelling_CLASSIFIER_PARAMETERS = {
     ]
 }
 
+# PARAMETERS SEARCH CONFIGURATION
 PERFORMED_PARAMETERS_SEARCH = 'None'  # grid random None
 RANDOM_SEARCH_ITERATIONS = 10
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
-
-# BEST PARAMS
-# SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly', 'degree': 4, 'max_iter': 500, 'class_weight': 'balanced', 'probability': True}
-# DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}
-# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8,'min_samples_split': 14, 'class_weight': 'balanced'}
-# NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (100, 50, 100), 'activation': 'relu', 'solver': 'lbfgs','batch_size': 'auto', 'learning_rate': 'constant', 'learning_rate_init': 0.0001,'max_iter': 100}
-# LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'solver': 'saga', 'max_iter': 300,'class_weight': 'balanced'}

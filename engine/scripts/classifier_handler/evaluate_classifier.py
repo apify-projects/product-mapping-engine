@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
-    NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS
+    NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, BEST_MODEL_SELECTION_CRITERION
 
 
 def setup_classifier(classifier_type):
@@ -393,6 +393,43 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     false_positive_rates.append(0)
     true_positive_rates.append(0)
     return true_positive_rates, false_positive_rates
+
+
+def select_best_classifier(classifiers):
+    """
+    Select best classifier from several training runs according o given criterion
+    @param classifiers: list of classifiers
+    @return: best classifier and its train and test stats
+    """
+    best_classifier = None
+    best_train_stats = None
+    best_test_stats = None
+    best_value = -1
+    if BEST_MODEL_SELECTION_CRITERION == 'max_precision':
+        for classifier in classifiers:
+            if classifier['test_stats']['precision'] > best_value and classifier['test_stats'][
+                'recall'] > MINIMAL_PRECISION:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_value = classifier['test_stats']['precision']
+    elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
+        for classifier in classifiers:
+            if classifier['test_stats']['recall'] > best_value and classifier['test_stats'][
+                'precision'] > MINIMAL_RECALL:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_value = classifier['test_stats']['recall']
+    else:  # balanced
+        for classifier in classifiers:
+            if classifier['test_stats']['f1_score'] > best_value:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_value = classifier['test_stats']['f1_score']
+    print_best_classifier_results(best_train_stats, best_test_stats)
+    return best_classifier, best_train_stats, best_test_stats
 
 
 def print_best_classifier_results(best_train_stats, best_test_stats):

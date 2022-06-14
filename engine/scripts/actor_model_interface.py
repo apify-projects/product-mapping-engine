@@ -19,9 +19,10 @@ from .dataset_handler.similarity_computation.texts.compute_texts_similarity impo
 from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, NUMBER_OF_RUNS
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, \
+    NUMBER_OF_RUNS
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    parameters_search_and_best_model_training, ensembling_models_training, print_best_classifier_results
+    parameters_search_and_best_model_training, ensembling_models_training, select_best_classifier
 
 
 def split_dataframes(dataset):
@@ -472,10 +473,7 @@ def load_data_and_train_model(
             similarities.to_csv(similarities_file_path, index=False)
 
     # Training part
-    best_classifier = None
-    best_classifier_f1_score = -1
-    best_train_stats = None
-    best_test_stats = None
+    classifiers = []
     for _ in range(NUMBER_OF_RUNS):
         if classifier_type == 'EnsembleModelling':
             classifier, train_stats, test_stats = ensembling_models_training(similarities, classifier_type)
@@ -484,14 +482,10 @@ def load_data_and_train_model(
         else:
             classifier, _ = setup_classifier(classifier_type)
             train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-        if test_stats['f1_score'] > best_classifier_f1_score:
-            best_classifier = classifier
-            best_classifier_f1_score = test_stats['f1_score']
-            best_train_stats = train_stats
-            best_test_stats = test_stats
+        classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
+    best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
     best_classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
-    print_best_classifier_results(best_train_stats, best_test_stats)
     #TODO remove the False and
     if False and not best_classifier.use_pca:
         best_classifier.print_feature_importance(feature_names)
