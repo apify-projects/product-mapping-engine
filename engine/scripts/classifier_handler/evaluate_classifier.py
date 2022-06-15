@@ -527,8 +527,8 @@ def is_model_better_than_previous(
 def print_best_classifier_results(best_train_stats, best_test_stats):
     """
     Print best classifier results
-    @param best_train_stats: The best classifier training statistics
-    @param best_test_stats: The best classifier training statistics
+    @param best_train_stats: the best classifier training statistics
+    @param best_test_stats: the best classifier training statistics
     @return:
     """
     print('BEST CLASSIFIER')
