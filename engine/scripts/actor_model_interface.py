@@ -145,8 +145,12 @@ def flatten(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
 
 
-def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pairs_dataset_idx, dataset_hashes1,
-                                                dataset_hashes2):
+def remove_precomputed_matches_and_extract_them(
+        dataset_precomputed_matches,
+        pairs_dataset_idx,
+        dataset_hashes1,
+        dataset_hashes2
+):
     """
     Remove already precomputed matches not to compute them again and return them separately
     @param dataset_precomputed_matches: dataframe with products with precomputed matches
@@ -174,9 +178,15 @@ def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pai
     return unseen_pairs_dataset_idx, dataset_precomputed_matches_filtered
 
 
-def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client,
-                                images_kvs2_client,
-                                filter_data):
+def prepare_data_for_classifier(
+        is_on_platform,
+        dataset1,
+        dataset2,
+        dataset_precomputed_matches,
+        images_kvs1_client,
+        images_kvs2_client,
+        filter_data
+):
     """
     Preprocess data, possibly filter data pairs and compute similarities
     @param is_on_platform: True if this is running on the platform
