@@ -1,17 +1,17 @@
-# RUNNING CONFIGURATION SETTING
+# RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-NUMBER_OF_RUNS = 10
+NUMBER_OF_TRAINING_RUNS = 3
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
 
-# TEXT PREPROCESSING SETTING
+# TEXT PREPROCESSING CONFIGURATION
 # Text column names that should be preprocessed and used for similarity computations
 COLUMNS_TO_BE_PREPROCESSED = ['name', 'short_description', 'long_description', 'specification_text', 'all_texts']
 # Elements
 SIMILARITIES_TO_BE_COMPUTED = ['id', 'brand', 'words', 'cos', 'descriptives', 'units', 'numbers']
-# Specification for each column name separately which keywords not to detect and which similarities not to compute
+# Keywords not to detect and which similarities not to compute specified for each column name
 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_description': ['id', 'brand', 'color', 'words'],
                                                                   'specification_text': ['descriptives', 'cos',
                                                                                          'words'],
@@ -19,17 +19,17 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # can be one of {czech, english}
+LANGUAGE = 'czech'  # czech, english
 TEXT_HASH_SIZE = 16
 
-# KEYWORDS DETECTION SETTING
+# KEYWORDS DETECTION CONFIGURATION
 PERFORM_ID_DETECTION = True
 PERFORM_COLOR_DETECTION = True
 PERFORM_BRAND_DETECTION = True
 PERFORM_UNITS_DETECTION = True
 PERFORM_NUMBERS_DETECTION = True
 
-# TEXT FILTERING SETTING
+# TEXT FILTERING CONFIGURATION
 MINIMAL_DETECTABLE_ID_LENGTH = 4
 NUMBER_OF_TOP_DESCRIPTIVE_WORDS = 50
 MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS = 0.5
@@ -38,7 +38,7 @@ MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
 MIN_MATCH_PRICE_RATIO = 0.5
 MAX_MATCH_PRICE_RATIO = 2
 
-# IMAGE PREPROCESSING SETTING
+# IMAGE PREPROCESSING CONFIGURATION
 IMAGE_HASHES_SIZE = 8  # TODO: call from js somehow
 IMAGE_RESIZE_WIDTH = 1024
 IMAGE_RESIZE_HEIGHT = 1024
@@ -46,15 +46,15 @@ IMAGE_FILTERING = True
 IMAGE_FILTERING_THRESH = 0.9
 HEX_GROUPS_FOR_IMAGE_HASHES = 1
 
-# SIMILARITY COMPUTATIONS SETTING
+# SIMILARITY COMPUTATIONS CONFIGURATION
 KEY_SIMILARITY_LIMIT = 0.9
 NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = False
+COMPUTE_IMAGE_SIMILARITIES = True
 
-# TRAINING CONFIGURATION SETTING
+# TRAINING CONFIGURATION
 TEST_DATA_PROPORTION = 0.2
 PRINCIPAL_COMPONENT_COUNT = 20
 PERFORM_PCA_ANALYSIS = False
@@ -64,10 +64,20 @@ POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 # EVALUATION CONFIGURATION
 NUMBER_OF_THRESHES = 30
 NUMBER_OF_THRESHES_FOR_AUC = 30
-MAX_FP_RATE = 0.1
-PRINT_ROC_AND_STATISTICS = False
+PRINT_ROC_AND_STATISTICS = True
+PRINT_FEATURE_IMPORTANCE = False
+PRINT_CORRELATION_MATRIX = False
+CORRELATION_LIMIT = 0.7
+MINIMAL_PRECISION = 0.2
+MINIMAL_RECALL = 0.2
+BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
+LinearRegression_CLASSIFIER_PARAMETERS = {}
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
+                                            'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
+                                            'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                            'class_weight': 'balanced'}
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                                               'degree': [2, 3, 4, 5],
                                               'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
@@ -87,6 +97,7 @@ NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': [(10), (50), (100),
                                        'batch_size': 'auto', 'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                        'learning_rate_init': [0.01, 0.001, 0.0001],
                                        'max_iter': [50, 100, 500]}
+
 LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                                             'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                             'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
@@ -95,8 +106,8 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
 Bagging_CLASSIFIER_PARAMETERS = {
+    'LogisticRegression': [{'class_weight': 'balanced'}],
     'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
-    'LogisticRegression':[{'class_weight': 'balanced'}],
     'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
     'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
                        'class_weight': 'balanced'}],
@@ -107,7 +118,6 @@ Bagging_CLASSIFIER_PARAMETERS = {
 }
 
 from sklearn.linear_model import LogisticRegression
-
 AdaBoost_CLASSIFIER_PARAMETERS = {
     'base_estimator': LogisticRegression(),
     'n_estimators': 400
@@ -117,13 +127,7 @@ GradientBoosting_CLASSIFIER_PARAMETERS = {
 
 }
 
-PERFORMED_PARAMETERS_SEARCH = 'None'  # grid random None
+# BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
+PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
 RANDOM_SEARCH_ITERATIONS = 10
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
-
-# BEST PARAMS
-# SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly', 'degree': 4, 'max_iter': 500, 'class_weight': 'balanced', 'probability': True}
-# DecisionTree_CLASSIFIER_PARAMETERS = {'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}
-# RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8,'min_samples_split': 14, 'class_weight': 'balanced'}
-# NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (100, 50, 100), 'activation': 'relu', 'solver': 'lbfgs','batch_size': 'auto', 'learning_rate': 'constant', 'learning_rate_init': 0.0001,'max_iter': 100}
-# LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1', 'solver': 'saga', 'max_iter': 300,'class_weight': 'balanced'}

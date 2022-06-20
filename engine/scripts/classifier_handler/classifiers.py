@@ -166,23 +166,6 @@ class SupportVectorMachineClassifier(Classifier):
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
 
-class NeuralNetworkClassifier(Classifier):
-    def __init__(self, weights, parameters):
-        super().__init__(weights)
-        self.model = MLPClassifier(**parameters)
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-    def print_feature_importance(self, feature_names):
-        print(
-            f'Number of layers: {self.model.n_layers_} and their shapes; '
-            f'{len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}'
-        )
-        print(f'Feature importance for {self.name} \n')
-        for i, weights in enumerate(self.model.coefs_):
-            weights = [[round(w, 4) for w in weight] for weight in weights]
-            print(f'Layer {i} to {i + 1}: \n {weights}')
-
-
 class DecisionTreeClassifier(Classifier):
     def __init__(self, weights, parameters):
         super().__init__(weights)
@@ -223,6 +206,23 @@ class RandomForestsClassifier(Classifier):
 class EnsembleClassifier(Classifier):
     pass
 
+class NeuralNetworkClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = MLPClassifier(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+    def print_feature_importance(self, feature_names):
+        print(
+            f'Number of layers: {self.model.n_layers_} and their shapes; '
+            f'{len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}'
+        )
+        print(f'Feature importance for {self.name} \n')
+        for i, weights in enumerate(self.model.coefs_):
+            weights = [[round(w, 4) for w in weight] for weight in weights]
+            print(f'Layer {i} to {i + 1}: \n {weights}')
+
+
 class BaggingClassifier(EnsembleClassifier):
     def __init__(self, weights, parameters):
         super().__init__(weights)
@@ -238,7 +238,8 @@ class BaggingClassifier(EnsembleClassifier):
                     classifier = classifier_class({}, model_params)
                     self.model.append(classifier)
 
-    def combine_predictions_from_classifiers(self, predicted_values, combination_type):
+    @staticmethod
+    def combine_predictions_from_classifiers(predicted_values, combination_type):
         predicted_values = np.array(predicted_values)
         if combination_type == 'score':
             return np.mean(predicted_values, axis=0)
