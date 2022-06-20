@@ -97,6 +97,10 @@ def train_classifier(classifier, data):
     return train_stats, test_stats
 
 
+def sample_data_according_to_weights(data, weights, sample_proportion):
+    sample = data.sample(weights=weights, frac=sample_proportion, replace=True)
+    return sample
+
 def ensembling_models_training(similarities, classifier_type):
     """
     Training of classifier ensembling several models
@@ -104,17 +108,27 @@ def ensembling_models_training(similarities, classifier_type):
     @param classifier_type: type of the classifier
     @return: combined classifier and its train and test stats
     """
+
     classifiers, _ = setup_classifier(classifier_type)
     data = similarities.drop(columns=['id1', 'id2'])
     train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
     predicted_scores_train = []
     predicted_scores_test = []
 
+    weights = [1] * train_data.shape[0]
     for classifier in classifiers.model:
-        classifier.fit(train_data)
+        train_data_sample = sample_data_according_to_weights(train_data, weights, 0.2)
+        classifier.fit(train_data_sample)
         predicted_scores_train.append(classifier.predict(train_data, predict_outputs=False))
         predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
-    train_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
+        evaluation_data = train_data[['match']]
+        evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
+        weights = evaluation_data.apply(
+            lambda row: min(1/(row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
+            axis=1
+        )
+
+    train_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
     test_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_test, 'score')
     train_stats, test_stats = evaluate_classifier(
         classifiers,

@@ -477,7 +477,7 @@ def load_data_and_train_model(
     best_train_stats = None
     best_test_stats = None
     for _ in range(NUMBER_OF_RUNS):
-        if classifier_type == 'EnsembleModelling':
+        if classifier_type == 'Bagging':
             classifier, train_stats, test_stats = ensembling_models_training(similarities, classifier_type)
         elif PERFORMED_PARAMETERS_SEARCH is not None:
             classifier, train_stats, test_stats = parameters_search_and_best_model_training(similarities, classifier_type)

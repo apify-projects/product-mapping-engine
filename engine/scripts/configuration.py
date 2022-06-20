@@ -94,7 +94,7 @@ LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': ['l1', 'l2', 'elasticnet'
 
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
-EnsembleModelling_CLASSIFIER_PARAMETERS = {
+Bagging_CLASSIFIER_PARAMETERS = {
     'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
     'LogisticRegression':[{'class_weight': 'balanced'}],
     'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
@@ -104,6 +104,17 @@ EnsembleModelling_CLASSIFIER_PARAMETERS = {
         {'hidden_layer_sizes': (50, 50), 'activation': 'tanh', 'solver': 'lbfgs', 'batch_size': 'auto',
          'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 200}
     ]
+}
+
+from sklearn.linear_model import LogisticRegression
+
+AdaBoost_CLASSIFIER_PARAMETERS = {
+    'base_estimator': LogisticRegression(),
+    'n_estimators': 400
+}
+
+GradientBoosting_CLASSIFIER_PARAMETERS = {
+
 }
 
 PERFORMED_PARAMETERS_SEARCH = 'None'  # grid random None

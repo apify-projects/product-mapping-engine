@@ -11,6 +11,8 @@ from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier as RandomForests
+from sklearn.ensemble import AdaBoostClassifier as AdaBoost
+from sklearn.ensemble import GradientBoostingClassifier as GradientBoosting
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
@@ -42,16 +44,17 @@ class Classifier:
             self.model.fit(inputs, target)
 
     def predict(self, data, predict_outputs=True):
+        inputs = data
         if self.use_pca:
-            data = self.perform_pca(data, False)
-        if 'match' in data.columns:
-            data = data.drop(columns=['match'])
+            inputs = self.perform_pca(inputs, False)
+        if 'match' in inputs.columns:
+            inputs = inputs.drop(columns=['match'])
 
         if self.predict_probability:
-            scores = self.model.predict_proba(data)
+            scores = self.model.predict_proba(inputs)
             scores = [s[1] for s in scores]
         else:
-            scores = self.model.predict(data)
+            scores = self.model.predict(inputs)
 
         if predict_outputs:
             outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
@@ -217,20 +220,23 @@ class RandomForestsClassifier(Classifier):
                 graph = pydot.graph_from_dot_data(dot_data.getvalue())
                 graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
 
+class EnsembleClassifier(Classifier):
+    pass
 
-class EnsembleModellingClassifier(Classifier):
+class BaggingClassifier(EnsembleClassifier):
     def __init__(self, weights, parameters):
         super().__init__(weights)
         self.model = []
-        self.name = 'EnsembleModellingClassifier'
+        self.name = 'BaggingClassifier'
         for classifier_type in parameters:
             for model_params in parameters[classifier_type]:
-                classifier_class_name = classifier_type + 'Classifier'
-                classifier_class = getattr(
-                    __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
-                    classifier_class_name)
-                classifier = classifier_class({}, model_params)
-                self.model.append(classifier)
+                for e in range(20):
+                    classifier_class_name = classifier_type + 'Classifier'
+                    classifier_class = getattr(
+                        __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                        classifier_class_name)
+                    classifier = classifier_class({}, model_params)
+                    self.model.append(classifier)
 
     def combine_predictions_from_classifiers(self, predicted_values, combination_type):
         predicted_values = np.array(predicted_values)
@@ -245,10 +251,11 @@ class EnsembleModellingClassifier(Classifier):
             data = self.perform_pca(data, False)
         outputs_array = []
         scores_array = []
-        for classifier in self.model:
-            if 'match' in data.columns:
-                data = data.drop(columns=['match'])
 
+        if 'match' in data.columns:
+            data = data.drop(columns=['match'])
+
+        for classifier in self.model:
             if self.predict_probability:
                 scores = classifier.model.predict_proba(data)
                 scores = [s[1] for s in scores]
@@ -260,4 +267,17 @@ class EnsembleModellingClassifier(Classifier):
             scores_array.append(scores)
         outputs = self.combine_predictions_from_classifiers(outputs_array, 'output')
         scores = self.combine_predictions_from_classifiers(scores_array, 'score')
+        #outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
         return outputs, scores
+
+class AdaBoostClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = AdaBoost(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+class GradientBoostingClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = GradientBoosting(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
