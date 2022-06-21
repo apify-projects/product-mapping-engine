@@ -124,10 +124,11 @@ def ensemble_models_training(similarities, classifier_type):
         predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
         evaluation_data = train_data[['match']]
         evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
-        weights = evaluation_data.apply(
-            lambda row: min(1/(row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
-            axis=1
-        )
+        if classifier_type == 'Boosting':
+            weights = evaluation_data.apply(
+                lambda row: min(1/(row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
+                axis=1
+            )
 
     train_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
     test_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_test, 'score')

@@ -230,13 +230,12 @@ class BaggingClassifier(EnsembleClassifier):
         self.name = 'BaggingClassifier'
         for classifier_type in parameters:
             for model_params in parameters[classifier_type]:
-                for e in range(20):
-                    classifier_class_name = classifier_type + 'Classifier'
-                    classifier_class = getattr(
-                        __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
-                        classifier_class_name)
-                    classifier = classifier_class({}, model_params)
-                    self.model.append(classifier)
+                classifier_class_name = classifier_type + 'Classifier'
+                classifier_class = getattr(
+                    __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                    classifier_class_name)
+                classifier = classifier_class({}, model_params)
+                self.model.append(classifier)
 
     @staticmethod
     def combine_predictions_from_classifiers(predicted_values, combination_type):
@@ -271,11 +270,19 @@ class BaggingClassifier(EnsembleClassifier):
         #outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
         return outputs, scores
 
+
+class BoostingClassifier(BaggingClassifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights, parameters)
+        self.name = 'BoostingClassifier'
+
+
 class AdaBoostClassifier(Classifier):
     def __init__(self, weights, parameters):
         super().__init__(weights)
         self.model = AdaBoost(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
+
 
 class GradientBoostingClassifier(Classifier):
     def __init__(self, weights, parameters):
