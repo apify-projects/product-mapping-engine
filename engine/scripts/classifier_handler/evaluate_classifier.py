@@ -159,9 +159,11 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     if not isinstance(classifiers, list) or len(classifiers) == 1:
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
-        train_stats, test_stats = (classifiers, similarities.drop(columns=['id1', 'id2']))
+
+        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
         warnings.warn(
             f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
+
         return classifiers, train_stats, test_stats
     rows_to_dataframe = []
     for classifier in classifiers:
