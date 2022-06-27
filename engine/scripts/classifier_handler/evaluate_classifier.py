@@ -272,14 +272,14 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
                     optimal_value = abs(
                         test_data_results['precision'] - test_data_results['recall'])
             elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-                if has_thresh_best_results(test_data_results, 'precision', optimal_value, 'recall',
-                                           MINIMAL_RECALL, optimal_minimal_value):
+                if is_model_better_than_previous(test_data_results, 'precision', optimal_value, 'recall',
+                                                 MINIMAL_RECALL, optimal_minimal_value):
                     optimal_threshold = thresh
                     optimal_value = test_data_results['precision']
                     optimal_minimal_value = test_data_results['recall']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
-                if has_thresh_best_results(test_data_results, 'recall', optimal_value, 'precision',
-                                           MINIMAL_PRECISION, optimal_minimal_value):
+                if is_model_better_than_previous(test_data_results, 'recall', optimal_value, 'precision',
+                                                 MINIMAL_PRECISION, optimal_minimal_value):
                     optimal_threshold = thresh
                     optimal_value = test_data_results['recall']
                     optimal_minimal_value = test_data_results['precision']
@@ -329,32 +329,6 @@ def plot_correlation_matrix(test_data, train_data):
                 print(f'{column} + {correlation_matrix.columns[i]}: {row}')
         counter += 1
     print('\n----------------------------\n')
-
-
-def has_thresh_best_results(
-        test_data,
-        compared_parameter_type,
-        optimal_value,
-        minimal_parameter_type,
-        minimal_parameter_value,
-        optimal_parameter_minimum
-):
-    """
-    Check whether the model with given thresh has better results than previous threshes
-    @param test_data: dataframe with testing data
-    @param compared_parameter_type: precision or recall, depends on what is compared
-    @param optimal_value: value of optimal solution
-    @param minimal_parameter_type: recall or precision, tho opposite of compared_parameter_type
-    @param minimal_parameter_value: minimal tolerated value of minimal_parameter_type (precision or recall)
-                                    defined in config
-    @param optimal_parameter_minimum: value of minimal_parameter_type of optimal model
-    @return: True if the model with given thresh is better than previous threshes
-    """
-    return (test_data[compared_parameter_type] > optimal_value and
-            test_data[minimal_parameter_type] > minimal_parameter_value) \
-           or \
-           (test_data[compared_parameter_type] == optimal_value and
-            test_data[minimal_parameter_type] > optimal_parameter_minimum)
 
 
 def compute_prediction_accuracies(data, data_type):
@@ -499,16 +473,17 @@ def select_best_classifier(classifiers):
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['f1_score']
         elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-            if is_model_better_than_previous(classifier, best_compared_value, best_minimal_value, 'precision', 'recall',
-                                             MINIMAL_RECALL):
+
+            if is_model_better_than_previous(classifier['test_stats'], 'precision', best_compared_value, 'recall',
+                                             MINIMAL_RECALL, best_minimal_value):
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['precision']
                 best_minimal_value = classifier['test_stats']['recall']
         elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
-            if is_model_better_than_previous(classifier, best_compared_value, best_minimal_value, 'recall', 'precision',
-                                             MINIMAL_PRECISION):
+            if is_model_better_than_previous(classifier['test_stats'], 'recall', best_compared_value, 'precision',
+                                             MINIMAL_PRECISION, best_minimal_value):
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
                 best_test_stats = classifier['test_stats']
@@ -524,28 +499,29 @@ def select_best_classifier(classifiers):
 
 
 def is_model_better_than_previous(
-        classifier,
-        best_compared_value,
-        best_minimal_value,
+        model_results,
         compared_parameter_type,
+        optimal_value,
         minimal_parameter_type,
-        minimal_parameter_value
+        minimal_parameter_value,
+        optimal_parameter_minimum
 ):
     """
     Check whether the model has better results than previous models
-    @param classifier: the compared model
-    @param best_compared_value: precision or recall of optimal model
-    @param best_minimal_value: value of minimal_parameter_type of optimal model
+    @param model_results: dataframe with testing data
     @param compared_parameter_type: precision or recall, depends on what is compared
+    @param optimal_value: value of optimal solution
     @param minimal_parameter_type: recall or precision, tho opposite of compared_parameter_type
-    @param minimal_parameter_value: minimal recall or precision defined in config
-    @return: True if the model is better than previous models
+    @param minimal_parameter_value: minimal tolerated value of minimal_parameter_type (precision or recall)
+                                    defined in config
+    @param optimal_parameter_minimum: value of minimal_parameter_type of optimal model
+    @return: True if the model with given thresh is better than previous threshes
     """
-    return (classifier['test_stats'][compared_parameter_type] > best_compared_value and
-            classifier['test_stats'][minimal_parameter_type] > minimal_parameter_value) \
+    return (model_results[compared_parameter_type] > optimal_value and
+            model_results[minimal_parameter_type] > minimal_parameter_value) \
            or \
-           (classifier['test_stats']['precision'] == best_compared_value and
-            classifier['test_stats']['recall'] > best_minimal_value)
+           (model_results[compared_parameter_type] == optimal_value and
+            model_results[minimal_parameter_type] > optimal_parameter_minimum)
 
 
 def print_best_classifier_results(best_train_stats, best_test_stats):
