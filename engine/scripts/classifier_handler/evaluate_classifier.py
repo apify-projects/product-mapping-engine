@@ -1,4 +1,3 @@
-import copy
 import itertools
 import random
 import warnings
@@ -22,15 +21,18 @@ def setup_classifier(classifier_type):
     """
     Setup particular classifier or more classifiers if grid search is performed
     @param classifier_type: type of classifier
-    @return: set up classifier(s) and it's set up parameters
+    @return: set up classifier(s) and its/theirs parameters
     """
     classifier_class_name = classifier_type + 'Classifier'
     classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
                                classifier_class_name)
-    classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS'
-
+    if PERFORMED_PARAMETERS_SEARCH == 'grid' or PERFORMED_PARAMETERS_SEARCH == 'random':
+        classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS_SEARCH'
+    else:
+        classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS'
     classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
                                     classifier_parameters_name)
+
     if PERFORMED_PARAMETERS_SEARCH == 'grid' and classifier_parameters != {}:
         classifier = []
         for parameter_name in classifier_parameters:
@@ -61,7 +63,7 @@ def is_valid_combination_of_parameters(classifier_type, parameters):
     """
     Check whether the created combination of parameters is valid
     @param classifier_type: type of classifier
-    @param parameters: parameters fo the classifier
+    @param parameters: parameters of the classifier
     @return:
     """
     if classifier_type == 'LogisticRegression':
@@ -98,15 +100,17 @@ def train_classifier(classifier, data):
     classifier.save()
     return train_stats, test_stats
 
+
 def sample_data_according_to_weights(data, weights, sample_proportion):
     sample = data.sample(weights=weights, frac=sample_proportion, replace=True)
     return sample
 
+
 def ensemble_models_training(similarities, classifier_type):
     """
-    Training of classifier ensemble several models
+    Training ensembles of several models
     @param similarities: dataframe with precomputed similarities
-    @param classifier_type: type of the classifier
+    @param classifier_type: type of the ensemble
     @return: combined classifier and its train and test stats
     """
 
@@ -123,10 +127,11 @@ def ensemble_models_training(similarities, classifier_type):
         predicted_scores_train.append(classifier.predict(train_data, predict_outputs=False))
         predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
         evaluation_data = train_data[['match']]
-        evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
+        evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train,
+                                                                                               'score')
         if classifier_type == 'Boosting':
             weights = evaluation_data.apply(
-                lambda row: min(1/(row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
+                lambda row: min(1 / (row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
                 axis=1
             )
 
@@ -145,7 +150,7 @@ def ensemble_models_training(similarities, classifier_type):
 
 def parameters_search_and_best_model_training(similarities, classifier_type):
     """
-    Setup classifier and perform grid of random search to find the best parameters for given type of model
+    Setup classifier and perform grid or random search to find the best parameters for given type of model
     @param similarities: precomputed similarities used as training data
     @param classifier_type: classifier type
     @return: classifier with the highest test f1 score and its train and test stats
@@ -156,11 +161,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     best_classifier_accuracy = -1
     best_train_stats = None
     best_test_stats = None
+    similarities_without_ids = similarities.drop(columns=['id1', 'id2'])
     if not isinstance(classifiers, list) or len(classifiers) == 1:
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
 
-        train_stats, test_stats = train_classifier(classifiers, similarities.drop(columns=['id1', 'id2']))
+        train_stats, test_stats = train_classifier(classifiers, similarities_without_ids)
         warnings.warn(
             f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
 
@@ -168,12 +174,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     rows_to_dataframe = []
     for classifier in classifiers:
         if NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS == 1:
-            train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+            train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
         else:
             train_stats_array = []
             test_stats_array = []
             for i in range(NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS):
-                train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+                train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
                 train_stats_array.append(train_stats)
                 test_stats_array.append(test_stats)
             train_stats = average_statistics_from_several_runs(train_stats_array)
@@ -244,6 +250,8 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
 
     true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
                                                                                     out_train, threshes, 'train')
+    train_data.drop(columns=['predicted_scores'], inplace=True)
+    test_data.drop(columns=['predicted_scores'], inplace=True)
     # find the best thresh
     if set_threshold:
         optimal_threshold = threshes[0]
@@ -251,40 +259,40 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
         optimal_minimal_value = -1
         for x, thresh in enumerate(threshes):
 
-            # prepare data
-            test_data_for_threshes = copy.deepcopy(test_data)
-            test_data_for_threshes.drop(columns=['predicted_scores'], inplace=True)
+            # prepare and test classifier
             classifier.set_threshold(thresh)
-            test_data_for_threshes['predicted_match'], test_data_for_threshes['predicted_scores'] = classifier.predict(
-                test_data_for_threshes)
-            test_data_for_threshes = compute_prediction_accuracies(test_data_for_threshes, 'test')
+            test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(
+                test_data)
+            test_data_results = compute_prediction_accuracies(test_data, 'test')
 
             # compare results and select the best thresh
             if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
-                if abs(test_data_for_threshes['precision'] - test_data_for_threshes['recall']) < optimal_value:
+                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
                     optimal_threshold = thresh
                     optimal_value = abs(
-                        test_data_for_threshes['precision'] - test_data_for_threshes['recall'])
+                        test_data_results['precision'] - test_data_results['recall'])
             elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-                if has_thresh_better_results(test_data_for_threshes, 'precision', optimal_value, 'recall',
-                                             MINIMAL_RECALL, optimal_minimal_value):
+                if has_thresh_best_results(test_data_results, 'precision', optimal_value, 'recall',
+                                           MINIMAL_RECALL, optimal_minimal_value):
                     optimal_threshold = thresh
-                    optimal_value = test_data_for_threshes['precision']
-                    optimal_minimal_value = test_data_for_threshes['recall']
+                    optimal_value = test_data_results['precision']
+                    optimal_minimal_value = test_data_results['recall']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
-                if has_thresh_better_results(test_data_for_threshes, 'recall', optimal_value, 'precision',
-                                             MINIMAL_PRECISION, optimal_minimal_value):
+                if has_thresh_best_results(test_data_results, 'recall', optimal_value, 'precision',
+                                           MINIMAL_PRECISION, optimal_minimal_value):
                     optimal_threshold = thresh
-                    optimal_value = test_data_for_threshes['recall']
-                    optimal_minimal_value = test_data_for_threshes['precision']
+                    optimal_value = test_data_results['recall']
+                    optimal_minimal_value = test_data_results['precision']
             else:
                 raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
+            # clean the data
+            test_data.drop(columns=['predicted_match'], inplace=True)
+            test_data.drop(columns=['predicted_scores'], inplace=True)
+
         # evaluate data
         classifier.set_threshold(optimal_threshold)
-        train_data.drop(columns=['predicted_scores'], inplace=True)
         train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
-        test_data.drop(columns=['predicted_scores'], inplace=True)
         test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
 
     # compute prediction accuracies
@@ -323,7 +331,7 @@ def plot_correlation_matrix(test_data, train_data):
     print('\n----------------------------\n')
 
 
-def has_thresh_better_results(
+def has_thresh_best_results(
         test_data,
         compared_parameter_type,
         optimal_value,
@@ -473,7 +481,7 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
 
 def select_best_classifier(classifiers):
     """
-    Select best classifier from several training runs according o given criterion
+    Select best classifier from several training runs according to given criterion
     @param classifiers: list of classifiers
     @return: the best classifier and its train and test stats
     """
@@ -550,15 +558,15 @@ def print_best_classifier_results(best_train_stats, best_test_stats):
     print('BEST CLASSIFIER')
     print(f'Best classifier train F1 score: {best_train_stats["f1_score"]}')
     print(f'Best classifier train accuracy: {best_train_stats["accuracy"]}')
-    print(f'Best classifier train F1 score: {best_train_stats["precision"]}')
-    print(f'Best classifier train accuracy: {best_train_stats["recall"]}')
+    print(f'Best classifier train precision: {best_train_stats["precision"]}')
+    print(f'Best classifier train recall: {best_train_stats["recall"]}')
     print('Confusion matrix:')
     print(best_train_stats["confusion_matrix"])
 
     print(f'Best classifier test F1 score: {best_test_stats["f1_score"]}')
     print(f'Best classifier test accuracy: {best_test_stats["accuracy"]}')
-    print(f'Best classifier test F1 score: {best_test_stats["precision"]}')
-    print(f'Best classifier test accuracy: {best_test_stats["recall"]}')
+    print(f'Best classifier test precision: {best_test_stats["precision"]}')
+    print(f'Best classifier test recall: {best_test_stats["recall"]}')
     print('Confusion matrix:')
     print(best_test_stats["confusion_matrix"])
     print('----------------------------')
