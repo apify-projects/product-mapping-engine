@@ -1,4 +1,6 @@
-import json
+import itertools
+import random
+import warnings
 from math import ceil
 
 import numpy as np
@@ -8,28 +10,72 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
-from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, MAX_FP_RATE, \
-    PRINT_ROC_AND_STATISTICS
+
+from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, \
+    PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
+    NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
+    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT
 
 
-def setup_classifier(classifier_type, classifier_parameters_file=None):
+def setup_classifier(classifier_type):
     """
-    Setup particular classifier
+    Setup particular classifier or more classifiers if grid search is performed
     @param classifier_type: type of classifier
-    @param classifier_parameters_file: file with classifier params
-    @return: set up classifier
+    @return: set up classifier(s) and its/theirs parameters
     """
     classifier_class_name = classifier_type + 'Classifier'
+    classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                               classifier_class_name)
+    if PERFORMED_PARAMETERS_SEARCH == 'grid' or PERFORMED_PARAMETERS_SEARCH == 'random':
+        classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS_SEARCH'
+    else:
+        classifier_parameters_name = classifier_type + '_CLASSIFIER_PARAMETERS'
+    classifier_parameters = getattr(__import__('configuration', fromlist=[classifier_parameters_name]),
+                                    classifier_parameters_name)
 
-    classifier_class = getattr(__import__('classifier_handler.classifiers', fromlist=[classifier_class_name]), classifier_class_name)
-    classifier_parameters = {}
-    if classifier_parameters_file is not None:
-        classifier_parameters_path = classifier_parameters_file
-        with open(classifier_parameters_path, 'r') as classifier_parameters_file:
-            classifier_parameters_json = classifier_parameters_file.read()
-        classifier_parameters = json.loads(classifier_parameters_json)
-    classifier = classifier_class(classifier_parameters)
-    return classifier
+    if PERFORMED_PARAMETERS_SEARCH == 'grid' and classifier_parameters != {}:
+        classifier = []
+        for parameter_name in classifier_parameters:
+            if not isinstance(classifier_parameters[parameter_name], list):
+                classifier_parameters[parameter_name] = [classifier_parameters[parameter_name]]
+        keys, values = zip(*classifier_parameters.items())
+        classifier_parameters_permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
+        for classifier_parameters in classifier_parameters_permutations:
+            if is_valid_combination_of_parameters(classifier_type, classifier_parameters):
+                classifier.append(classifier_class({}, classifier_parameters))
+    elif PERFORMED_PARAMETERS_SEARCH == 'random' and classifier_parameters != {}:
+        classifier = []
+        for _ in range(RANDOM_SEARCH_ITERATIONS):
+            classifier_parameters_random = {}
+            for parameter_name in classifier_parameters:
+                if isinstance(classifier_parameters[parameter_name], list):
+                    classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
+                else:
+                    classifier_parameters_random[parameter_name] = classifier_parameters[parameter_name]
+            if is_valid_combination_of_parameters(classifier_type, classifier_parameters_random):
+                classifier.append(classifier_class({}, classifier_parameters_random))
+    else:
+        classifier = classifier_class({}, classifier_parameters)
+    return classifier, classifier_parameters
+
+
+def is_valid_combination_of_parameters(classifier_type, parameters):
+    """
+    Check whether the created combination of parameters is valid
+    @param classifier_type: type of classifier
+    @param parameters: parameters of the classifier
+    @return:
+    """
+    if classifier_type == 'LogisticRegression':
+        if parameters['solver'] in ['lbfgs', 'newton-cg', 'sag'] and parameters['penalty'] == 'l1':
+            return False
+        if parameters['solver'] in ['lbfgs', 'newton-cg'] and parameters['penalty'] == 'elasticnet':
+            return False
+        if parameters['penalty'] == 'elasticnet' and parameters['penalty'] != 'saga':
+            return False
+        if parameters['penalty'] == 'none' and parameters['solver'] == 'liblinear':
+            return False
+    return True
 
 
 def train_classifier(classifier, data):
@@ -37,7 +83,7 @@ def train_classifier(classifier, data):
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
-    @return: train and test datasets with predictions
+    @return: train and test datasets with predictions and statistics
     """
     train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
     classifier.fit(train_data)
@@ -55,16 +101,146 @@ def train_classifier(classifier, data):
     return train_stats, test_stats
 
 
+def sample_data_according_to_weights(data, weights, sample_proportion):
+    sample = data.sample(weights=weights, frac=sample_proportion, replace=True)
+    return sample
+
+
+def ensemble_models_training(similarities, classifier_type):
+    """
+    Training ensembles of several models
+    @param similarities: dataframe with precomputed similarities
+    @param classifier_type: type of the ensemble
+    @return: combined classifier and its train and test stats
+    """
+
+    classifiers, _ = setup_classifier(classifier_type)
+    data = similarities.drop(columns=['id1', 'id2'])
+    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+    predicted_scores_train = []
+    predicted_scores_test = []
+
+    weights = [1] * train_data.shape[0]
+    for classifier in classifiers.model:
+        train_data_sample = sample_data_according_to_weights(train_data, weights, 0.2)
+        classifier.fit(train_data_sample)
+        predicted_scores_train.append(classifier.predict(train_data, predict_outputs=False))
+        predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
+        evaluation_data = train_data[['match']]
+        evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train,
+                                                                                               'score')
+        if classifier_type == 'Boosting':
+            weights = evaluation_data.apply(
+                lambda row: min(1 / (row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
+                axis=1
+            )
+
+    train_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train, 'score')
+    test_data[f'predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_test, 'score')
+    train_stats, test_stats = evaluate_classifier(
+        classifiers,
+        train_data,
+        test_data,
+        True,
+        'trainer data'
+    )
+    classifiers.save()
+    return classifiers, train_stats, test_stats
+
+
+def parameters_search_and_best_model_training(similarities, classifier_type):
+    """
+    Setup classifier and perform grid or random search to find the best parameters for given type of model
+    @param similarities: precomputed similarities used as training data
+    @param classifier_type: classifier type
+    @return: classifier with the highest test f1 score and its train and test stats
+    """
+    classifiers, classifier_parameters = setup_classifier(classifier_type)
+    best_classifier = None
+    best_classifier_f1_score = -1
+    best_classifier_accuracy = -1
+    best_train_stats = None
+    best_test_stats = None
+    similarities_without_ids = similarities.drop(columns=['id1', 'id2'])
+    if not isinstance(classifiers, list) or len(classifiers) == 1:
+        if isinstance(classifiers, list) and len(classifiers) == 1:
+            classifiers = classifiers[0]
+
+        train_stats, test_stats = train_classifier(classifiers, similarities_without_ids)
+        warnings.warn(
+            f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
+
+        return classifiers, train_stats, test_stats
+    rows_to_dataframe = []
+    for classifier in classifiers:
+        if NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS == 1:
+            train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
+        else:
+            train_stats_array = []
+            test_stats_array = []
+            for i in range(NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS):
+                train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
+                train_stats_array.append(train_stats)
+                test_stats_array.append(test_stats)
+            train_stats = average_statistics_from_several_runs(train_stats_array)
+            test_stats = average_statistics_from_several_runs(test_stats_array)
+        row_to_dataframe = []
+        for parameter in classifier_parameters:
+            row_to_dataframe.append(getattr(classifier.model, parameter))
+        row_to_dataframe = row_to_dataframe + [train_stats['f1_score'], train_stats['accuracy'],
+                                               train_stats['precision'], train_stats['recall'],
+                                               test_stats['f1_score'], test_stats['accuracy'],
+                                               test_stats['precision'], test_stats['recall']]
+        rows_to_dataframe.append(row_to_dataframe)
+        if test_stats['f1_score'] > best_classifier_f1_score:
+            best_classifier = classifier
+            best_classifier_f1_score = test_stats['f1_score']
+            best_classifier_accuracy = test_stats['accuracy']
+            best_train_stats = train_stats
+            best_test_stats = test_stats
+    print(f'{PERFORMED_PARAMETERS_SEARCH.upper()} SEARCH PERFORMED')
+    print(f'Best classifier test F1 score: {best_classifier_f1_score}')
+    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
+    print(f'Best classifier parameters')
+    for parameter in classifier_parameters:
+        print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
+    print('----------------------------')
+    models_results = pd.DataFrame(rows_to_dataframe,
+                                  columns=list(classifier_parameters.keys()) + ['train_f1_score', 'train_accuracy',
+                                                                                'train_precision', 'train_recall',
+                                                                                'test_f1_score', 'test_accuracy',
+                                                                                'test_precision', 'test_recall'])
+    models_results = models_results.sort_values(by=['test_f1_score'], ascending=False)
+    models_results.to_csv(f'results/{classifier_type}_models_comparison.csv')
+    return best_classifier, best_train_stats, best_test_stats
+
+
+def average_statistics_from_several_runs(statistics_from_runs):
+    """
+    Average statistical values from several runs
+    @param statistics_from_runs: List with dicts of statistical values from several runs
+    @return: Dict with average values
+    """
+    statistics_average = {}
+    for stats in statistics_from_runs:
+        for key, value in stats.items():
+            statistics_average.setdefault(key, []).append(value)
+    for key in statistics_average:
+        statistics_average[key] = sum(statistics_average[key]) / len(statistics_average[key])
+    return statistics_average
+
+
 def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
     """
-    Compute accuracy, recall, specificity and precision + plot ROC curve, print feature importance
+    Find the best thresh and compute f1 score, accuracy, recall, specificity and precision + plot ROC curve
     @param classifier: classifier to train and evaluate
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
     @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
-    @return: train and test accuracy, recall, specificity, precision
     @param data_type: string value specifying the evaluated data type
+    @return: train and test  f1 score, accuracy, recall, specificity, precision
     """
+    # create threshes
     threshes = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHES)
     out_train = []
     out_test = []
@@ -74,60 +250,93 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
 
     true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
                                                                                     out_train, threshes, 'train')
-
+    train_data.drop(columns=['predicted_scores'], inplace=True)
+    test_data.drop(columns=['predicted_scores'], inplace=True)
+    # find the best thresh
     if set_threshold:
         optimal_threshold = threshes[0]
-        for x in range(len(threshes)):
-            optimal_threshold = threshes[x]
-            if false_positive_rates_train[x] <= MAX_FP_RATE:
-                break
+        optimal_value = -1 if BEST_MODEL_SELECTION_CRITERION != 'balanced_precision_recall' else 1000
+        optimal_minimal_value = -1
+        for x, thresh in enumerate(threshes):
 
+            # prepare and test classifier
+            classifier.set_threshold(thresh)
+            test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(
+                test_data)
+            test_data_results = compute_prediction_accuracies(test_data, 'test')
+
+            # compare results and select the best thresh
+            if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+                    optimal_threshold = thresh
+                    optimal_value = abs(
+                        test_data_results['precision'] - test_data_results['recall'])
+            elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
+                if is_model_better_than_previous(test_data_results, 'precision', optimal_value, 'recall',
+                                                 MINIMAL_RECALL, optimal_minimal_value):
+                    optimal_threshold = thresh
+                    optimal_value = test_data_results['precision']
+                    optimal_minimal_value = test_data_results['recall']
+            elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
+                if is_model_better_than_previous(test_data_results, 'recall', optimal_value, 'precision',
+                                                 MINIMAL_PRECISION, optimal_minimal_value):
+                    optimal_threshold = thresh
+                    optimal_value = test_data_results['recall']
+                    optimal_minimal_value = test_data_results['precision']
+            else:
+                raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
+
+            # clean the data
+            test_data.drop(columns=['predicted_match'], inplace=True)
+            test_data.drop(columns=['predicted_scores'], inplace=True)
+
+        # evaluate data
         classifier.set_threshold(optimal_threshold)
-        train_data.drop(columns=['predicted_scores'], inplace=True)
         train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
-        test_data.drop(columns=['predicted_scores'], inplace=True)
         test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
 
+    # compute prediction accuracies
     train_stats = compute_prediction_accuracies(train_data, 'train')
     test_stats = compute_prediction_accuracies(test_data, 'test')
 
     if PRINT_ROC_AND_STATISTICS:
-        plot_train_test_roc(
-            true_positive_rates_train,
-            false_positive_rates_train,
-            test_data['match'].tolist(),
-            out_test,
-            threshes,
-            classifier.name,
-            data_type
-        )
-        data = pd.concat([train_data, test_data])
-        correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
-        print_whole_correlation_matrix = False
-        if print_whole_correlation_matrix:
-            sns.heatmap(correlation_matrix, annot=True, cmap=plt.cm.Reds)
-            plt.show()
-            print(correlation_matrix)
-        upper_limit = 0.7
-        lower_limit = -0.7
-        print(f'Correlations bigger than {upper_limit} ar smaller than {lower_limit}')
-        counter = 0
-        for column in correlation_matrix:
-            for i in range(0, counter):
-                row = correlation_matrix[column][i]
-                if correlation_matrix.columns[i] != column and (row > upper_limit or row < lower_limit):
-                    print(f'{column} + {correlation_matrix.columns[i]}: {row}')
-            counter += 1
-        print('\n----------------------------\n')
+        plot_train_test_roc(true_positive_rates_train, false_positive_rates_train, test_data['match'].tolist(),
+                            out_test, threshes, classifier.name, data_type)
+    if PRINT_CORRELATION_MATRIX:
+        plot_correlation_matrix(test_data, train_data)
+
     return train_stats, test_stats
+
+
+def plot_correlation_matrix(test_data, train_data):
+    """
+    Print correlation matrix and the most correlated values
+    @param test_data: dataframe with train data
+    @param train_data: dataframe with test data
+    @return:
+    """
+    data = pd.concat([train_data, test_data])
+    correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap=plt.cm.Reds)
+    plt.show()
+    print(correlation_matrix)
+    print(f'Correlations bigger than {CORRELATION_LIMIT} ar smaller than {-CORRELATION_LIMIT}')
+    counter = 0
+    for column in correlation_matrix:
+        for i in range(0, counter):
+            row = correlation_matrix[column][i]
+            if correlation_matrix.columns[i] != column and (row > CORRELATION_LIMIT or row < -CORRELATION_LIMIT):
+                print(f'{column} + {correlation_matrix.columns[i]}: {row}')
+        counter += 1
+    print('\n----------------------------\n')
 
 
 def compute_prediction_accuracies(data, data_type):
     """
-    Compute accuracy, precision, recall and show confusion matrix
+    Compute  f1 score, accuracy, precision, recall and show confusion matrix
     @param data: all dataset used for training and prediction
     @param data_type: whether data are train or test
-    @return: accuracy, recall, specificity, precision
+    @return:  f1 score, accuracy, recall, specificity, precision
     """
     data_count = data.shape[0]
     mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
@@ -143,9 +352,11 @@ def compute_prediction_accuracies(data, data_type):
     precision = true_positive_count / (
             true_positive_count + false_positive_count) if true_positive_count + false_positive_count != 0 else 0
     conf_matrix = confusion_matrix(data['match'], data['predicted_match'])
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
 
     print(f'Classifier results for {data_type} data')
     print('----------------------------')
+    print(f'F1 score: {f1_score}')
     print(f'Accuracy: {accuracy}')
     print(f'Recall: {recall}')
     print(f'Specificity: {specificity}')
@@ -155,8 +366,8 @@ def compute_prediction_accuracies(data, data_type):
     print('----------------------------')
     print('\n\n')
 
-    return {"accuracy": accuracy, "recall": recall, "specificity": specificity, "precision": precision,
-            "confusion_matrix": conf_matrix}
+    return {'f1_score': f1_score, 'accuracy': accuracy, 'recall': recall, 'specificity': specificity,
+            'precision': precision, 'confusion_matrix': conf_matrix}
 
 
 def create_thresh(scores, intervals):
@@ -182,8 +393,8 @@ def plot_train_test_roc(
 ):
     """
     Plot roc curve
-    @param true_positive_rates_train: true positive rates for thresholds from the threshes parameter
-    @param false_positive_rates_train: false positive rates for thresholds from the threshes parameter
+    @param true_positive_rates_train: true positive rates for thresholds from the threshes' parameter
+    @param false_positive_rates_train: false positive rates for thresholds from the threshes' parameter
     @param true_test_labels:  true test labels
     @param predicted_test_labels_list: predicted test labels
     @param threshes: threshold to evaluate accuracy of similarities
@@ -225,12 +436,15 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     print('----------------------------')
     for thresh, predicted_labels in zip(threshes, predicted_labels_list):
         # calculate auc score and roc curve
-        auc = roc_auc_score(true_labels, predicted_labels)
+        try:
+            auc = roc_auc_score(true_labels, predicted_labels)
+            if threshes_counter % gap_between_auc_scores_outputs == 0:
+                print(f'thresh={round(thresh, 3)} AUC={round(auc, 3)}')
+        except ValueError as e:
+            warnings.warn(str(e))
         false_positive_rate, true_positive_rate, _ = roc_curve(true_labels, predicted_labels)
         false_positive_rates.append(false_positive_rate[1])
         true_positive_rates.append(true_positive_rate[1])
-        if threshes_counter % gap_between_auc_scores_outputs == 0:
-            print(f'thresh={round(thresh, 3)} AUC={round(auc, 3)}')
         threshes_counter += 1
     print('----------------------------')
     print('\n\n')
@@ -239,79 +453,98 @@ def create_roc_curve_points(true_labels, predicted_labels_list, threshes, label)
     return true_positive_rates, false_positive_rates
 
 
-# OTHER UNUSED METHODS
-def compute_mean_values(statistics):
+def select_best_classifier(classifiers):
     """
-    Compute mean values of accuracy, recall, specificity and precision after several runs
-    @param statistics: accuracy, recall, specificity and precision from all the runs
+    Select best classifier from several training runs according to given criterion
+    @param classifiers: list of classifiers
+    @return: the best classifier and its train and test stats
+    """
+    best_classifier = None
+    best_train_stats = None
+    best_test_stats = None
+    best_compared_value = -1
+    best_minimal_value = -1
+
+    for classifier in classifiers:
+        if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+            if classifier['test_stats']['f1_score'] > best_compared_value:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_compared_value = classifier['test_stats']['f1_score']
+        elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
+
+            if is_model_better_than_previous(classifier['test_stats'], 'precision', best_compared_value, 'recall',
+                                             MINIMAL_RECALL, best_minimal_value):
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_compared_value = classifier['test_stats']['precision']
+                best_minimal_value = classifier['test_stats']['recall']
+        elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
+            if is_model_better_than_previous(classifier['test_stats'], 'recall', best_compared_value, 'precision',
+                                             MINIMAL_PRECISION, best_minimal_value):
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_compared_value = classifier['test_stats']['recall']
+                best_minimal_value = classifier['test_stats']['precision']
+        else:
+            raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
+
+    if best_classifier is None:
+        raise SystemExit('No classifier satisfying requested parameters for best model selection process was found.')
+    print_best_classifier_results(best_train_stats, best_test_stats)
+    return best_classifier, best_train_stats, best_test_stats
+
+
+def is_model_better_than_previous(
+        model_results,
+        compared_parameter_type,
+        optimal_value,
+        minimal_parameter_type,
+        minimal_parameter_value,
+        optimal_parameter_minimum
+):
+    """
+    Check whether the model has better results than previous models
+    @param model_results: dataframe with testing data
+    @param compared_parameter_type: precision or recall, depends on what is compared
+    @param optimal_value: value of optimal solution
+    @param minimal_parameter_type: recall or precision, tho opposite of compared_parameter_type
+    @param minimal_parameter_value: minimal tolerated value of minimal_parameter_type (precision or recall)
+                                    defined in config
+    @param optimal_parameter_minimum: value of minimal_parameter_type of optimal model
+    @return: True if the model with given thresh is better than previous threshes
+    """
+    return (model_results[compared_parameter_type] > optimal_value and
+            model_results[minimal_parameter_type] > minimal_parameter_value) \
+           or \
+           (model_results[compared_parameter_type] == optimal_value and
+            model_results[minimal_parameter_type] > optimal_parameter_minimum)
+
+
+def print_best_classifier_results(best_train_stats, best_test_stats):
+    """
+    Print best classifier results
+    @param best_train_stats: the best classifier training statistics
+    @param best_test_stats: the best classifier training statistics
     @return:
     """
-    mean_train_accuracy = statistics['train_accuracy'].mean()
-    mean_train_recall = statistics['train_recall'].mean()
-    mean_train_specificity = statistics['train_specificity'].mean()
-    mean_train_precision = statistics['train_precision'].mean()
-    mean_test_accuracy = statistics['test_accuracy'].mean()
-    mean_test_recall = statistics['test_recall'].mean()
-    mean_test_specificity = statistics['test_specificity'].mean()
-    mean_test_precision = statistics['test_precision'].mean()
-    print(f'Evaluation results after {statistics.shape[0]} runs:')
-    print("----------------------------")
-    print(f"Mean Train Accuracy: \t{round(mean_train_accuracy * 100, 2)}")
-    print(f"Mean Train Recall: \t{round(mean_train_recall * 100, 2)}")
-    print(f"Mean Train Specificity: \t{round(mean_train_specificity * 100, 2)}")
-    print(f"Mean Train Precision: \t{round(mean_train_precision * 100, 2)}")
-    print(f"Mean Test Accuracy: \t{round(mean_test_accuracy * 100, 2)}")
-    print(f"Mean Test Recall: \t{round(mean_test_recall * 100, 2)}")
-    print(f"Mean Test Specificity: \t{round(mean_test_specificity * 100, 2)}")
-    print(f"Mean Test Precision: \t{round(mean_test_precision * 100, 2)}")
-    print("----------------------------")
-    print("\n\n")
+    print('BEST CLASSIFIER')
+    print(f'Best classifier train F1 score: {best_train_stats["f1_score"]}')
+    print(f'Best classifier train accuracy: {best_train_stats["accuracy"]}')
+    print(f'Best classifier train precision: {best_train_stats["precision"]}')
+    print(f'Best classifier train recall: {best_train_stats["recall"]}')
+    print('Confusion matrix:')
+    print(best_train_stats["confusion_matrix"])
 
-
-def compute_and_plot_outliers(train_data, test_data, classifier_class_name):
-    """
-    Compute number of FP and FN and plot their distribution
-    @param classifier_class_name: name of the classifier
-    @param train_data: train data
-    @param test_data: test data
-    @return:
-    """
-    for data, data_type in zip([train_data, test_data], ['train_data', 'test_data']):
-        print(data_type)
-        mismatched_count = data[data['predicted_match'] != data['match']].shape[0]
-        tp_data = data[(data['predicted_match'] == 1) & (data['match'] == 1)]
-        fp_data = data[(data['predicted_match'] == 1) & (data['match'] == 0)]
-        tn_data = data[(data['predicted_match'] == 0) & (data['match'] == 0)]
-        fn_data = data[(data['predicted_match'] == 0) & (data['match'] == 1)]
-
-        print(f'Number of mismatching values for {data} is: {mismatched_count}')
-        print('----------------------------')
-        print(f'Number of FPs is: {len(fp_data)}')
-        print(f'Number of FNs is: {len(fn_data)}')
-        print('----------------------------')
-        print('\n\n')
-
-        visualize_outliers(tp_data, fp_data, ['TP', 'FP', data_type])
-        visualize_outliers(tn_data, fn_data, ['TN', 'FN', data_type])
-
-        mismatched = data[data['predicted_match'] != data['match']]
-        mismatched.to_csv(f'results/mismatches/data/{classifier_class_name}_{data_type}.csv')
-
-
-def visualize_outliers(correct_data, wrong_data, labels):
-    """
-    Plot outliers according to the feature values
-    @param correct_data: correctly predicted data
-    @param wrong_data: wrongly predicted data
-    @param labels: labels whether iit is TP+FP or TN+FN
-    @return:
-    """
-    for column in correct_data.iloc[:, :-3]:
-        plt.scatter(np.arange(0, len(correct_data)), correct_data[column], color='green')
-        plt.scatter(np.arange(0, len(wrong_data)), wrong_data[column], color='red')
-        plt.title(f'{labels[0]} and {labels[1]} distribution on {labels[2]} by {column} match')
-        plt.xlabel(f'{labels[2]}')
-        plt.ylabel(f'{column} data match value')
-        plt.legend(labels)
-        plt.show()
-        plt.clf()
+    print(f'Best classifier test F1 score: {best_test_stats["f1_score"]}')
+    print(f'Best classifier test accuracy: {best_test_stats["accuracy"]}')
+    print(f'Best classifier test precision: {best_test_stats["precision"]}')
+    print(f'Best classifier test recall: {best_test_stats["recall"]}')
+    print('Confusion matrix:')
+    print(best_test_stats["confusion_matrix"])
+    print('----------------------------')
+    print('\n\n')
+    pass

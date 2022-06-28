@@ -36,12 +36,12 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ-middle-sample",
+                    "task_id": "extra-xcite-mapping",
                     "classifier_type": "LogisticRegression",
-                    "dataset_1": "jK6ZlalZBOMyZzVyA",
-                    "images_kvs_1": "coKhaQXSyj2kPqzyM",
-                    "dataset_2": "nzE3itcUfBzQQtmgy",
-                    "images_kvs_2": "wb001Kh9JAGpFvpaG"
+                    "dataset_1": "ajZuzoWIkpUSbRqWP",
+                    "images_kvs_1": "iCdo7OawbdUx8MJVk",
+                    "dataset_2": "MKqJMRLNFXpebNj2X",
+                    "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
                 }
             )
 

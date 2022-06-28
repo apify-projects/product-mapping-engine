@@ -169,7 +169,6 @@ def download_images_from_kvs(
     if dataset_images_kvs is not None:
         if not os.path.exists(img_dir):
             os.makedirs(img_dir)
-
         for chunk_record in dataset_images_kvs.list_keys()['items']:
             chunk = json.loads(dataset_images_kvs.get_record(chunk_record['key'])['value'])
             for image_name, image_data in chunk.items():

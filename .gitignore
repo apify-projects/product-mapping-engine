@@ -11,3 +11,4 @@ actors/trainer/images/
 actors/trainer/results/
 actors/executor/images/
 actors/executor/results/
+engine/scripts/dataset_handler/dataset_upload/data/

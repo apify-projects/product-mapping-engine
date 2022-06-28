@@ -365,6 +365,9 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @return: Similarity scores for the product pairs
     """
 
+    print(dataset1['id'])
+    print(dataset2['id'])
+
     dataset1_subsets = [dataset1.iloc[list(product_pairs_idx_part.keys())] for product_pairs_idx_part in
                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
     dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in

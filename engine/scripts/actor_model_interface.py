@@ -19,8 +19,10 @@ from .dataset_handler.similarity_computation.texts.compute_texts_similarity impo
 from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
-    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES
-from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier
+    COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, \
+    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE
+from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
+    parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier
 
 
 def split_dataframes(dataset):
@@ -143,8 +145,12 @@ def flatten(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
 
 
-def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pairs_dataset_idx, dataset_hashes1,
-                                                dataset_hashes2):
+def remove_precomputed_matches_and_extract_them(
+        dataset_precomputed_matches,
+        pairs_dataset_idx,
+        dataset_hashes1,
+        dataset_hashes2
+):
     """
     Remove already precomputed matches not to compute them again and return them separately
     @param dataset_precomputed_matches: dataframe with products with precomputed matches
@@ -172,9 +178,15 @@ def remove_precomputed_matches_and_extract_them(dataset_precomputed_matches, pai
     return unseen_pairs_dataset_idx, dataset_precomputed_matches_filtered
 
 
-def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_precomputed_matches, images_kvs1_client,
-                                images_kvs2_client,
-                                filter_data):
+def prepare_data_for_classifier(
+        is_on_platform,
+        dataset1,
+        dataset2,
+        dataset_precomputed_matches,
+        images_kvs1_client,
+        images_kvs2_client,
+        filter_data
+):
     """
     Preprocess data, possibly filter data pairs and compute similarities
     @param is_on_platform: True if this is running on the platform
@@ -188,7 +200,7 @@ def prepare_data_for_classifier(is_on_platform, dataset1, dataset2, dataset_prec
     """
     # setup parallelling stuff
     pool = Pool()
-    num_cpu = os.cpu_count()
+    num_cpu = os.cpu_count() - 1
     if not is_on_platform:
         num_cpu -= 2
 
@@ -267,6 +279,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     @param data_to_remove: dataframe with pairs to be removed from labeled_dataset
     """
     print('{}_unlabeled_data.csv'.format(task_id))
+    labeled_dataset = None
     try:
         labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
     except OSError as e:
@@ -339,7 +352,7 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
-    classifier = setup_classifier(classifier_type)
+    classifier, _ = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
@@ -347,12 +360,15 @@ def load_model_create_dataset_and_predict_matches(
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
-        preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(is_on_platform, dataset1,
-                                                                                            dataset2,
-                                                                                            precomputed_pairs_matching_scores,
-                                                                                            images_kvs1_client,
-                                                                                            images_kvs2_client,
-                                                                                            filter_data=True)
+        preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(
+            is_on_platform,
+            dataset1,
+            dataset2,
+            precomputed_pairs_matching_scores,
+            images_kvs1_client,
+            images_kvs2_client,
+            filter_data=True
+        )
 
     if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES and len(preprocessed_pairs) != 0:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
@@ -436,6 +452,7 @@ def load_data_and_train_model(
     @param is_on_platform: True if this is running on the platform
     @return: train and test stats after training
     """
+    # Loading and preprocessing part
     similarities_file_path = "similarities_{}.csv".format(task_id)
     similarities_file_exists = os.path.exists(similarities_file_path)
 
@@ -465,10 +482,26 @@ def load_data_and_train_model(
         if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES:
             similarities.to_csv(similarities_file_path, index=False)
 
-    classifier = setup_classifier(classifier_type)
-    train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-    classifier.save(key_value_store=output_key_value_store_client)
+    # Training part
+    classifiers = []
+    for _ in range(NUMBER_OF_TRAINING_RUNS):
+        if classifier_type in ['Bagging', 'Boosting']:
+            classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type)
+        elif PERFORMED_PARAMETERS_SEARCH is not None:
+            classifier, train_stats, test_stats = parameters_search_and_best_model_training(
+                similarities,
+                classifier_type
+            )
+        else:
+            classifier, _ = setup_classifier(classifier_type)
+            train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
+
+        classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
+    best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
+    best_classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
-    if not classifier.use_pca:
-        classifier.print_feature_importance(feature_names)
-    return train_stats, test_stats
+
+    if PRINT_FEATURE_IMPORTANCE:
+        best_classifier.print_feature_importance(feature_names)
+
+    return best_train_stats, best_test_stats

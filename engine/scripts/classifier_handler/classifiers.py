@@ -2,18 +2,20 @@ import os
 import pickle
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 import pydot
-
+from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
+    PERFORM_PCA_ANALYSIS
 from sklearn import svm
 from sklearn import tree
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier as RandomForests
+from sklearn.ensemble import AdaBoostClassifier as AdaBoost
+from sklearn.ensemble import GradientBoostingClassifier as GradientBoosting
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier as DecisionTree
-from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
-    PERFORM_PCA_ANALYSIS
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
 
@@ -42,16 +44,17 @@ class Classifier:
             self.model.fit(inputs, target)
 
     def predict(self, data, predict_outputs=True):
+        inputs = data
         if self.use_pca:
-            data = self.perform_pca(data, False)
-        if 'match' in data.columns:
-            data = data.drop(columns=['match'])
+            inputs = self.perform_pca(inputs, False)
+        if 'match' in inputs.columns:
+            inputs = inputs.drop(columns=['match'])
 
         if self.predict_probability:
-            scores = self.model.predict_proba(data)
+            scores = self.model.predict_proba(inputs)
             scores = [s[1] for s in scores]
         else:
-            scores = self.model.predict(data)
+            scores = self.model.predict(inputs)
 
         if predict_outputs:
             outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
@@ -122,12 +125,11 @@ class Classifier:
 
 
 class LinearRegressionClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, _):
         super().__init__(weights)
         self.model = LinearRegression()
         self.name = str(type(self.model)).split(".")[-1][:-2]
         self.predict_probability = False
-
 
     def predict(self, data, predict_outputs=True):
         scores = self.model.predict(data.drop(columns=['match']))
@@ -145,9 +147,9 @@ class LinearRegressionClassifier(Classifier):
 
 
 class LogisticRegressionClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = LogisticRegression()
+        self.model = LogisticRegression(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -157,59 +159,17 @@ class LogisticRegressionClassifier(Classifier):
         )
 
 
-class SvmLinearClassifier(Classifier):
-    def __init__(self, weights):
+class SupportVectorMachineClassifier(Classifier):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.kernel = 'linear'
-        self.model = svm.SVC(kernel=self.kernel, probability=True)
+        self.model = svm.SVC(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
-
-    def print_feature_importance(self, feature_names):
-        print(f'Feature importance for {self.name} \n {dict(zip(feature_names, self.model.coef_[0]))}')
-
-
-class SvmRbfClassifier(Classifier):
-    def __init__(self, weights):
-        super().__init__(weights)
-        self.kernel = 'rbf'
-        self.model = svm.SVC(kernel=self.kernel, probability=True)
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-
-class SvmPolyClassifier(Classifier):
-    def __init__(self, weights):
-        super().__init__(weights)
-        self.kernel = 'poly'
-        self.model = svm.SVC(kernel=self.kernel, probability=True)
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-
-class NeuralNetworkClassifier(Classifier):
-    def __init__(self, weights):
-        super().__init__(weights)
-        self.model = MLPClassifier(
-            hidden_layer_sizes=(15, 10),
-            activation='relu',
-            solver='adam',
-            max_iter=300
-        )
-        self.name = str(type(self.model)).split(".")[-1][:-2]
-
-    def print_feature_importance(self, feature_names):
-        print(
-            f'Number of layers: {self.model.n_layers_} and their shapes; '
-            f'{len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}'
-        )
-        print(f'Feature importance for {self.name} \n')
-        for i, weights in enumerate(self.model.coefs_):
-            weights = [[round(w, 4) for w in weight] for weight in weights]
-            print(f'Layer {i} to {i + 1}: \n {weights}')
 
 
 class DecisionTreeClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = DecisionTree(max_depth=5, max_leaf_nodes=20)
+        self.model = DecisionTree(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names):
@@ -225,9 +185,9 @@ class DecisionTreeClassifier(Classifier):
 
 
 class RandomForestsClassifier(Classifier):
-    def __init__(self, weights):
+    def __init__(self, weights, parameters):
         super().__init__(weights)
-        self.model = RandomForests(max_depth=5, n_estimators=3)
+        self.model = RandomForests(**parameters)
         self.name = str(type(self.model)).split(".")[-1][:-2]
 
     def print_feature_importance(self, feature_names, visualize=False):
@@ -242,3 +202,90 @@ class RandomForestsClassifier(Classifier):
                                      impurity=False, feature_names=feature_names)
                 graph = pydot.graph_from_dot_data(dot_data.getvalue())
                 graph[0].write_pdf(f"random_forest_visualization/random_forests_{i}.pdf")
+
+class EnsembleClassifier(Classifier):
+    pass
+
+class NeuralNetworkClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = MLPClassifier(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+    def print_feature_importance(self, feature_names):
+        print(
+            f'Number of layers: {self.model.n_layers_} and their shapes; '
+            f'{len(self.model.coefs_[0])}, {self.model.hidden_layer_sizes}, {self.model.n_outputs_}'
+        )
+        print(f'Feature importance for {self.name} \n')
+        for i, weights in enumerate(self.model.coefs_):
+            weights = [[round(w, 4) for w in weight] for weight in weights]
+            print(f'Layer {i} to {i + 1}: \n {weights}')
+
+
+class BaggingClassifier(EnsembleClassifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = []
+        self.name = 'BaggingClassifier'
+        for classifier_type in parameters:
+            for model_params in parameters[classifier_type]:
+                classifier_class_name = classifier_type + 'Classifier'
+                classifier_class = getattr(
+                    __import__('classifier_handler.classifiers', fromlist=[classifier_class_name]),
+                    classifier_class_name)
+                classifier = classifier_class({}, model_params)
+                self.model.append(classifier)
+
+    @staticmethod
+    def combine_predictions_from_classifiers(predicted_values, combination_type):
+        predicted_values = np.array(predicted_values)
+        if combination_type == 'score':
+            return np.mean(predicted_values, axis=0)
+        else:
+            predicted_values = np.mean(predicted_values, axis=0)
+            return [1 if output >= 0.5 else 0 for output in predicted_values]
+
+    def predict(self, data, predict_outputs=True):
+        if self.use_pca:
+            data = self.perform_pca(data, False)
+        outputs_array = []
+        scores_array = []
+
+        if 'match' in data.columns:
+            data = data.drop(columns=['match'])
+
+        for classifier in self.model:
+            if self.predict_probability:
+                scores = classifier.model.predict_proba(data)
+                scores = [s[1] for s in scores]
+            else:
+                scores = classifier.model.predict(data)
+
+            if predict_outputs:
+                outputs_array.append([0 if score < self.weights['threshold'] else 1 for score in scores])
+            scores_array.append(scores)
+        outputs = self.combine_predictions_from_classifiers(outputs_array, 'output')
+        scores = self.combine_predictions_from_classifiers(scores_array, 'score')
+        #outputs = [0 if score < self.weights['threshold'] else 1 for score in scores]
+        return outputs, scores
+
+
+class BoostingClassifier(BaggingClassifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights, parameters)
+        self.name = 'BoostingClassifier'
+
+
+class AdaBoostClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = AdaBoost(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]
+
+
+class GradientBoostingClassifier(Classifier):
+    def __init__(self, weights, parameters):
+        super().__init__(weights)
+        self.model = GradientBoosting(**parameters)
+        self.name = str(type(self.model)).split(".")[-1][:-2]

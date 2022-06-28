@@ -100,18 +100,22 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "url": "url1"
         }
     )
+
+    scraped_dataset1 = scraped_dataset1.astype({"price1": str}, errors='raise')
     scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace("[^0-9]", "", regex=True)
     scraped_dataset1["id1"] = scraped_dataset1["url1"]
 
     scraped_dataset2 = pd.read_json(scraped_dataset2_path)
     scraped_dataset2 = scraped_dataset2[
-        ["name", "shortDescription", "longDescription", "params", "images", "price", "url"]]
+        ["productName", "shortDescription", "longDescription", "specifications", "images", "price", "productUrl"]]
     scraped_dataset2 = scraped_dataset2.rename(
         columns={
+            "productName": "name",
             "shortDescription": "short_description",
             "longDescription": "long_description",
-            "params": "specification",
-            "images": "image"
+            "specifications": "specification",
+            "images": "image",
+            "productUrl": "url"
         }
     )
     scraped_dataset2 = scraped_dataset2.rename(
@@ -125,11 +129,13 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "url": "url2"
         }
     )
+    scraped_dataset2 = scraped_dataset2.astype({"price2": str}, errors='raise')
     scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace("[^0-9]", "", regex=True)
     scraped_dataset2["id2"] = scraped_dataset2["url2"]
 
     pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='source_url', right_on='url1')
     full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='target_url', right_on='url2')
+
     full_pairs_dataset["match"] = full_pairs_dataset["match_type"].apply(
         lambda match_type: 1 if match_type == "match" else 0
     )
@@ -177,7 +183,7 @@ transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "aggregated_images"),
 )
 '''
-
+'''
 transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
                  "complete_cz.csv"),
@@ -187,4 +193,15 @@ transform_scraped_datasets_to_full_pairs_dataset(
                  "mall_complete_cz.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
+)
+'''
+transform_scraped_datasets_to_full_pairs_dataset(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
+                 "aggregated.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "extra.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "xcite.json"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images"),
 )
