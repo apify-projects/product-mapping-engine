@@ -7,11 +7,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from .compute_specifications_similarity import compute_similarity_of_specifications
+from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
     COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, \
     ALL_KEYWORDS_SIMILARITIES
-from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 
 
 def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_compute,
@@ -350,6 +350,31 @@ def multi_run_text_similarities_wrapper(args):
     return compute_text_similarities_parallelly(*args)
 
 
+def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
+    """
+    Compute the ratio of matching codes in corresponding products pairs
+    @param dataset1: first dataframe with products' codes
+    @param dataset2: second dataframe with products' codes
+    @param product_pairs_idx: dict with indices of filtered possible matching pairs
+    @return: rati of common codes in corresponding products pairs
+    """
+    similarity_scores = []
+
+    for product_idx, corresponding_indices in product_pairs_idx.items():
+        product1 = dataset1.loc[[product_idx]].values[0]
+        for product2_idx in corresponding_indices:
+            product2 = dataset2.loc[[product2_idx]].values[0]
+            matches = 0
+            for item1 in product1:
+                for item2 in product2:
+                    if item1 == item2:
+                        matches += 1
+            score = matches / len(product1)
+            similarity_scores.append(score)
+
+    return similarity_scores
+
+
 def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                   dataset2_starting_index, pool, num_cpu):
     """
@@ -394,6 +419,12 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
+    #dataset1['code'] = [[123, 456]] * len(dataset1)
+    #dataset2['code'] = [[123, 456]] * len(dataset2)
+    if 'code' in dataset1.columns and 'code' in dataset2.columns:
+        code_similarity = compute_similarity_of_codes(dataset1['code'], dataset2['code'], product_pairs_idx)
+        df_all_similarities['code'] = pd.Series(code_similarity)
+
     df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
     return df_all_similarities
 
@@ -408,7 +439,7 @@ def create_empty_dataframe_with_ids(dataset1, dataset2):
     dataset1_ids = []
     dataset2_ids = []
     dataset1_hashes = []
-    dataset2_hashes= []
+    dataset2_hashes = []
     for i, (id1, hash1) in enumerate(zip(dataset1['id'].values, dataset1['all_texts_hash'].values)):
         dataset1_ids += [id1] * len(dataset2[i])
         dataset2_ids += list(dataset2[i]['id'].values)
@@ -438,7 +469,8 @@ def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, 
         if column in dataset1 and column in dataset2[0]:
             similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[
                 column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED else []
-            similarities_to_compute = [similarity for similarity in similarities_to_compute if similarity not in similarities_to_ignore]
+            similarities_to_compute = [similarity for similarity in similarities_to_compute if
+                                       similarity not in similarities_to_ignore]
             tf_idfs_column = tf_idfs[column] if column in tf_idfs else None
             descriptive_words_column = descriptive_words[column] if column in descriptive_words else None
             columns_similarity = compute_similarity_of_texts(dataset1[column], [item[column] for item in dataset2],
