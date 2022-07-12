@@ -74,8 +74,9 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
             print(f'No corresponding product for product "{product["name"]}" at index {idx}')
             data_subset_idx = dataset2_no_price_idx
         else:
+            data_subset_idx = data_subset_idx.tolist()
             if len(dataset2_no_price_idx) != 0:
-                data_subset_idx = data_subset_idx.tolist() + dataset2_no_price_idx
+                data_subset_idx = data_subset_idx + dataset2_no_price_idx
         pairs_dataset_idx[idx] = data_subset_idx
     return pairs_dataset_idx
 

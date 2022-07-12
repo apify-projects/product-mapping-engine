@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
-        full_dataset = False
+        full_dataset = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     output_key_value_store_client = client.key_value_store(output_key_value_store_info['id'])
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
-    #labeled_dataset.to_csv('extra-xcite-mapping_unlabeled_data.csv')
+
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,
