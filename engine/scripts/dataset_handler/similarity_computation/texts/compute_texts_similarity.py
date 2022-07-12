@@ -356,7 +356,7 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
     @param dataset1: first dataframe with products' codes
     @param dataset2: second dataframe with products' codes
     @param product_pairs_idx: dict with indices of filtered possible matching pairs
-    @return: rati of common codes in corresponding products pairs
+    @return: ratio of common codes in corresponding products pairs
     """
     similarity_scores = []
 
@@ -419,8 +419,6 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
-    #dataset1['code'] = [[123, 456]] * len(dataset1)
-    #dataset2['code'] = [[123, 456]] * len(dataset2)
     if 'code' in dataset1.columns and 'code' in dataset2.columns:
         code_similarity = compute_similarity_of_codes(dataset1['code'], dataset2['code'], product_pairs_idx)
         df_all_similarities['code'] = pd.Series(code_similarity)
