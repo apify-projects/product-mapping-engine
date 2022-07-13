@@ -250,8 +250,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
 
     true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
                                                                                     out_train, threshes, 'train')
-    train_data.drop(columns=['predicted_scores'], inplace=True)
-    test_data.drop(columns=['predicted_scores'], inplace=True)
+    if 'predicted_scores' in train_data.columns:
+        train_data.drop(columns=['predicted_scores'], inplace=True)
+    if 'predicted_scores' in test_data.columns:
+        test_data.drop(columns=['predicted_scores'], inplace=True)
     # find the best thresh
     if set_threshold:
         optimal_threshold = threshes[0]
