@@ -273,7 +273,7 @@ if __name__ == '__main__':
             similarity_scores_merged_data = similarity_scores_merged_data.drop(
                 columns=['predicted_scores_13', 'predicted_scores_23'])
 
+        similarity_scores_merged_data = similarity_scores_merged_data.groupby(['id1', 'id2'])['predicted_scores'].max().reset_index()
         similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] >= 1, 'predicted_match'] = 1
         similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] < 1, 'predicted_match'] = 0
-        similarity_scores_merged_data = similarity_scores_merged_data.drop(columns=['id3'])
         print("Done\n")
