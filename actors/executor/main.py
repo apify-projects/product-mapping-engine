@@ -237,42 +237,43 @@ if __name__ == '__main__':
         df13 = pd.DataFrame([['p1', 'p3', 0.8], ['p1', 'p5', 0.8], ['p8', 'p9', 0.3]],
                             columns=['id1', 'id2', 'predicted_scores'])
         df23 = pd.DataFrame([['p2', 'p3', 0.9], ['p7', 'p9', 0.8]], columns=['id1', 'id2', 'predicted_scores'])
-        similarity_scores_all_datasets = [['d1', 'd2', df12], ['d1', 'd3', df13], ['d2', 'd3', df23]]
 
-        similarity_scores_source_target_datasets = similarity_scores_all_datasets[0]
-        similarity_scores_all_datasets.pop(0)
-        source_dataset_id = similarity_scores_source_target_datasets[0]
-        target_dataset_id = similarity_scores_source_target_datasets[1]
-        similarity_scores_merged_data = similarity_scores_source_target_datasets[2]
-        done = False
-        for similarity_scores_dataset1 in similarity_scores_all_datasets:
-            if similarity_scores_dataset1[0] == source_dataset_id:
-                for similarity_scores_dataset2 in similarity_scores_all_datasets:
-                    if similarity_scores_dataset2[0] == target_dataset_id and similarity_scores_dataset2[1] == \
-                            similarity_scores_dataset1[1]:
-                        similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
-                                                                 similarity_scores_dataset1[2], how='left',
-                                                                 left_on=['id1'], right_on=['id1']).fillna(0)
-                        similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
-                                                                 similarity_scores_dataset2[2], how='left',
-                                                                 left_on=['id2_x', 'id2_y'],
-                                                                 right_on=['id1', 'id2']).fillna(0)
-                        similarity_scores_merged_data = similarity_scores_merged_data.drop(columns=['id1_y', 'id2'])
-                        similarity_scores_merged_data = similarity_scores_merged_data.rename(
-                            columns={'id1_x': 'id1', 'id2_x': 'id2', 'id2_y': 'id3',
-                                     'predicted_scores_x': 'predicted_scores_12',
-                                     'predicted_scores_y': 'predicted_scores_13',
-                                     'predicted_scores': 'predicted_scores_23'})
-                        similarity_scores_merged_data['total_predicted_score'] = \
-                            similarity_scores_merged_data['predicted_scores_12'] + \
-                            similarity_scores_merged_data['predicted_scores_13'] * \
-                            similarity_scores_merged_data['predicted_scores_23']
-                        similarity_scores_merged_data.loc[similarity_scores_merged_data['total_predicted_score'] >= 1, 'predicted_match'] = 1
-                        similarity_scores_merged_data.loc[similarity_scores_merged_data['total_predicted_score'] < 1, 'predicted_match'] = 0
-                        done = True
-                        # TODO: do some stuff to save the results
-                        break
-        if not done:
-            raise Exception('Not possible to perform multiple datasets products comparisons. Some of the datasets are probably missing.')
+        df14 = pd.DataFrame([['p6', 'p0', 0.8]], columns=['id1', 'id2', 'predicted_scores'])
+        df24 = pd.DataFrame([['p7', 'p0', 0.9]], columns=['id1', 'id2', 'predicted_scores'])
+        similarity_scores_all_datasets = {('d1', 'd2'): df12, ('d1', 'd3'): df13, ('d2', 'd3'): df23,
+                                          ('d1', 'd4'): df14, ('d2', 'd4'): df24}
+        source_dataset_id = 'd1'  # parameters['dataset_1']
+        target_dataset_id = 'd2'  # parameters['dataset_2']
+        similarity_scores_source_target_datasets = similarity_scores_all_datasets[
+            (source_dataset_id, target_dataset_id)]
+        similarity_scores_merged_data = similarity_scores_source_target_datasets
+
+        third_datasets_ids = [datasets_ids[1] for datasets_ids in similarity_scores_all_datasets.keys() if
+                              datasets_ids[0] == source_dataset_id and datasets_ids[1] != target_dataset_id]
+        for third_dataset_id in third_datasets_ids:
+            similarity_scores_dataset1 = similarity_scores_all_datasets[(source_dataset_id, third_dataset_id)]
+            similarity_scores_dataset2 = similarity_scores_all_datasets[(target_dataset_id, third_dataset_id)]
+
+            similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
+                                                     similarity_scores_dataset1, how='left',
+                                                     left_on=['id1'], right_on=['id1']).fillna(0)
+            similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
+                                                     similarity_scores_dataset2, how='left',
+                                                     left_on=['id2_x', 'id2_y'],
+                                                     right_on=['id1', 'id2']).fillna(0)
+            similarity_scores_merged_data = similarity_scores_merged_data.drop(columns=['id1_y', 'id2'])
+            similarity_scores_merged_data = similarity_scores_merged_data.rename(
+                columns={'id1_x': 'id1', 'id2_x': 'id2', 'id2_y': 'id3',
+                         'predicted_scores_y': 'predicted_scores_13',
+                         'predicted_scores': 'predicted_scores_23',
+                         'predicted_scores_x': 'predicted_scores'})
+            similarity_scores_merged_data['predicted_scores'] += \
+                similarity_scores_merged_data['predicted_scores_13'] * \
+                similarity_scores_merged_data['predicted_scores_23']
+            similarity_scores_merged_data = similarity_scores_merged_data.drop(
+                columns=['predicted_scores_13', 'predicted_scores_23'])
+
+        similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] >= 1, 'predicted_match'] = 1
+        similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] < 1, 'predicted_match'] = 0
+        similarity_scores_merged_data = similarity_scores_merged_data.drop(columns=['id3'])
         print("Done\n")
-
