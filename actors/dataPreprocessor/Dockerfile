@@ -27,8 +27,7 @@ RUN echo "Python version:" \
  && pip install -r requirements.txt \
  && echo "All installed Python packages:" \
  && pip freeze \
- && git clone -b master https://ssh:$GITHUB_TOKEN@github.com/apify-projects/product-mapping-engine.git product_mapping_engine \
- && (cd product_mapping_engine/scripts/preprocessing/images/image_hash_creator && npm install)
+ && git clone -b master https://ssh:$GITHUB_TOKEN@github.com/apify-projects/product-mapping-engine.git product_mapping_engine
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after installing the dependencies, quick build will be really fast
