@@ -12,6 +12,16 @@ LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
 
 def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_name, dataset_1_images, dataset_2_images):
+    """
+    Load datasets from client and compute their similarities
+    @param client: client containing datasets
+    @param dataset_1_name: string name of the first dataset
+    @param dataset_2_name: string name of the second dataset
+    @param dataset_1_images: string name of images of the first dataset
+    @param dataset_2_images: string name of images of the second dataset
+    @return: product pairs evaluated as matches, all product pairs matching scores,
+             newly created product pairs matching scores, first dataset, second dataset
+    """
     dataset_1_client = client.dataset(dataset_1_name)
     dataset_2_client = client.dataset(dataset_2_name)
     images_kvs_1_client = client.key_value_store(dataset_1_images)
@@ -75,14 +85,16 @@ if __name__ == '__main__':
                 {
                     "task_id": "Alpha-Complete-CZ",
                     "classifier_type": "LogisticRegression",
-                    "dataset_1": "9mk56pDWdfDZoCMiR",
-                    "images_kvs_1": "iNNZxJhjAatupQSV0",
-                    "dataset_2": "axCYJHLt6cmb1gbNJ",
-                    "images_kvs_2": "NNZ40CQnWh4KofXJB",
-                    "dataset_3": "axCYJHLt6cmb1gbNJ",
-                    "images_kvs_3": "NNZ40CQnWh4KofXJB",
-                    "dataset_4": "axCYJHLt6cmb1gbNJ",
-                    "images_kvs_4": "NNZ40CQnWh4KofXJB"
+                    "dataset_1": "1nOTjfyp0NXsZJb2S",
+                    "images_kvs_1": "haHXbo9qWaHg4cQ0p",
+                    "dataset_2": "CNfIC2xuEX2S6SGCu",
+                    "images_kvs_2": "oK3xYWm6NOGfowovB",
+                    "dataset_3": "cqDoJagWSkmGdhJ5X",
+                    "images_kvs_3": "udcDNXm7prDpcgGkh",
+                    "dataset_4": "fVvmJNgdgg8cHIp6h",
+                    "images_kvs_4": "klviW5ORt8ebBvm5B",
+                    "dataset_5": "Mo4oN24sJW9juNh7a",
+                    "images_kvs_5": "r4R71M6g3DIPNd8RS"
                 }
             )
 
@@ -118,8 +130,10 @@ if __name__ == '__main__':
         datasets_pairs = [['dataset_1', 'dataset_2', 'images_kvs_1', 'images_kvs_2'],
                           ['dataset_1', 'dataset_3', 'images_kvs_1', 'images_kvs_3'],
                           ['dataset_1', 'dataset_4', 'images_kvs_1', 'images_kvs_4'],
+                          ['dataset_1', 'dataset_5', 'images_kvs_1', 'images_kvs_5'],
                           ['dataset_2', 'dataset_3', 'images_kvs_2', 'images_kvs_3'],
-                          ['dataset_2', 'dataset_4', 'images_kvs_2', 'images_kvs_4']]
+                          ['dataset_2', 'dataset_4', 'images_kvs_2', 'images_kvs_4'],
+                          ['dataset_2', 'dataset_5', 'images_kvs_2', 'images_kvs_5']]
         similarity_scores_all_datasets = {}
         for datasets_pair in datasets_pairs:
             _, all_product_pairs_matching_scores, _, dataset1, dataset2 = load_datasets_and_compute_similarities(
@@ -128,7 +142,8 @@ if __name__ == '__main__':
                 parameters[datasets_pair[1]],
                 parameters[datasets_pair[2]],
                 parameters[datasets_pair[3]])
-            similarity_scores_all_datasets[(datasets_pair[0], datasets_pair[1])] = all_product_pairs_matching_scores
+            similarity_scores_all_datasets[(datasets_pair[0], datasets_pair[1])] = all_product_pairs_matching_scores[
+                ['id1', 'id2', 'predicted_scores']]
 
         source_dataset_id = 'dataset_1'
         target_dataset_id = 'dataset_2'
