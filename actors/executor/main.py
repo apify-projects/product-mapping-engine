@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import pandas as pd
 from apify_client import ApifyClient
@@ -44,6 +45,27 @@ def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_nam
         )
     return predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores, dataset1, dataset2
 
+
+def dataset_pairs_creation(parameters):
+    """
+    Find corresponding pairs of two dataset for computation of similarities
+    @param parameters: parameters of the run
+    @return: dictionary with corresponding pairs of two dataset for computation of similarities
+    """
+    datasets_names = [re.findall(r'dataset_[0-9]', parameter) for parameter in parameters.keys()]
+    datasets_names = [i for sublist in datasets_names for i in sublist if i]
+    images_names = [re.findall(r'images_kvs_[0-9]', parameter) for parameter in parameters.keys()]
+    images_names = [i for sublist in images_names for i in sublist if i]
+    datasets_names_images = {i + 1: [datasets_names[i], images_names[i]] for i in range(len(datasets_names))}
+    first = datasets_names_images[1]
+    second = datasets_names_images[2]
+    datasets_pairs = [first + second]
+    del datasets_names_images[1]
+    del datasets_names_images[2]
+    for i in datasets_names_images:
+        datasets_pairs.append(first + datasets_names_images[i])
+        datasets_pairs.append(second + datasets_names_images[i])
+    return datasets_pairs
 
 if __name__ == '__main__':
     # Read input
@@ -127,22 +149,16 @@ if __name__ == '__main__':
     # Prepare storages and read data
 
     if multiple_datasets:
-        datasets_pairs = [['dataset_1', 'dataset_2', 'images_kvs_1', 'images_kvs_2'],
-                          ['dataset_1', 'dataset_3', 'images_kvs_1', 'images_kvs_3'],
-                          ['dataset_1', 'dataset_4', 'images_kvs_1', 'images_kvs_4'],
-                          ['dataset_1', 'dataset_5', 'images_kvs_1', 'images_kvs_5'],
-                          ['dataset_2', 'dataset_3', 'images_kvs_2', 'images_kvs_3'],
-                          ['dataset_2', 'dataset_4', 'images_kvs_2', 'images_kvs_4'],
-                          ['dataset_2', 'dataset_5', 'images_kvs_2', 'images_kvs_5']]
+        datasets_pairs = dataset_pairs_creation(parameters)
         similarity_scores_all_datasets = {}
         for datasets_pair in datasets_pairs:
             _, all_product_pairs_matching_scores, _, dataset1, dataset2 = load_datasets_and_compute_similarities(
                 client,
                 parameters[datasets_pair[0]],
-                parameters[datasets_pair[1]],
                 parameters[datasets_pair[2]],
+                parameters[datasets_pair[1]],
                 parameters[datasets_pair[3]])
-            similarity_scores_all_datasets[(datasets_pair[0], datasets_pair[1])] = all_product_pairs_matching_scores[
+            similarity_scores_all_datasets[(datasets_pair[0], datasets_pair[2])] = all_product_pairs_matching_scores[
                 ['id1', 'id2', 'predicted_scores']]
 
         source_dataset_id = 'dataset_1'
@@ -150,7 +166,6 @@ if __name__ == '__main__':
         similarity_scores_source_target_datasets = similarity_scores_all_datasets[
             (source_dataset_id, target_dataset_id)]
         similarity_scores_merged_data = similarity_scores_source_target_datasets
-
         third_datasets_ids = [datasets_ids[1] for datasets_ids in similarity_scores_all_datasets.keys() if
                               datasets_ids[0] == source_dataset_id and datasets_ids[1] != target_dataset_id]
         for third_dataset_id in third_datasets_ids:
