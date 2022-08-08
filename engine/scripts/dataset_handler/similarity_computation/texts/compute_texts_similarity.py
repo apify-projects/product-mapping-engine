@@ -139,7 +139,7 @@ def compute_match_ratio(list1, list2, allow_substrings=False):
 
 def find_descriptive_words(tf_idfs, filter_limit, number_of_top_words):
     """
-    Find *number_of_top_words* top words that occurs in at maximum of *filter_limit* percent of texts
+    Find *number_of_top_words* top words that occur in at maximum of *filter_limit* percent of texts
     @param tf_idfs: tf-idf of data
     @param filter_limit: the max limit of occurrences of word among documents
     @param number_of_top_words: how many most important words are to be selected
