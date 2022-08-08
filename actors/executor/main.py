@@ -12,10 +12,11 @@ CHUNK_SIZE = 1000
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
 
-def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_name, dataset_1_images, dataset_2_images):
+def load_datasets_and_compute_similarities(client_info, dataset_1_name, dataset_2_name, dataset_1_images,
+                                           dataset_2_images):
     """
     Load datasets from client and compute their similarities
-    @param client: client containing datasets
+    @param client_info: client containing datasets
     @param dataset_1_name: id of the first dataset
     @param dataset_2_name: id of the second dataset
     @param dataset_1_images: id of a key value store of images of the first dataset
@@ -23,18 +24,18 @@ def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_nam
     @return: product pairs evaluated as matches, all product pairs matching scores,
              newly created product pairs matching scores, first dataset, second dataset
     """
-    dataset_1_client = client.dataset(dataset_1_name)
-    dataset_2_client = client.dataset(dataset_2_name)
-    images_kvs_1_client = client.key_value_store(dataset_1_images)
-    images_kvs_2_client = client.key_value_store(dataset_2_images)
-    dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
-    dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
-    dataset1 = dataset1.drop_duplicates(subset=['url'], ignore_index=True)
-    dataset2 = dataset2.drop_duplicates(subset=['url'], ignore_index=True)
-    predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
+    dataset_1_client = client_info.dataset(dataset_1_name)
+    dataset_2_client = client_info.dataset(dataset_2_name)
+    images_kvs_1_client = client_info.key_value_store(dataset_1_images)
+    images_kvs_2_client = client_info.key_value_store(dataset_2_images)
+    dataset1_data = pd.DataFrame(dataset_1_client.list_items().items)
+    dataset2_data = pd.DataFrame(dataset_2_client.list_items().items)
+    dataset1_data = dataset1_data.drop_duplicates(subset=['url'], ignore_index=True)
+    dataset2_data = dataset2_data.drop_duplicates(subset=['url'], ignore_index=True)
+    predicted_matching_pairs_data, all_product_pairs_matching_scores_data, new_product_pairs_matching_scores_data = \
         load_model_create_dataset_and_predict_matches(
-            dataset1,
-            dataset2,
+            dataset1_data,
+            dataset2_data,
             dataset_precomputed_matches,
             images_kvs_1_client,
             images_kvs_2_client,
@@ -43,29 +44,31 @@ def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_nam
             task_id=task_id,
             is_on_platform=is_on_platform
         )
-    return predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores, dataset1, dataset2
+    return predicted_matching_pairs_data, all_product_pairs_matching_scores_data, \
+           new_product_pairs_matching_scores_data, dataset1_data, dataset2_data
 
 
-def dataset_pairs_creation(parameters):
+def dataset_pairs_creation(run_parameters):
     """
     Find corresponding pairs of datasets for computation of similarities
-    @param parameters: parameters of the run
+    @param run_parameters: parameters of the run
     @return: dictionary with corresponding pairs of two dataset for computation of similarities
     """
-    datasets_ids = [re.findall(r'dataset_[0-9]', parameter) for parameter in parameters.keys()]
+    datasets_ids = [re.findall(r'dataset_[0-9]', parameter) for parameter in run_parameters.keys()]
     datasets_ids = [i for sublist in datasets_ids for i in sublist if i]
-    images_names = [re.findall(r'images_kvs_[0-9]', parameter) for parameter in parameters.keys()]
+    images_names = [re.findall(r'images_kvs_[0-9]', parameter) for parameter in run_parameters.keys()]
     images_names = [i for sublist in images_names for i in sublist if i]
     datasets_names_images = {i + 1: [datasets_ids[i], images_names[i]] for i in range(len(datasets_ids))}
     first = datasets_names_images[1]
     second = datasets_names_images[2]
-    datasets_pairs = [first + second]
+    datasets_joined_pairs = [first + second]
     del datasets_names_images[1]
     del datasets_names_images[2]
     for i in datasets_names_images:
-        datasets_pairs.append(first + datasets_names_images[i])
-        datasets_pairs.append(second + datasets_names_images[i])
-    return datasets_pairs
+        datasets_joined_pairs.append(first + datasets_names_images[i])
+        datasets_joined_pairs.append(second + datasets_names_images[i])
+    return datasets_joined_pairs
+
 
 if __name__ == '__main__':
     # Read input
