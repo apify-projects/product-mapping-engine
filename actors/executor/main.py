@@ -16,10 +16,10 @@ def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_nam
     """
     Load datasets from client and compute their similarities
     @param client: client containing datasets
-    @param dataset_1_name: string name of the first dataset
-    @param dataset_2_name: string name of the second dataset
-    @param dataset_1_images: string name of images of the first dataset
-    @param dataset_2_images: string name of images of the second dataset
+    @param dataset_1_name: id of the first dataset
+    @param dataset_2_name: id of the second dataset
+    @param dataset_1_images: id of a key value store of images of the first dataset
+    @param dataset_2_images: id of a key value store of images of the second dataset
     @return: product pairs evaluated as matches, all product pairs matching scores,
              newly created product pairs matching scores, first dataset, second dataset
     """
@@ -48,15 +48,15 @@ def load_datasets_and_compute_similarities(client, dataset_1_name, dataset_2_nam
 
 def dataset_pairs_creation(parameters):
     """
-    Find corresponding pairs of two dataset for computation of similarities
+    Find corresponding pairs of datasets for computation of similarities
     @param parameters: parameters of the run
     @return: dictionary with corresponding pairs of two dataset for computation of similarities
     """
-    datasets_names = [re.findall(r'dataset_[0-9]', parameter) for parameter in parameters.keys()]
-    datasets_names = [i for sublist in datasets_names for i in sublist if i]
+    datasets_ids = [re.findall(r'dataset_[0-9]', parameter) for parameter in parameters.keys()]
+    datasets_ids = [i for sublist in datasets_ids for i in sublist if i]
     images_names = [re.findall(r'images_kvs_[0-9]', parameter) for parameter in parameters.keys()]
     images_names = [i for sublist in images_names for i in sublist if i]
-    datasets_names_images = {i + 1: [datasets_names[i], images_names[i]] for i in range(len(datasets_names))}
+    datasets_names_images = {i + 1: [datasets_ids[i], images_names[i]] for i in range(len(datasets_ids))}
     first = datasets_names_images[1]
     second = datasets_names_images[2]
     datasets_pairs = [first + second]
