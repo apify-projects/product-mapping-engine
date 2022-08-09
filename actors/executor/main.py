@@ -1,6 +1,6 @@
 import json
 import os
-from math import ceil
+import re
 
 import pandas as pd
 from apify_client import ApifyClient
@@ -11,6 +11,65 @@ from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHE
 CHUNK_SIZE = 1000
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
+
+def load_datasets_and_compute_similarities(client_info, dataset_1_name, dataset_2_name, dataset_1_images,
+                                           dataset_2_images):
+    """
+    Load datasets from client and compute their similarities
+    @param client_info: client containing datasets
+    @param dataset_1_name: id of the first dataset
+    @param dataset_2_name: id of the second dataset
+    @param dataset_1_images: id of a key value store of images of the first dataset
+    @param dataset_2_images: id of a key value store of images of the second dataset
+    @return: product pairs evaluated as matches, all product pairs matching scores,
+             newly created product pairs matching scores, first dataset, second dataset
+    """
+    dataset_1_client = client_info.dataset(dataset_1_name)
+    dataset_2_client = client_info.dataset(dataset_2_name)
+    images_kvs_1_client = client_info.key_value_store(dataset_1_images)
+    images_kvs_2_client = client_info.key_value_store(dataset_2_images)
+    dataset1_data = pd.DataFrame(dataset_1_client.list_items().items)
+    dataset2_data = pd.DataFrame(dataset_2_client.list_items().items)
+    dataset1_data = dataset1_data.drop_duplicates(subset=['url'], ignore_index=True)
+    dataset2_data = dataset2_data.drop_duplicates(subset=['url'], ignore_index=True)
+    predicted_matching_pairs_data, all_product_pairs_matching_scores_data, new_product_pairs_matching_scores_data = \
+        load_model_create_dataset_and_predict_matches(
+            dataset1_data,
+            dataset2_data,
+            dataset_precomputed_matches,
+            images_kvs_1_client,
+            images_kvs_2_client,
+            classifier_type,
+            model_key_value_store_client=model_key_value_store,
+            task_id=task_id,
+            is_on_platform=is_on_platform
+        )
+    return predicted_matching_pairs_data, all_product_pairs_matching_scores_data, \
+           new_product_pairs_matching_scores_data, dataset1_data, dataset2_data
+
+
+def dataset_pairs_creation(run_parameters):
+    """
+    Find corresponding pairs of datasets for computation of similarities
+    @param run_parameters: parameters of the run
+    @return: dictionary with corresponding pairs of two dataset for computation of similarities
+    """
+    datasets_ids = [re.findall(r'dataset_[0-9]', parameter) for parameter in run_parameters.keys()]
+    datasets_ids = [i for sublist in datasets_ids for i in sublist if i]
+    images_names = [re.findall(r'images_kvs_[0-9]', parameter) for parameter in run_parameters.keys()]
+    images_names = [i for sublist in images_names for i in sublist if i]
+    datasets_names_images = {i + 1: [datasets_ids[i], images_names[i]] for i in range(len(datasets_ids))}
+    first = datasets_names_images[1]
+    second = datasets_names_images[2]
+    datasets_joined_pairs = [first + second]
+    del datasets_names_images[1]
+    del datasets_names_images[2]
+    for i in datasets_names_images:
+        datasets_joined_pairs.append(first + datasets_names_images[i])
+        datasets_joined_pairs.append(second + datasets_names_images[i])
+    return datasets_joined_pairs
+
+
 if __name__ == '__main__':
     # Read input
     client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
@@ -20,6 +79,7 @@ if __name__ == '__main__':
 
     if not is_on_platform:
         full_dataset = True
+        multiple_datasets = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -44,6 +104,24 @@ if __name__ == '__main__':
                     "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
                 }
             )
+        if multiple_datasets:
+            default_kvs_client.set_record(
+                'INPUT',
+                {
+                    "task_id": "Alpha-Complete-CZ",
+                    "classifier_type": "LogisticRegression",
+                    "dataset_1": "1nOTjfyp0NXsZJb2S",
+                    "images_kvs_1": "haHXbo9qWaHg4cQ0p",
+                    "dataset_2": "CNfIC2xuEX2S6SGCu",
+                    "images_kvs_2": "oK3xYWm6NOGfowovB",
+                    "dataset_3": "cqDoJagWSkmGdhJ5X",
+                    "images_kvs_3": "udcDNXm7prDpcgGkh",
+                    "dataset_4": "fVvmJNgdgg8cHIp6h",
+                    "images_kvs_4": "klviW5ORt8ebBvm5B",
+                    "dataset_5": "Mo4oN24sJW9juNh7a",
+                    "images_kvs_5": "r4R71M6g3DIPNd8RS"
+                }
+            )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
@@ -51,6 +129,13 @@ if __name__ == '__main__':
 
     task_id = parameters['task_id']
     classifier_type = parameters['classifier_type']
+
+    model_key_value_store_info = client.key_value_stores().get_or_create(
+        name=task_id + '-product-mapping-model-output'
+    )
+    model_key_value_store = client.key_value_store(model_key_value_store_info['id'])
+
+    default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
 
     # Load precomputed matches
     dataset_precomputed_matches = None
@@ -65,58 +150,63 @@ if __name__ == '__main__':
             dataset_precomputed_matches = pd.read_csv(task_id + '-precomputed-matches' + '.csv')
 
     # Prepare storages and read data
-    dataset_1_client = client.dataset(parameters['dataset_1'])
-    dataset_2_client = client.dataset(parameters['dataset_2'])
-    images_kvs_1_client = client.key_value_store(parameters['images_kvs_1'])
-    images_kvs_2_client = client.key_value_store(parameters['images_kvs_2'])
 
-    dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
-    dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
+    if multiple_datasets:
+        datasets_pairs = dataset_pairs_creation(parameters)
+        similarity_scores_all_datasets = {}
+        for datasets_pair in datasets_pairs:
+            _, all_product_pairs_matching_scores, _, dataset1, dataset2 = load_datasets_and_compute_similarities(
+                client,
+                parameters[datasets_pair[0]],
+                parameters[datasets_pair[2]],
+                parameters[datasets_pair[1]],
+                parameters[datasets_pair[3]])
+            similarity_scores_all_datasets[(datasets_pair[0], datasets_pair[2])] = all_product_pairs_matching_scores[
+                ['id1', 'id2', 'predicted_scores']]
 
-    dataset1 = dataset1.drop_duplicates(subset=['url'], ignore_index=True)
-    dataset2 = dataset2.drop_duplicates(subset=['url'], ignore_index=True)
-    print(dataset1.shape)
-    print(dataset2.shape)
+        source_dataset_id = 'dataset_1'
+        target_dataset_id = 'dataset_2'
+        similarity_scores_source_target_datasets = similarity_scores_all_datasets[
+            (source_dataset_id, target_dataset_id)]
+        similarity_scores_merged_data = similarity_scores_source_target_datasets
+        third_datasets_ids = [datasets_ids[1] for datasets_ids in similarity_scores_all_datasets.keys() if
+                              datasets_ids[0] == source_dataset_id and datasets_ids[1] != target_dataset_id]
+        for third_dataset_id in third_datasets_ids:
+            similarity_scores_dataset1 = similarity_scores_all_datasets[(source_dataset_id, third_dataset_id)]
+            similarity_scores_dataset2 = similarity_scores_all_datasets[(target_dataset_id, third_dataset_id)]
 
-    model_key_value_store_info = client.key_value_stores().get_or_create(
-        name=task_id + '-product-mapping-model-output'
-    )
-    model_key_value_store = client.key_value_store(model_key_value_store_info['id'])
+            similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
+                                                     similarity_scores_dataset1, how='left',
+                                                     left_on=['id1'], right_on=['id1']).fillna(0)
+            similarity_scores_merged_data = pd.merge(similarity_scores_merged_data,
+                                                     similarity_scores_dataset2, how='left',
+                                                     left_on=['id2_x', 'id2_y'],
+                                                     right_on=['id1', 'id2']).fillna(0)
+            similarity_scores_merged_data = similarity_scores_merged_data.drop(columns=['id1_y', 'id2'])
+            similarity_scores_merged_data = similarity_scores_merged_data.rename(
+                columns={'id1_x': 'id1', 'id2_x': 'id2', 'id2_y': 'id3',
+                         'predicted_scores_y': 'predicted_scores_13',
+                         'predicted_scores': 'predicted_scores_23',
+                         'predicted_scores_x': 'predicted_scores'})
+            similarity_scores_merged_data['predicted_scores'] += \
+                similarity_scores_merged_data['predicted_scores_13'] * \
+                similarity_scores_merged_data['predicted_scores_23']
+            similarity_scores_merged_data = similarity_scores_merged_data.drop(
+                columns=['predicted_scores_13', 'predicted_scores_23'])
 
-    default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
+        similarity_scores_merged_data = similarity_scores_merged_data.groupby(['id1', 'id2'])[
+            'predicted_scores'].max().reset_index()
+        similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] >= 1, 'predicted_match'] = 1
+        similarity_scores_merged_data.loc[similarity_scores_merged_data['predicted_scores'] < 1, 'predicted_match'] = 0
 
-    first_chunk = 0
-    if is_on_platform:
-        start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
-        if start_from_chunk:
-            first_chunk = start_from_chunk['value'] + 1
-
-    data_count = dataset1.shape[0]
-    if not is_on_platform:
-        CHUNK_SIZE = data_count
-
-    for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
-        if is_on_platform:
-            print('Searching matches for products {}:{}'.format(current_chunk * CHUNK_SIZE + 1,
-                                                                (current_chunk + 1) * CHUNK_SIZE))
-            print('---------------------------------------------\n\n')
-
-        dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
-
-        predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
-            load_model_create_dataset_and_predict_matches(
-                dataset1_chunk,
-                dataset2,
-                dataset_precomputed_matches,
-                images_kvs_1_client,
-                images_kvs_2_client,
-                classifier_type,
-                model_key_value_store_client=model_key_value_store,
-                task_id=task_id,
-                is_on_platform=is_on_platform
-            )
-
-        predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
+    else:
+        predicted_matching_pairs, _, new_product_pairs_matching_scores, dataset1, dataset2 = \
+            load_datasets_and_compute_similarities(client,
+                                                   parameters['dataset_1'],
+                                                   parameters['dataset_2'],
+                                                   parameters['images_kvs_1'],
+                                                   parameters['images_kvs_2'])
+        predicted_matching_pairs = predicted_matching_pairs.merge(dataset1.rename(columns={"id": "id1"}),
                                                                   on='id1', how='left') \
             .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
         # TODO remove upon resolution
@@ -128,16 +218,9 @@ if __name__ == '__main__':
                     new_product_pairs_matching_scores.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
             else:
                 precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
-            # TODO investigate
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
         predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
         default_dataset_client.push_items(
             predicted_matching_pairs.to_dict(orient='records'))
 
-        if is_on_platform:
-            default_kvs_client.set_record(
-                LAST_PROCESSED_CHUNK_KEY,
-                current_chunk
-            )
-
-            print("Done\n")
+    print("Done\n")
