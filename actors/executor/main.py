@@ -19,7 +19,7 @@ if __name__ == '__main__':
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
     if not is_on_platform:
-        full_dataset = True
+        full_dataset = False
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -36,12 +36,12 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "extra-xcite-mapping",
-                    "classifier_type": "LogisticRegression",
-                    "dataset_1": "ajZuzoWIkpUSbRqWP",
-                    "images_kvs_1": "iCdo7OawbdUx8MJVk",
-                    "dataset_2": "MKqJMRLNFXpebNj2X",
-                    "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
+                    "task_id": "improved-extra-xcite-mapping",
+                    "classifier_type": "NeuralNetwork",
+                    "dataset_1": "TmwSx86VgPaBNGasS",
+                    "images_kvs_1": "K9hEE5ISZhWN4qOfk",
+                    "dataset_2": "NHeOW3l06VeKzlMzX",
+                    "images_kvs_2": "AgrPGcmpPqkHvcWaM"
                 }
             )
 

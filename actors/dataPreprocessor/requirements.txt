@@ -4,9 +4,4 @@
 pandas
 scikit-learn
 python-slugify
-matplotlib
-opencv-contrib-python
-pydot
-majka
-nltk
-seaborn
+price-parser

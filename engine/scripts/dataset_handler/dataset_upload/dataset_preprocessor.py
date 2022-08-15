@@ -1,16 +1,34 @@
+import cv2
+import json
+import numpy as np
+import os
+import pandas as pd
+import base64
+import requests
+import imghdr
+from slugify import slugify
+
+import importlib.machinery
+
+configuration = importlib.machinery.SourceFileLoader(
+    'configuration',
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..", "configuration.py"),
+).load_module()
+
+IMAGES_CHUNK_SIZE = 1000
+IMAGES_PATH = "product_images"
+
+def is_url(potential_url):
+    return "http" in potential_url or ".com" in potential_url
 
 def download_images(dataset):
-    """
-    Download images for a product from pair of products from the dataset
-    @param images_path: what folder to save the images to
-    @param pair_index: index of the pair
-    @param product_index: either 1 or 2, specifying which product from the pair should images be downloaded for
-    @param pair: pair of products from the dataset
-    @return: the amount of images that have been downloaded
-    """
-    for index, row in full_pairs_dataset.iterrows():
+    if not os.path.exists(IMAGES_PATH):
+        os.makedirs(IMAGES_PATH)
+
+    image_counts = []
+    for index, item in dataset.iterrows():
         downloaded_images = 0
-        for potential_url in pair["image{}".format(product_index)]:
+        for potential_url in item["image"]:
             if is_url(potential_url):
                 try:
                     response = requests.get(potential_url, timeout=5)
@@ -24,8 +42,8 @@ def download_images(dataset):
                         continue
 
                     image_file_path = os.path.join(
-                        images_path,
-                        'pair_{}_product_{}_image_{}.jpg'.format(pair_index, product_index, downloaded_images + 1)
+                        IMAGES_PATH,
+                        'product_{}_image_{}.jpg'.format(index, downloaded_images + 1)
                     )
 
                     image = cv2.imdecode(np.asarray(bytearray(response.content), dtype="uint8"), cv2.IMREAD_COLOR)
@@ -40,7 +58,33 @@ def download_images(dataset):
                     cv2.imwrite(image_file_path, image)
                     downloaded_images += 1
 
-    return images
+        image_counts.append(downloaded_images)
 
-def upload_images_to_kvs(images, kvs_client):
-    pass
+    print(image_counts)
+    return image_counts
+
+def upload_images_to_kvs(dataset, images_kvs_client):
+    counter = 0
+    chunks = 0
+    collected_images = {}
+    for index, item in dataset.iterrows():
+        for f in range(1, item['image'] + 1):
+            with open(os.path.join(IMAGES_PATH, "product_{}_image_{}.jpg".format(index, f)), mode='rb') as image:
+                collected_images[slugify(item['id'] + '_image_{}'.format(f - 1))] = str(
+                    base64.b64encode(image.read()),
+                    'utf-8'
+                )
+
+        print('Item {} uploaded'.format(counter))
+        counter += 1
+
+        if counter % IMAGES_CHUNK_SIZE == 0:
+            chunks += 1
+            print("images_chunk_{}".format(chunks))
+            images_kvs_client.set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))
+            collected_images = {}
+
+    if counter % IMAGES_CHUNK_SIZE != 0:
+        chunks += 1
+        print("images_chunk_{}".format(chunks))
+        images_kvs_client.set_record("images_chunk_{}".format(chunks), json.dumps(collected_images))

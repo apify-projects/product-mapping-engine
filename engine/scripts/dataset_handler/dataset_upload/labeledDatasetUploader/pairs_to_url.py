@@ -18,9 +18,12 @@ def extract_unique_urls_and_save_them_to_json(pairs_dataset, urls_attribute, url
     array_to_jsonify = []
     for url in urls_array:
         if url != "":
+            '''
             array_to_jsonify.append({
                 'url': url
             })
+            '''
+            array_to_jsonify.append(url)
 
     with open(url_json_path, 'w') as url_json_file:
         json.dump(array_to_jsonify, url_json_file)

@@ -10,7 +10,7 @@ import importlib.machinery
 
 configuration = importlib.machinery.SourceFileLoader(
     'configuration',
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..", "configuration.py"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..", "configuration.py"),
 ).load_module()
 
 
@@ -80,15 +80,18 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     url_pairs_dataset = pd.read_csv(url_pairs_dataset_path)
 
     scraped_dataset1 = pd.read_json(scraped_dataset1_path)
+    '''
     scraped_dataset1 = scraped_dataset1[
         ["name", "shortDescription", "longDescription", "specification", "images", "price", "url"]]
+    '''
     scraped_dataset1 = scraped_dataset1.rename(
         columns={
+            "images": "image",
             "shortDescription": "short_description",
             "longDescription": "long_description",
-            "images": "image"
         }
     )
+
     scraped_dataset1 = scraped_dataset1.rename(
         columns={
             "name": "name1",
@@ -97,7 +100,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "specification": "specification1",
             "image": "image1",
             "price": "price1",
-            "url": "url1"
+            "url": "url1",
+            "code": "code1"
         }
     )
 
@@ -106,18 +110,16 @@ def transform_scraped_datasets_to_full_pairs_dataset(
     scraped_dataset1["id1"] = scraped_dataset1["url1"]
 
     scraped_dataset2 = pd.read_json(scraped_dataset2_path)
-    scraped_dataset2 = scraped_dataset2[
-        ["productName", "shortDescription", "longDescription", "specifications", "images", "price", "productUrl"]]
+    '''
+    scraped_dataset2 = scraped_dataset2[["productName", "shortDescription", "longDescription", "specifications", "images", "price", "productUrl"]]
+    '''
     scraped_dataset2 = scraped_dataset2.rename(
         columns={
-            "productName": "name",
             "shortDescription": "short_description",
-            "longDescription": "long_description",
-            "specifications": "specification",
-            "images": "image",
-            "productUrl": "url"
+            "longDescription": "long_description"
         }
     )
+
     scraped_dataset2 = scraped_dataset2.rename(
         columns={
             "name": "name2",
@@ -126,7 +128,8 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "specification": "specification2",
             "image": "image2",
             "price": "price2",
-            "url": "url2"
+            "url": "url2",
+            "code": "code2"
         }
     )
     scraped_dataset2 = scraped_dataset2.astype({"price2": str}, errors='raise')
@@ -203,5 +206,5 @@ transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
                  "xcite.json"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images_finalized"),
 )

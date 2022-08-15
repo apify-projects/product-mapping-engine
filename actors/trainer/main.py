@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
-        full_dataset = True
+        full_dataset = False
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
@@ -32,11 +32,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "extra-xcite-mapping",
+                    "task_id": "improved-extra-xcite-mapping",
                     "classifier_type": "NeuralNetwork",
-                    "dataset_id": "AzT4gUuFh6EaismqR",
-                    "images_kvs_1": "iCdo7OawbdUx8MJVk",
-                    "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
+                    "dataset_id": "cGthH13dQu56WZda1",
+                    "images_kvs_1": "K9hEE5ISZhWN4qOfk",
+                    "images_kvs_2": "AgrPGcmpPqkHvcWaM"
                 }
             )
 
