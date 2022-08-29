@@ -25,7 +25,6 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ",
-                    "classifier_type": "LogisticRegression",
                     "dataset_1": "9mk56pDWdfDZoCMiR",
                     "images_kvs_1": "iNNZxJhjAatupQSV0",
                     "dataset_2": "axCYJHLt6cmb1gbNJ",
@@ -36,12 +35,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "improved-extra-xcite-mapping",
-                    "classifier_type": "NeuralNetwork",
-                    "dataset_1": "TmwSx86VgPaBNGasS",
-                    "images_kvs_1": "K9hEE5ISZhWN4qOfk",
-                    "dataset_2": "NHeOW3l06VeKzlMzX",
-                    "images_kvs_2": "AgrPGcmpPqkHvcWaM"
+                    "task_id": "fixed-v4-extra-xcite-mapping",
+                    "dataset_1": "YRJd6DPu3Cbd9SrjZ",
+                    "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
+                    "dataset_2": "lTVsLhiQXQoFIo52D",
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
                 }
             )
 
@@ -50,7 +48,6 @@ if __name__ == '__main__':
     print(json.dumps(parameters, indent=2))
 
     task_id = parameters['task_id']
-    classifier_type = parameters['classifier_type']
 
     # Load precomputed matches
     dataset_precomputed_matches = None
@@ -110,11 +107,13 @@ if __name__ == '__main__':
                 dataset_precomputed_matches,
                 images_kvs_1_client,
                 images_kvs_2_client,
-                classifier_type,
                 model_key_value_store_client=model_key_value_store,
                 task_id=task_id,
                 is_on_platform=is_on_platform
             )
+
+        all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
+        print(all_product_pairs_matching_scores)
 
         predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
                                                                   on='id1', how='left') \
@@ -128,7 +127,8 @@ if __name__ == '__main__':
                     new_product_pairs_matching_scores.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
             else:
                 precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
-            # TODO investigate
+
+        # TODO investigate
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
         predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
         default_dataset_client.push_items(

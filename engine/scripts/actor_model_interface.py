@@ -9,6 +9,7 @@ import pandas as pd
 from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
+from .classifier_handler.classifiers import Classifier
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ""))
@@ -31,10 +32,10 @@ def split_dataframes(dataset):
     @param dataset: preprocessed dataframe
     @return: two dataframes with detected keywords and without them
     """
-    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts']
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'code']
     dataset_without_marks = dataset[[col for col in columns_without_marks + ['price']]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
-    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks]]
+    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks] + ['code']]
     return dataset, dataset_without_marks
 
 
@@ -305,7 +306,9 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     print("Predicted pairs")
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
 
-    merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+    merged_data = predicted_pairs.merge(labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2', 'name1', 'name2']], on=['id1', 'id2'], how='outer')
+    merged_data.info()
+    merged_data.to_csv("filtered.csv")
 
     predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
 
@@ -332,7 +335,6 @@ def load_model_create_dataset_and_predict_matches(
         precomputed_pairs_matching_scores,
         images_kvs1_client,
         images_kvs2_client,
-        classifier_type,
         model_key_value_store_client=None,
         task_id="basic",
         is_on_platform=IS_ON_PLATFORM
@@ -344,7 +346,6 @@ def load_model_create_dataset_and_predict_matches(
     @param precomputed_pairs_matching_scores: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
@@ -352,7 +353,7 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
-    classifier, _ = setup_classifier(classifier_type)
+    classifier = Classifier()
     classifier.load(key_value_store=model_key_value_store_client)
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
@@ -384,6 +385,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
             preprocessed_pairs_to_predict
         )
+        preprocessed_pairs.to_csv("predictions.csv")
 
         if not is_on_platform:
             evaluate_executor_results(classifier, preprocessed_pairs, task_id, 'new executor data',
@@ -422,6 +424,7 @@ def load_model_create_dataset_and_predict_matches(
             ignore_index=True)
     else:
         all_product_pairs_matching_scores = new_product_pairs_matching_scores
+
     if not is_on_platform:
         evaluate_executor_results(classifier, all_product_pairs_matching_scores, task_id, 'all executor data', None)
 
@@ -487,7 +490,7 @@ def load_data_and_train_model(
     for _ in range(NUMBER_OF_TRAINING_RUNS):
         if classifier_type in ['Bagging', 'Boosting']:
             classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type)
-        elif PERFORMED_PARAMETERS_SEARCH is not None:
+        elif PERFORMED_PARAMETERS_SEARCH is not 'none':
             classifier, train_stats, test_stats = parameters_search_and_best_model_training(
                 similarities,
                 classifier_type
