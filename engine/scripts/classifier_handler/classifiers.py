@@ -5,7 +5,7 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 import pydot
-from ..configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
+from configuration import PRINCIPAL_COMPONENT_COUNT, POSITIVE_CLASS_UPSAMPLING_RATIO, EQUALIZE_CLASS_IMPORTANCE, \
     PERFORM_PCA_ANALYSIS
 from sklearn import svm
 from sklearn import tree

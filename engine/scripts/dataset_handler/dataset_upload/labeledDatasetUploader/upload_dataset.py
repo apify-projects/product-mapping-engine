@@ -143,7 +143,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
 
 
 upload_dataset_to_platform(
-    "improved-extra-xcite-mapping",
+    "fixed-v4-extra-xcite-mapping",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images_finalized"),
 )

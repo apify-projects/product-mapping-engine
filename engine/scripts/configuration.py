@@ -2,8 +2,7 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-NUMBER_OF_TRAINING_RUNS = 3
-LOAD_PRECOMPUTED_SIMILARITIES = True
+LOAD_PRECOMPUTED_SIMILARITIES = False
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
@@ -21,7 +20,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # czech, english
+LANGUAGE = 'english'  # czech, english
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION CONFIGURATION
@@ -36,7 +35,8 @@ MINIMAL_DETECTABLE_ID_LENGTH = 4
 NUMBER_OF_TOP_DESCRIPTIVE_WORDS = 50
 MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS = 0.5
 MIN_DESCRIPTIVE_WORDS_FOR_MATCH = 0
-MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
+MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 1
+MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
 MIN_MATCH_PRICE_RATIO = 0.5
 MAX_MATCH_PRICE_RATIO = 2
 
@@ -58,28 +58,28 @@ COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION
 TEST_DATA_PROPORTION = 0.2
+NUMBER_OF_TRAINING_RUNS = 10
 PRINCIPAL_COMPONENT_COUNT = 20
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION CONFIGURATION
-NUMBER_OF_THRESHES = 30
+NUMBER_OF_THRESHES = 100
 NUMBER_OF_THRESHES_FOR_AUC = 30
 PRINT_ROC_AND_STATISTICS = False
-PRINT_FEATURE_IMPORTANCE = False
+PRINT_FEATURE_IMPORTANCE = True
 PRINT_CORRELATION_MATRIX = False
 CORRELATION_LIMIT = 0.7
-MINIMAL_PRECISION = 0.2
-MINIMAL_RECALL = 0.2
-BEST_MODEL_SELECTION_CRITERION = 'balanced_precision_recall'  # max_precision, max_recall, balanced_precision_recall
+MINIMAL_PRECISION = 0.5
+MINIMAL_RECALL = 0.7
+BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 LinearRegression_CLASSIFIER_PARAMETERS = {}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1',
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l2',
                                             'solver': 'lbfgs',
-                                            'max_iter': 100,
-                                            'class_weight': 'balanced'}
+                                            'max_iter': 600}
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly',
                                               'degree': 5,
                                               'max_iter': 100,
@@ -94,34 +94,35 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 10, 50),
-                                       'activation': 'relu',
-                                       'solver': 'adam',
-                                       'batch_size': 'auto',
-                                       'learning_rate': 'adaptive',
-                                       'learning_rate_init': 0.001,
-                                       'max_iter': 100}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1',
-                                            'solver': 'lbfgs',
-                                            'max_iter': 100,
-                                            'class_weight': 'balanced'}
-
+NeuralNetwork_CLASSIFIER_PARAMETERS = {
+                                           'hidden_layer_sizes': (20, 20),
+                                           'max_iter': 400,
+                                           'solver': 'adam',
+                                           'activation': 'relu'
+                                       }
 LinearRegression_CLASSIFIER_PARAMETERS = {}
+
 Bagging_CLASSIFIER_PARAMETERS = {
-    'LogisticRegression': [{'class_weight': 'balanced'}],
-    'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
-    'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
-    'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
-                       'class_weight': 'balanced'}],
+    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (50, 50), 'activation': 'tanh', 'solver': 'lbfgs', 'batch_size': 'auto',
-         'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 200}
-    ]
+        {'hidden_layer_sizes': (20, 20), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+    ] * 10
 }
+
+Boosting_CLASSIFIER_PARAMETERS = {
+    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    'NeuralNetwork': [
+        {'hidden_layer_sizes': (20, 20), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+    ] * 15
+}
+
 AdaBoost_CLASSIFIER_PARAMETERS = {
     'base_estimator': LogisticRegression(),
     'n_estimators': 400
 }
+
 GradientBoosting_CLASSIFIER_PARAMETERS = {}
 
 # CLASSIFIER PARAMETERS CONFIGURATION FOR PARAMETERS SEARCH

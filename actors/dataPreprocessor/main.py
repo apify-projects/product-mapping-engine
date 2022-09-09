@@ -44,8 +44,8 @@ if __name__ == '__main__':
         default_kvs_client.set_record(
             'INPUT',
             {
-                'task_id': 'Final-Xcite',
-                'dataset_to_preprocess': 'R2yxBEbgCOA8hyO9u',
+                'task_id': 'Final-Xcite-Amazon',
+                'dataset_to_preprocess': 'qLWfgpocod6qlBPjj',
                 'attribute_names': {
                     'id': 'productUrl',
                     'name': 'name',

@@ -11,6 +11,17 @@ from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHE
 CHUNK_SIZE = 1000
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
+def output_results(default_dataset_client, default_kvs_client, predicted_matching_pairs, is_on_platform, current_chunk):
+    default_dataset_client.push_items(
+        predicted_matching_pairs.to_dict(orient='records')
+    )
+
+    if is_on_platform:
+        default_kvs_client.set_record(
+            LAST_PROCESSED_CHUNK_KEY,
+            current_chunk
+        )
+
 if __name__ == '__main__':
     # Read input
     client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
@@ -113,7 +124,6 @@ if __name__ == '__main__':
             )
 
         all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
-        print(all_product_pairs_matching_scores)
 
         predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
                                                                   on='id1', how='left') \
@@ -131,13 +141,7 @@ if __name__ == '__main__':
         # TODO investigate
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
         predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
-        default_dataset_client.push_items(
-            predicted_matching_pairs.to_dict(orient='records'))
 
-        if is_on_platform:
-            default_kvs_client.set_record(
-                LAST_PROCESSED_CHUNK_KEY,
-                current_chunk
-            )
+        output_results(default_dataset_client, default_kvs_client, predicted_matching_pairs, is_on_platform, current_chunk)
 
-            print("Done\n")
+        print("Done\n")

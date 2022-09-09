@@ -210,11 +210,20 @@ def preprocess_textual_data(dataset,
                 units_detection,
                 numbers_detection
             )
+
+            if 'all_ids_list' in detected_keywords_df:
+                print(detected_keywords_df['all_ids_list'])
+
     dataset = add_all_texts_column(dataset)
     detected_keywords = convert_keyword_dicts_to_dataframe(detected_keywords_df)
 
     if 'specification' in dataset.columns:
         dataset['specification'] = preprocess_specifications(dataset['specification'])
+
+    if 'code' in dataset.columns:
+        dataset['code'] = dataset['code'].apply(
+            lambda code_string: code_string.replace(' ,', ',').replace(', ', ',').replace('[', '').replace(']', '').replace('"', '').replace("'", "").split(',')
+        )
 
     dataset = reindex_and_merge_dataframes(dataset, detected_keywords)
     return dataset
@@ -287,6 +296,8 @@ def preprocess_specifications(dataset):
                 units_detection=True
             )
             specification_dict_preprocessed[' '.join(name[0])] = ' '.join(text_detected[0])
+
+        print(specification_dict_preprocessed)
         preprocessed_dataset.append(specification_dict_preprocessed)
     return preprocessed_dataset
 

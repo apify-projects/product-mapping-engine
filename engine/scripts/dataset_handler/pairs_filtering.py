@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from ..configuration import MIN_MATCH_PRICE_RATIO, MAX_MATCH_PRICE_RATIO, MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH, \
-    MIN_DESCRIPTIVE_WORDS_FOR_MATCH
+    MIN_DESCRIPTIVE_WORDS_FOR_MATCH, MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH
 from .similarity_computation.texts.compute_texts_similarity import \
     compute_descriptive_words_similarity
 
@@ -29,14 +29,16 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     @return dict with key as indices of products from the first dataset and
             values as indices of filtered possible matching products from second dataset
     """
-    dataset2_no_price_idx = dataset2.index[dataset2['price'] == 0].tolist()
+    dataset2_no_price_idx = dataset2.index[(dataset2['price'] == 0) | (dataset2['price'] == '') | (dataset2['price'].isnull())].tolist()
+    dataset2_no_price_products = dataset2.iloc[dataset2_no_price_idx]
+
     dataset1 = dataset1.sort_values(by=['price'])
     dataset2 = dataset2.sort_values(by=['price'])
     dataset_start_index = len(dataset1)
 
     dataset_list = np.array_split(dataset1, num_cpu)
     filtered_indices_dicts = pool.map(multi_run_filter_wrapper,
-                                      [(dataset_subset, dataset2, dataset2_no_price_idx, dataset_start_index,
+                                      [(dataset_subset, dataset2, dataset2_no_price_products, dataset_start_index,
                                         descriptive_words) for dataset_subset in dataset_list])
     pairs_dataset_idx = {}
     for filtered_dict in filtered_indices_dicts:
@@ -44,18 +46,19 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     return pairs_dataset_idx
 
 
-def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_idx, dataset_start_index,
+def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_products, dataset_start_index,
                                              descriptive_words):
     """
     Filter possible pairs of two datasets using price similar words and descriptive words filter in parallel way
     @param dataset_start_index: starting index to index the products from second dataset in descriptive words
-    @param dataset2_no_price_idx: indices of the products from second dataset without specified prices
+    @param dataset2_no_price_products: products from second dataset without specified prices
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
     @param descriptive_words: dictionary of descriptive words for each text column in products
     @return dict with key as indices of products from the first dataset and
             values as indices of filtered possible matching products from second dataset
     """
+    dataset1.info()
     product = dataset1.iloc[0, :]
     idx_start, idx_to = 0, 0
 
@@ -69,20 +72,20 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
     for idx, product in dataset1.iterrows():
         data_subset_idx, idx_start, idx_to = filter_products(product, descriptive_words['all_texts'].iloc[idx].values,
                                                              dataset2, idx_start, idx_to, dataset_start_index,
-                                                             descriptive_words)
+                                                             dataset2_no_price_products, descriptive_words)
         if len(data_subset_idx) == 0:
             print(f'No corresponding product for product "{product["name"]}" at index {idx}')
-            data_subset_idx = dataset2_no_price_idx
+            data_subset_idx = []
         else:
             data_subset_idx = data_subset_idx.tolist()
-            if len(dataset2_no_price_idx) != 0:
-                data_subset_idx = data_subset_idx + dataset2_no_price_idx
+
         pairs_dataset_idx[idx] = data_subset_idx
+
     return pairs_dataset_idx
 
 
 def filter_products(product, product_descriptive_words, dataset, idx_from, idx_to, dataset_start_index,
-                    descriptive_words):
+                    no_price_products, descriptive_words):
     """
     Filter products in dataset according to the price, category and word similarity to reduce number of comparisons
     @param product: given product for which we want to filter dataset
@@ -91,6 +94,7 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
     @param idx_from: starting index for searching for product with similar price in dataset
     @param idx_to: ending index for searching for product with similar price in dataset
     @param dataset_start_index: starting index to index the products from second dataset in descriptive words
+    @param no_price_products: dataframe of products with no specified price
     @param descriptive_words: dictionary of descriptive words for each text column in products
     @return: Filtered dataset of products that are possibly the same as given product
     """
@@ -115,6 +119,11 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         else:
             data_filtered = dataset.iloc[idx_from:idx_to]
 
+        if not no_price_products.empty:
+            print("Adding no price products")
+            data_filtered = pd.concat([data_filtered, no_price_products])
+            print(no_price_products)
+
     '''
     if 'category' in product.index.values and 'category' in dataset:
         data_filtered = data_filtered[
@@ -137,15 +146,34 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
     @param descriptive_words: dictionary of descriptive words for each text column in products
     @return: dataset with products containing at least one same word as source product
     """
-    data_subset = pd.DataFrame(columns=dataset.columns.tolist())
+    data_subsets = []
     for idx, second_product in dataset.iterrows():
         second_product_descriptive_words = descriptive_words.iloc[idx + dataset_start_index].values
         descriptive_words_sim = compute_descriptive_words_similarity(
             product_descriptive_words,
             second_product_descriptive_words
         )
-        if len(set(product['name']) & set(second_product['name'])) >= MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH and \
-                descriptive_words_sim >= MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
-            data_subset = data_subset.append(second_product)
 
-    return data_subset
+        codes_matching = True
+        if len(product["code"]) > 0 and len(second_product["code"]) > 0 \
+                and len(second_product["code"]) + len(product["code"]) > 2:
+            matches = 0
+            for code1 in product["code"]:
+                for code2 in second_product["code"]:
+                    if code1 == code2:
+                        matches += 1
+                        break
+
+            if matches == 0:
+                codes_matching = False
+
+        # TODO delete
+        codes_matching = True
+
+        matching_words = len(set(product['name']) & set(second_product['name']))
+        if codes_matching and (matching_words >= MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH) \
+            and (len(product['name']) < 4 or len(product['name']) < 4 or matching_words >= MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH) \
+            and descriptive_words_sim >= MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
+            data_subsets.append(second_product)
+
+    return pd.DataFrame(data_subsets) if len(data_subsets) > 0 else pd.DataFrame(columns=dataset.columns.tolist())

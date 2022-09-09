@@ -370,6 +370,9 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
                     if item1 == item2:
                         matches += 1
             score = matches / len(product1)
+            if matches == 0 and len(product1) > 0 and len(product2) > 0:
+                score = -1
+
             similarity_scores.append(score)
 
     return similarity_scores
@@ -389,10 +392,6 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: Similarity scores for the product pairs
     """
-
-    print(dataset1['id'])
-    print(dataset2['id'])
-
     dataset1_subsets = [dataset1.iloc[list(product_pairs_idx_part.keys())] for product_pairs_idx_part in
                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
     dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in

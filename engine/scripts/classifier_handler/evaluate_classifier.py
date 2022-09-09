@@ -126,10 +126,12 @@ def ensemble_models_training(similarities, classifier_type):
         classifier.fit(train_data_sample)
         predicted_scores_train.append(classifier.predict(train_data, predict_outputs=False))
         predicted_scores_test.append(classifier.predict(test_data, predict_outputs=False))
-        evaluation_data = train_data[['match']]
-        evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(predicted_scores_train,
-                                                                                               'score')
         if classifier_type == 'Boosting':
+            evaluation_data = train_data[['match']]
+            evaluation_data['predicted_scores'] = classifiers.combine_predictions_from_classifiers(
+                predicted_scores_train,
+                'score'
+            )
             weights = evaluation_data.apply(
                 lambda row: min(1 / (row.predicted_scores if row.match == 1 else 1 - row.predicted_scores), 10),
                 axis=1
@@ -265,7 +267,7 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
             classifier.set_threshold(thresh)
             test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(
                 test_data)
-            test_data_results = compute_prediction_accuracies(test_data, 'test')
+            test_data_results = compute_prediction_accuracies(test_data, 'test', print_classifier_results=False)
 
             # compare results and select the best thresh
             if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
@@ -333,7 +335,7 @@ def plot_correlation_matrix(test_data, train_data):
     print('\n----------------------------\n')
 
 
-def compute_prediction_accuracies(data, data_type):
+def compute_prediction_accuracies(data, data_type, print_classifier_results=True):
     """
     Compute  f1 score, accuracy, precision, recall and show confusion matrix
     @param data: all dataset used for training and prediction
@@ -356,17 +358,18 @@ def compute_prediction_accuracies(data, data_type):
     conf_matrix = confusion_matrix(data['match'], data['predicted_match'])
     f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
 
-    print(f'Classifier results for {data_type} data')
-    print('----------------------------')
-    print(f'F1 score: {f1_score}')
-    print(f'Accuracy: {accuracy}')
-    print(f'Recall: {recall}')
-    print(f'Specificity: {specificity}')
-    print(f'Precision: {precision}')
-    print('Confusion matrix:')
-    print(conf_matrix)
-    print('----------------------------')
-    print('\n\n')
+    if print_classifier_results:
+        print(f'Classifier results for {data_type} data')
+        print('----------------------------')
+        print(f'F1 score: {f1_score}')
+        print(f'Accuracy: {accuracy}')
+        print(f'Recall: {recall}')
+        print(f'Specificity: {specificity}')
+        print(f'Precision: {precision}')
+        print('Confusion matrix:')
+        print(conf_matrix)
+        print('----------------------------')
+        print('\n\n')
 
     return {'f1_score': f1_score, 'accuracy': accuracy, 'recall': recall, 'specificity': specificity,
             'precision': precision, 'confusion_matrix': conf_matrix}
@@ -475,7 +478,6 @@ def select_best_classifier(classifiers):
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['f1_score']
         elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-
             if is_model_better_than_previous(classifier['test_stats'], 'precision', best_compared_value, 'recall',
                                              MINIMAL_RECALL, best_minimal_value):
                 best_classifier = classifier['classifier']

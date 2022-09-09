@@ -22,7 +22,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "Alpha-Complete-CZ",
-                    "classifier_type": "AdaBoost",
+                    "classifier_type": "NeuralNetwork",
                     "dataset_id": "cfKxr20fm88KfhBDg",
                     "images_kvs_1": "iNNZxJhjAatupQSV0",
                     "images_kvs_2": "NNZ40CQnWh4KofXJB"
@@ -32,11 +32,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "improved-extra-xcite-mapping",
-                    "classifier_type": "NeuralNetwork",
-                    "dataset_id": "cGthH13dQu56WZda1",
-                    "images_kvs_1": "K9hEE5ISZhWN4qOfk",
-                    "images_kvs_2": "AgrPGcmpPqkHvcWaM"
+                    "task_id": "fixed-v4-extra-xcite-mapping",
+                    "classifier_type": "LogisticRegression",
+                    "dataset_id": "TyXf5pvH3eg7AES8g",
+                    "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
                 }
             )
 

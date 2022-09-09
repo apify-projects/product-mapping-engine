@@ -9,7 +9,6 @@ import pandas as pd
 from .dataset_handler.pairs_filtering import filter_possible_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
-from .classifier_handler.classifiers import Classifier
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ""))
@@ -353,8 +352,12 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
-    classifier = Classifier()
+    training_parameters = model_key_value_store_client.get_record('parameters')['value']
+    classifier_type = training_parameters['classifier_type']
+
+    classifier, _ = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
+
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
@@ -497,6 +500,7 @@ def load_data_and_train_model(
             )
         else:
             classifier, _ = setup_classifier(classifier_type)
+            print(classifier)
             train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
 
         classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
