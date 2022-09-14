@@ -29,7 +29,7 @@ RUN echo "Python version:" \
  && echo "All installed Python packages:" \
  && pip freeze \
  && git clone -b DatasetPreprocessor https://ssh:$GITHUB_TOKEN@github.com/apify-projects/product-mapping-engine.git product_mapping_engine \
- && (cd product_mapping_engine/scripts/preprocessing/images/image_hash_creator && npm install)
+ && (cd product_mapping_engine/scripts/dataset_handler/preprocessing/images/image_hash_creator && npm install)
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after installing the dependencies, quick build will be really fast
