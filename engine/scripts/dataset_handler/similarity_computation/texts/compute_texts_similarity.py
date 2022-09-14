@@ -377,6 +377,13 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
 
     return similarity_scores
 
+def merge_ids_and_codes(product_ids_and_codes):
+    union = list(set(product_ids_and_codes['all_ids_list']) | set(product_ids_and_codes['code']))
+
+    for e in range(len(union)):
+        union[e] = union[e].replace(ID_MARK, '')
+
+    return union
 
 def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                   dataset2_starting_index, pool, num_cpu):
@@ -418,9 +425,22 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
+    # TODO this should be parallel
     if 'code' in dataset1.columns and 'code' in dataset2.columns:
-        code_similarity = compute_similarity_of_codes(dataset1['code'], dataset2['code'], product_pairs_idx)
-        df_all_similarities['code'] = pd.Series(code_similarity)
+        df_all_similarities['code'] = pd.Series(
+            compute_similarity_of_codes(
+                dataset1['code'],
+                dataset2['code'],
+                product_pairs_idx
+            )
+        )
+        df_all_similarities['codes_and_ids'] = pd.Series(
+            compute_similarity_of_codes(
+                dataset1[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
+                dataset2[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
+                product_pairs_idx
+            )
+        )
 
     df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
     return df_all_similarities

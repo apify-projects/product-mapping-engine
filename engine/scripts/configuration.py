@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = False
+LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
@@ -59,7 +59,7 @@ COMPUTE_IMAGE_SIMILARITIES = False
 # TRAINING CONFIGURATION
 TEST_DATA_PROPORTION = 0.2
 NUMBER_OF_TRAINING_RUNS = 10
-PRINCIPAL_COMPONENT_COUNT = 20
+PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
@@ -68,7 +68,7 @@ POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 NUMBER_OF_THRESHES = 100
 NUMBER_OF_THRESHES_FOR_AUC = 30
 PRINT_ROC_AND_STATISTICS = False
-PRINT_FEATURE_IMPORTANCE = True
+PRINT_FEATURE_IMPORTANCE = False
 PRINT_CORRELATION_MATRIX = False
 CORRELATION_LIMIT = 0.7
 MINIMAL_PRECISION = 0.5
@@ -95,8 +95,8 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (20, 20),
-                                           'max_iter': 400,
+                                           'hidden_layer_sizes': (10, 10),
+                                           'max_iter': 250,
                                            'solver': 'adam',
                                            'activation': 'relu'
                                        }

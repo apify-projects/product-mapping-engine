@@ -120,9 +120,7 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
             data_filtered = dataset.iloc[idx_from:idx_to]
 
         if not no_price_products.empty:
-            print("Adding no price products")
             data_filtered = pd.concat([data_filtered, no_price_products])
-            print(no_price_products)
 
     '''
     if 'category' in product.index.values and 'category' in dataset:

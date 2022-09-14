@@ -173,7 +173,6 @@ def add_all_texts_column(dataset):
     dataset['all_texts'] = joined_rows
     return dataset
 
-
 def preprocess_textual_data(dataset,
                             id_detection=True,
                             color_detection=True,
@@ -197,22 +196,19 @@ def preprocess_textual_data(dataset,
         if column in dataset:
             dataset[column] = preprocess_text(dataset[column].values)
             dataset[column + '_no_detection'] = copy.deepcopy(dataset[column])
-            brand_detection, color_detection, id_detection, numbers_detection, units_detection = \
+            column_brand_detection, column_color_detection, column_id_detection, column_numbers_detection, column_units_detection = \
                 update_keywords_detection_from_config(
                     column, id_detection, brand_detection, color_detection, numbers_detection,
                     units_detection
                 )
             dataset[column], detected_keywords_df[column] = detect_ids_brands_colors_and_units(
                 dataset[column],
-                id_detection,
-                color_detection,
-                brand_detection,
-                units_detection,
-                numbers_detection
+                column_id_detection,
+                column_color_detection,
+                column_brand_detection,
+                column_units_detection,
+                column_numbers_detection
             )
-
-            if 'all_ids_list' in detected_keywords_df:
-                print(detected_keywords_df['all_ids_list'])
 
     dataset = add_all_texts_column(dataset)
     detected_keywords = convert_keyword_dicts_to_dataframe(detected_keywords_df)
@@ -297,7 +293,6 @@ def preprocess_specifications(dataset):
             )
             specification_dict_preprocessed[' '.join(name[0])] = ' '.join(text_detected[0])
 
-        print(specification_dict_preprocessed)
         preprocessed_dataset.append(specification_dict_preprocessed)
     return preprocessed_dataset
 

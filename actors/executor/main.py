@@ -11,9 +11,46 @@ from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHE
 CHUNK_SIZE = 1000
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
-def output_results(default_dataset_client, default_kvs_client, predicted_matching_pairs, is_on_platform, current_chunk):
-    default_dataset_client.push_items(
-        predicted_matching_pairs.to_dict(orient='records')
+def calculate_dataset_changes(dataset_output_attributes):
+    columns = []
+    renames = {}
+    for old_column, new_column in dataset_output_attributes.items():
+        columns.append(new_column)
+        renames[old_column] = new_column
+
+    return columns, renames
+
+
+def output_results (
+    output_dataset_client,
+    default_kvs_client,
+    predicted_matching_pairs,
+    is_on_platform,
+    current_chunk,
+    dataset1_output_attributes,
+    dataset2_output_attributes,
+    augment_outgoing_data,
+    augmenting_dataset1,
+    augmenting_dataset2
+):
+    if augment_outgoing_data:
+        output_data = predicted_matching_pairs[['id1', 'id2']]
+        output_data = output_data.merge(augmenting_dataset1, how='left', left_on="id1", right_on="url1")
+        augmenting_dataset2.info()
+        # TODO parametrize instead of "productUrl2"
+        output_data = output_data.merge(augmenting_dataset2, how='left', left_on="id2", right_on="productUrl2")
+
+        columns1, renames1 = calculate_dataset_changes(dataset1_output_attributes)
+        output_data = output_data.rename(columns=renames1)
+        columns2, renames2 = calculate_dataset_changes(dataset2_output_attributes)
+        output_data = output_data.rename(columns=renames2)
+
+        output_data = output_data[columns1 + columns2]
+    else:
+        output_data = predicted_matching_pairs
+
+    output_dataset_client.push_items(
+        output_data.to_dict(orient='records')
     )
 
     if is_on_platform:
@@ -39,7 +76,8 @@ if __name__ == '__main__':
                     "dataset_1": "9mk56pDWdfDZoCMiR",
                     "images_kvs_1": "iNNZxJhjAatupQSV0",
                     "dataset_2": "axCYJHLt6cmb1gbNJ",
-                    "images_kvs_2": "NNZ40CQnWh4KofXJB"
+                    "images_kvs_2": "NNZ40CQnWh4KofXJB",
+                    "augment_outgoing_data": False
                 }
             )
         else:
@@ -50,7 +88,19 @@ if __name__ == '__main__':
                     "dataset_1": "YRJd6DPu3Cbd9SrjZ",
                     "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
                     "dataset_2": "lTVsLhiQXQoFIo52D",
-                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb",
+                    "dataset_1_output_attributes": {
+                        "shopSpecificId1": "extraSku",
+                        "url1": "extraUrl"
+                    },
+                    "dataset_2_output_attributes": {
+                        "SKU2": "competitorSku",
+                        "productUrl2": "competitorUrl",
+                        "competitor2": "competitor"
+                    },
+                    "augment_outgoing_data": True,
+                    "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
+                    "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
                 }
             )
 
@@ -92,6 +142,18 @@ if __name__ == '__main__':
     model_key_value_store = client.key_value_store(model_key_value_store_info['id'])
 
     default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
+
+    augment_outgoing_data = parameters['augment_outgoing_data']
+    if augment_outgoing_data:
+        augmented_dataset1 = pd.DataFrame(
+            client.dataset(parameters['augmented_dataset_1']).list_items().items
+        ).add_suffix("1")
+
+        augmented_dataset2 = pd.DataFrame(
+            client.dataset(parameters['augmented_dataset_2']).list_items().items
+        ).add_suffix("2")
+    else:
+        augmented_dataset1 = augmented_dataset2 = None
 
     first_chunk = 0
     if is_on_platform:
@@ -142,6 +204,21 @@ if __name__ == '__main__':
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
         predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
 
-        output_results(default_dataset_client, default_kvs_client, predicted_matching_pairs, is_on_platform, current_chunk)
+        dataset_collection_client = client.datasets()
+        apify_dataset_info = dataset_collection_client.get_or_create(name="sample-pm-results")
+        apify_dataset_client = client.dataset(apify_dataset_info['id'])
+
+        output_results(
+            apify_dataset_client,
+            default_kvs_client,
+            predicted_matching_pairs,
+            is_on_platform,
+            current_chunk,
+            parameters["dataset_1_output_attributes"],
+            parameters["dataset_2_output_attributes"],
+            augment_outgoing_data,
+            augmented_dataset1,
+            augmented_dataset2
+        )
 
         print("Done\n")

@@ -30,10 +30,11 @@ class Classifier:
         self.predict_probability = True
 
     def fit(self, data):
-        if self.use_pca:
-            data = self.perform_pca(data, True)
         target = data['match']
         inputs = data.drop(columns=['match'])
+
+        if self.use_pca:
+            inputs = self.perform_pca(inputs, True)
 
         if EQUALIZE_CLASS_IMPORTANCE:
             value_counts = target.value_counts()
@@ -45,10 +46,11 @@ class Classifier:
 
     def predict(self, data, predict_outputs=True):
         inputs = data
-        if self.use_pca:
-            inputs = self.perform_pca(inputs, False)
         if 'match' in inputs.columns:
             inputs = inputs.drop(columns=['match'])
+
+        if self.use_pca:
+            inputs = self.perform_pca(inputs, False)
 
         if self.predict_probability:
             scores = self.model.predict_proba(inputs)
@@ -104,10 +106,6 @@ class Classifier:
 
     def perform_pca(self, data, train_pca=False):
         principal_component_count = PRINCIPAL_COMPONENT_COUNT
-        data_match = pd.Series()
-        if 'match' in data:
-            data_match = data['match']
-            data = data.drop(columns='match')
 
         if train_pca:
             self.pca = PCA(n_components=principal_component_count)
@@ -115,11 +113,12 @@ class Classifier:
         else:
             data = self.pca.transform(data)
 
-        data_principal_components = pd.DataFrame(data,
-                                                 columns=["principal_component_{}".format(component) for component in
-                                                          range(1, principal_component_count + 1)])
-        if not len(data_match) == 0:
-            data_principal_components['match'] = data_match
+        data_principal_components = pd.DataFrame(
+            data,
+            columns=[
+                "principal_component_{}".format(component) for component in range(1, principal_component_count + 1)
+            ]
+        )
 
         return data_principal_components
 
@@ -247,13 +246,13 @@ class BaggingClassifier(EnsembleClassifier):
             return [1 if output >= 0.5 else 0 for output in predicted_values]
 
     def predict(self, data, predict_outputs=True):
+        if 'match' in data.columns:
+            data = data.drop(columns=['match'])
+
         if self.use_pca:
             data = self.perform_pca(data, False)
         outputs_array = []
         scores_array = []
-
-        if 'match' in data.columns:
-            data = data.drop(columns=['match'])
 
         for classifier in self.model:
             if self.predict_probability:
