@@ -33,7 +33,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "fixed-v4-extra-xcite-mapping",
-                    "classifier_type": "LogisticRegression",
+                    "classifier_type": "NeuralNetwork",
                     "dataset_id": "TyXf5pvH3eg7AES8g",
                     "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
                     "images_kvs_2": "SLsfIZYZjjHzoQNtb"
