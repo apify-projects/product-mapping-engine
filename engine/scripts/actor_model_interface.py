@@ -31,10 +31,14 @@ def split_dataframes(dataset):
     @param dataset: preprocessed dataframe
     @return: two dataframes with detected keywords and without them
     """
-    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts', 'code']
+    codes_column_if_present = []
+    if 'code' in dataset.columns:
+        codes_column_if_present = ['code']
+
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts'] + codes_column_if_present
     dataset_without_marks = dataset[[col for col in columns_without_marks + ['price']]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
-    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks] + ['code']]
+    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks] + codes_column_if_present]
     return dataset, dataset_without_marks
 
 

@@ -144,7 +144,7 @@ if __name__ == '__main__':
     default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
 
     augment_outgoing_data = parameters['augment_outgoing_data']
-    if augment_outgoing_data:
+    if False and augment_outgoing_data:
         augmented_dataset1 = pd.DataFrame(
             client.dataset(parameters['augmented_dataset_1']).list_items().items
         ).add_suffix("1")
