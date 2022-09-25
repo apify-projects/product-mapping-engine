@@ -16,16 +16,16 @@ if __name__ == '__main__':
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
-        full_dataset = False
+        full_dataset = True
         if full_dataset:
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ",
+                    "task_id": "full-cs-dataset",
                     "classifier_type": "NeuralNetwork",
-                    "dataset_id": "cfKxr20fm88KfhBDg",
-                    "images_kvs_1": "iNNZxJhjAatupQSV0",
-                    "images_kvs_2": "NNZ40CQnWh4KofXJB"
+                    "dataset_id": "WRkXWRupE9x4hU9Gx",
+                    "images_kvs_1": "GAajPigzewo36wdak",
+                    "images_kvs_2": "UsXhHO2HBfplCnlmb"
                 }
             )
         else:
