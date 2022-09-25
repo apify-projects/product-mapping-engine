@@ -21,11 +21,11 @@ if __name__ == '__main__':
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "Alpha-Complete-CZ",
-                    "classifier_type": "AdaBoost",
-                    "dataset_id": "cfKxr20fm88KfhBDg",
-                    "images_kvs_1": "iNNZxJhjAatupQSV0",
-                    "images_kvs_2": "NNZ40CQnWh4KofXJB"
+                    "task_id": "full-cs-dataset",
+                    "classifier_type": "NeuralNetwork",
+                    "dataset_id": "WRkXWRupE9x4hU9Gx",
+                    "images_kvs_1": "GAajPigzewo36wdak",
+                    "images_kvs_2": "UsXhHO2HBfplCnlmb"
                 }
             )
         else:
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     )
     output_key_value_store_client = client.key_value_store(output_key_value_store_info['id'])
     output_key_value_store_client.set_record('parameters', parameters)
-    labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
+    labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items).head(500)
 
     stats = load_data_and_train_model(
         classifier_type,

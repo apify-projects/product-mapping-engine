@@ -140,7 +140,7 @@ def transform_scraped_datasets_to_full_pairs_dataset(
         lambda match_type: 1 if match_type == "match" else 0
     )
     full_pairs_dataset = full_pairs_dataset.filter(regex=("(.*(1|2)$)|^match$"), axis=1)
-    full_pairs_dataset = full_pairs_dataset[(full_pairs_dataset["price1"] != "") & (full_pairs_dataset["price2"] != "")]
+    #full_pairs_dataset = full_pairs_dataset[(full_pairs_dataset["price1"] != "") & (full_pairs_dataset["price2"] != "")]
     full_pairs_dataset.reset_index(inplace=True)
 
     full_pairs_dataset['specification1'] = full_pairs_dataset['specification1'].apply(
