@@ -139,10 +139,11 @@ def create_hash_sets(
                                  'utf-8')).hexdigest() + '.jpg'
                 pair_image_identification = 'pair{}_product{}_image{}'.format(pair_index, dataset_index + 1,
                                                                               image_index + 1)
-                one_hash = data[image_name]
 
-                pair_hashes.append(one_hash)
-                pair_names.append(pair_image_identification)
+                if image_name in data:
+                    one_hash = data[image_name]
+                    pair_hashes.append(one_hash)
+                    pair_names.append(pair_image_identification)
 
         if len(pair_hashes) > 0:
             hashes.append(pair_hashes)
@@ -150,6 +151,9 @@ def create_hash_sets(
 
         pair_index += 1
 
+    print("Hashes")
+    print(len(hashes))
+    print(len(names))
     return [hashes, names]
 
 
@@ -243,7 +247,6 @@ def create_image_similarities_data(
         download_images_from_kvs(img_dir, dataset_images_kvs2, dataset_prefixes[1])
 
         print("Image download finished")
-
         print("Image preprocessing started")
         script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                   "../../preprocessing/images/image_hash_creator/main.js")

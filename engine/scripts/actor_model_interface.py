@@ -208,6 +208,8 @@ def prepare_data_for_classifier(
     if not is_on_platform:
         num_cpu -= 2
 
+    num_cpu = 2
+
     # preprocess data
     print("Text preprocessing started")
     dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1,
