@@ -23,9 +23,9 @@ if __name__ == '__main__':
                 {
                     "task_id": "full-cs-dataset",
                     "classifier_type": "NeuralNetwork",
-                    "dataset_id": "WRkXWRupE9x4hU9Gx",
-                    "images_kvs_1": "GAajPigzewo36wdak",
-                    "images_kvs_2": "UsXhHO2HBfplCnlmb"
+                    "dataset_id": "hnSwb2SaERXcvbXQ6",
+                    "images_kvs_1": "dEoB1XWso0B0cY6AC",
+                    "images_kvs_2": "lBhezRArqcep8rMER"
                 }
             )
         else:

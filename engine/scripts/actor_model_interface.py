@@ -205,10 +205,6 @@ def prepare_data_for_classifier(
     # setup parallelling stuff
     pool = Pool()
     num_cpu = os.cpu_count() - 1
-    if not is_on_platform:
-        num_cpu -= 2
-
-    num_cpu = 2
 
     # preprocess data
     print("Text preprocessing started")
