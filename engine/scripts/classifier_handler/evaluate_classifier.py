@@ -282,11 +282,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
             test_data_results = compute_prediction_accuracies(test_data, 'test', print_classifier_results=False)
 
             # compare results and select the best thresh
-            if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
-                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+            if BEST_MODEL_SELECTION_CRITERION == 'max_f1':
+                if test_data_results['f1_score'] > optimal_value:
                     optimal_threshold = thresh
-                    optimal_value = abs(
-                        test_data_results['precision'] - test_data_results['recall'])
+                    optimal_value = test_data_results['f1_score']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
                 if is_model_better_than_previous(test_data_results, 'precision', optimal_value, 'recall',
                                                  MINIMAL_RECALL, optimal_minimal_value):
@@ -299,6 +298,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
                     optimal_threshold = thresh
                     optimal_value = test_data_results['recall']
                     optimal_minimal_value = test_data_results['precision']
+            elif BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+                    optimal_threshold = thresh
+                    optimal_value = abs(test_data_results['precision'] - test_data_results['recall'])
             else:
                 raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
@@ -483,7 +486,7 @@ def select_best_classifier(classifiers):
     best_minimal_value = -1
 
     for classifier in classifiers:
-        if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+        if BEST_MODEL_SELECTION_CRITERION == 'max_f1':
             if classifier['test_stats']['f1_score'] > best_compared_value:
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
@@ -505,6 +508,12 @@ def select_best_classifier(classifiers):
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['recall']
                 best_minimal_value = classifier['test_stats']['precision']
+        elif BEST_MODEL_SELECTION_CRITERION =='balanced_precision_recall':
+            if abs(classifier['test_stats']['precision'] - classifier['test_stats']['recall']) < best_compared_value:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_compared_value = abs(classifier['test_stats']['precision'] - classifier['test_stats']['recall'])
         else:
             raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
