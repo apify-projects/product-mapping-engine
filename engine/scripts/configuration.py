@@ -74,7 +74,7 @@ PRINT_CORRELATION_MATRIX = False
 CORRELATION_LIMIT = 0.7
 MINIMAL_PRECISION = 0.5
 MINIMAL_RECALL = 0.7
-BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
+BEST_MODEL_SELECTION_CRITERION = 'balanced_precision_recall'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 LinearRegression_CLASSIFIER_PARAMETERS = {}
