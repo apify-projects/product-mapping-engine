@@ -492,19 +492,20 @@ def load_data_and_train_model(
 
     # Training part
     classifiers = []
-    for _ in range(NUMBER_OF_TRAINING_RUNS):
-        if classifier_type in ['Bagging', 'Boosting']:
-            classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type, task_id)
-        elif PERFORMED_PARAMETERS_SEARCH is not 'none':
-            classifier, train_stats, test_stats = parameters_search_and_best_model_training(
-                similarities,
-                classifier_type,
-                task_id
-            )
-        else:
-            classifier, _ = setup_classifier(classifier_type)
-            print(classifier)
-            train_stats, test_stats = train_classifier(classifier, similarities, task_id)
+    if PERFORMED_PARAMETERS_SEARCH is not 'none':
+        classifier, train_stats, test_stats = parameters_search_and_best_model_training(
+            similarities,
+            classifier_type,
+            task_id
+        )
+    else:
+        for _ in range(NUMBER_OF_TRAINING_RUNS):
+            if classifier_type in ['Bagging', 'Boosting']:
+                classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type, task_id)
+            else:
+                classifier, _ = setup_classifier(classifier_type)
+                print(classifier)
+                train_stats, test_stats = train_classifier(classifier, similarities, task_id)
 
         classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
     best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
