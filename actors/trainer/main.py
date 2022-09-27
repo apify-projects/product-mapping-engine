@@ -23,7 +23,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "full-cs-dataset",
-                    "classifier_type": "LogisticRegression",
+                    "classifier_type": "NeuralNetwork",
                     "dataset_id": "hnSwb2SaERXcvbXQ6",
                     "images_kvs_1": "dEoB1XWso0B0cY6AC",
                     "images_kvs_2": "lBhezRArqcep8rMER"

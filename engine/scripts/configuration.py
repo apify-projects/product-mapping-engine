@@ -96,10 +96,13 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (10, 10),
-                                           'max_iter': 250,
-                                           'solver': 'adam',
-                                           'activation': 'relu'
+                                        'hidden_layer_sizes': (10, 50),
+                                        'max_iter': 500,
+                                        'solver': 'lbfgs',
+                                        'activation': 'logistic',
+                                        'learning_rate_init': 0.01,
+                                        'learning_rate': 'adaptive',
+                                        'batch_size': 'auto'
                                        }
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
@@ -164,7 +167,7 @@ AdaBoost_CLASSIFIER_PARAMETERS_SEARCH = {
 GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 
 # BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
-PERFORMED_PARAMETERS_SEARCH = 'random'  # grid, random, none
+PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
 RANDOM_SEARCH_ITERATIONS = 50
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
 
