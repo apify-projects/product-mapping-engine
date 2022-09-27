@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, \
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
-    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT
+    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT
 
 
 def setup_classifier(classifier_type):
@@ -78,14 +78,20 @@ def is_valid_combination_of_parameters(classifier_type, parameters):
     return True
 
 
-def train_classifier(classifier, data):
+def train_classifier(classifier, data, task_id):
     """
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
+    @param task_id: id of the task
     @return: train and test datasets with predictions and statistics
     """
-    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+    if PERFORM_TRAIN_TEST_SPLIT:
+        train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
+    else:
+        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
+
     classifier.fit(train_data)
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
     test_data['predicted_scores'] = classifier.predict(test_data, predict_outputs=False)
@@ -106,17 +112,22 @@ def sample_data_according_to_weights(data, weights, sample_proportion):
     return sample
 
 
-def ensemble_models_training(similarities, classifier_type):
+def ensemble_models_training(similarities, classifier_type, task_id):
     """
     Training ensembles of several models
     @param similarities: dataframe with precomputed similarities
     @param classifier_type: type of the ensemble
+    @param task_id: id of the task
     @return: combined classifier and its train and test stats
     """
 
     classifiers, _ = setup_classifier(classifier_type)
     data = similarities.drop(columns=['id1', 'id2'])
-    train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+    if PERFORM_TRAIN_TEST_SPLIT:
+        train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
+    else:
+        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
     predicted_scores_train = []
     predicted_scores_test = []
 
@@ -150,11 +161,12 @@ def ensemble_models_training(similarities, classifier_type):
     return classifiers, train_stats, test_stats
 
 
-def parameters_search_and_best_model_training(similarities, classifier_type):
+def parameters_search_and_best_model_training(similarities, classifier_type, task_id):
     """
     Setup classifier and perform grid or random search to find the best parameters for given type of model
     @param similarities: precomputed similarities used as training data
     @param classifier_type: classifier type
+    @param task_id: id of the task
     @return: classifier with the highest test f1 score and its train and test stats
     """
     classifiers, classifier_parameters = setup_classifier(classifier_type)
@@ -168,7 +180,7 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
 
-        train_stats, test_stats = train_classifier(classifiers, similarities_without_ids)
+        train_stats, test_stats = train_classifier(classifiers, similarities_without_ids, task_id)
         warnings.warn(
             f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
 
@@ -176,12 +188,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type):
     rows_to_dataframe = []
     for classifier in classifiers:
         if NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS == 1:
-            train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
+            train_stats, test_stats = train_classifier(classifier, similarities_without_ids, task_id)
         else:
             train_stats_array = []
             test_stats_array = []
             for i in range(NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS):
-                train_stats, test_stats = train_classifier(classifier, similarities_without_ids)
+                train_stats, test_stats = train_classifier(classifier, similarities_without_ids, task_id)
                 train_stats_array.append(train_stats)
                 test_stats_array.append(test_stats)
             train_stats = average_statistics_from_several_runs(train_stats_array)
