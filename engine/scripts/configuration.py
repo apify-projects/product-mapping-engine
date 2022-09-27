@@ -96,13 +96,10 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                        'hidden_layer_sizes': (10, 50),
-                                        'max_iter': 500,
-                                        'solver': 'lbfgs',
-                                        'activation': 'logistic',
-                                        'learning_rate_init': 0.01,
-                                        'learning_rate': 'adaptive',
-                                        'batch_size': 'auto'
+                                           'hidden_layer_sizes': (10, 10),
+                                           'max_iter': 250,
+                                           'solver': 'adam',
+                                           'activation': 'relu'
                                        }
 LinearRegression_CLASSIFIER_PARAMETERS = {}
 
