@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = True
+LOAD_PRECOMPUTED_SIMILARITIES = False
 SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
@@ -20,7 +20,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'english'  # czech, english
+LANGUAGE = 'czech'  # czech, english
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION CONFIGURATION
@@ -54,7 +54,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = False
+COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
@@ -107,7 +107,7 @@ Bagging_CLASSIFIER_PARAMETERS = {
     #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (20, 20), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
     ] * 10
 }
 
@@ -115,7 +115,7 @@ Boosting_CLASSIFIER_PARAMETERS = {
     #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (20, 20), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
     ] * 15
 }
 

@@ -108,7 +108,11 @@ def crop_images_contour_detection(input_folder, filenames, output_folder):
 
             # crop image to the biggest found object
             cropped = image[max_y:max_y + max_h, max_x:max_x + max_w]
-            cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+
+            if len(cropped) > 0:
+                cv2.imwrite(f'{output_folder}/{filename}.jpg', cropped)
+            else:
+                print(f"Warning: image {filename} has no objects in it and is being ignored")
 
 
 def compute_image_hashes(index, dataset_folder, img_dir, assigned_filenames, script_dir):

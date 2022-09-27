@@ -153,24 +153,25 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
         )
 
         codes_matching = True
-        if len(product["code"]) > 0 and len(second_product["code"]) > 0 \
-                and len(second_product["code"]) + len(product["code"]) > 2:
-            matches = 0
-            for code1 in product["code"]:
-                for code2 in second_product["code"]:
-                    if code1 == code2:
-                        matches += 1
-                        break
+        if "code" in product:
+            if len(product["code"]) > 0 and len(second_product["code"]) > 0 \
+                    and len(second_product["code"]) + len(product["code"]) > 2:
+                matches = 0
+                for code1 in product["code"]:
+                    for code2 in second_product["code"]:
+                        if code1 == code2:
+                            matches += 1
+                            break
 
-            if matches == 0:
-                codes_matching = False
+                if matches == 0:
+                    codes_matching = False
 
         # TODO delete
         codes_matching = True
 
         matching_words = len(set(product['name']) & set(second_product['name']))
         if codes_matching and (matching_words >= MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH) \
-            and (len(product['name']) < 4 or len(product['name']) < 4 or matching_words >= MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH) \
+            and (len(product['name']) < 4 or len(second_product['name']) < 4 or matching_words >= MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH) \
             and descriptive_words_sim >= MIN_DESCRIPTIVE_WORDS_FOR_MATCH:
             data_subsets.append(second_product)
 
