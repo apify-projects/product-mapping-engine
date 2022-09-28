@@ -14,7 +14,8 @@ from sklearn.model_selection import train_test_split
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, \
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
-    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT
+    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
+    SAVE_TRAIN_TEST_SPLIT
 
 
 def setup_classifier(classifier_type):
@@ -88,9 +89,12 @@ def train_classifier(classifier, data, task_id):
     """
     if PERFORM_TRAIN_TEST_SPLIT:
         train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
+        if SAVE_TRAIN_TEST_SPLIT:
+            train_data.to_csv(task_id + '-train_data.csv')
+            test_data.to_csv(task_id + '-test_data.csv')
     else:
-        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
+        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
 
     classifier.fit(train_data)
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
@@ -126,8 +130,8 @@ def ensemble_models_training(similarities, classifier_type, task_id):
     if PERFORM_TRAIN_TEST_SPLIT:
         train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
     else:
-        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
+        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
     predicted_scores_train = []
     predicted_scores_test = []
 
@@ -508,7 +512,7 @@ def select_best_classifier(classifiers):
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['recall']
                 best_minimal_value = classifier['test_stats']['precision']
-        elif BEST_MODEL_SELECTION_CRITERION =='balanced_precision_recall':
+        elif BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
             if abs(classifier['test_stats']['precision'] - classifier['test_stats']['recall']) < best_compared_value:
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
