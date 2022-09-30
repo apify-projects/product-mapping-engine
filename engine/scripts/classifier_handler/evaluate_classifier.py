@@ -88,10 +88,15 @@ def train_classifier(classifier, data, task_id):
     @return: train and test datasets with predictions and statistics
     """
     if PERFORM_TRAIN_TEST_SPLIT:
-        train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
         if SAVE_TRAIN_TEST_SPLIT:
+            train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
             train_data.to_csv(task_id + '-train_data.csv')
             test_data.to_csv(task_id + '-test_data.csv')
+
+            train_data = train_data.drop(columns=['id1', 'id2'])
+            test_data = test_data.drop(columns=['id1', 'id2'])
+        else:
+            train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
     else:
         train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
         test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
