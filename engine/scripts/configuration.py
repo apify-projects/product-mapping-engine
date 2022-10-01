@@ -58,6 +58,7 @@ COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
+SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
 NUMBER_OF_TRAINING_RUNS = 1
@@ -79,9 +80,10 @@ BEST_MODEL_SELECTION_CRITERION = 'max_f1'  # max_precision, max_recall, balanced
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 LinearRegression_CLASSIFIER_PARAMETERS = {}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l2',
-                                            'solver': 'lbfgs',
-                                            'max_iter': 600}
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'none',
+                                            'solver': 'newton-cg',
+                                            'max_iter': 50,
+                                            'class_weight': 'balanced'}
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly',
                                               'degree': 5,
                                               'max_iter': 100,
@@ -98,7 +100,7 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
                                            'hidden_layer_sizes': (10, 10),
-                                           'max_iter': 250,
+                                           'max_iter': 500,
                                            'solver': 'adam',
                                            'activation': 'relu'
                                        }
@@ -167,5 +169,5 @@ GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 # BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
 PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
 RANDOM_SEARCH_ITERATIONS = 100
-NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 5
+NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
 

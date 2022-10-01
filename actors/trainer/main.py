@@ -19,7 +19,6 @@ if __name__ == '__main__':
         czech_dataset = True
         if czech_dataset:
             default_kvs_client.set_record(
-
                 'INPUT',
                 {
                     "task_id": "full-cs-dataset",
