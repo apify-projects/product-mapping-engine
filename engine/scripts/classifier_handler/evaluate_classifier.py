@@ -15,7 +15,7 @@ from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
     BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
-    SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA
+    SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION
 
 
 def setup_classifier(classifier_type):
@@ -208,7 +208,7 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     rows_to_dataframe = []
     if SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA:
         train_data, test_data = create_train_test_data(similarities, task_id)
-        validation_data = train_data.sample(frac=0.2)
+        validation_data = train_data.sample(frac=VALIDATION_DATA_PROPORTION)
         validation_data.to_csv('validation_data_params_search.csv', index=False)
         train_data_params_search = train_data.drop(validation_data.index)
         train_data_params_search.to_csv('train_data_params_search.csv', index=False)
