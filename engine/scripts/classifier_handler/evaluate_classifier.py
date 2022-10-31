@@ -50,7 +50,15 @@ def setup_classifier(classifier_type):
             classifier_parameters_random = {}
             for parameter_name in classifier_parameters:
                 if isinstance(classifier_parameters[parameter_name], list):
-                    classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
+                    if all(isinstance(x, (int, float)) for x in classifier_parameters[parameter_name]):
+                        min_val = min(classifier_parameters[parameter_name])
+                        max_val = max(classifier_parameters[parameter_name])
+                        if isinstance(min_val, int) and isinstance(max_val, int):
+                            classifier_parameters_random[parameter_name] = random.randint(min_val, max_val)
+                        else:
+                            classifier_parameters_random[parameter_name] = random.uniform(min_val, max_val)
+                    else:
+                        classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
                 else:
                     classifier_parameters_random[parameter_name] = classifier_parameters[parameter_name]
             if is_valid_combination_of_parameters(classifier_type, classifier_parameters_random):
