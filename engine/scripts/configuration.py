@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = True
+LOAD_PRECOMPUTED_SIMILARITIES = False
 SAVE_PRECOMPUTED_SIMILARITIES = False
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
@@ -54,7 +54,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
@@ -73,8 +73,8 @@ PRINT_FEATURE_IMPORTANCE = False
 PRINT_CORRELATION_MATRIX = False
 CORRELATION_LIMIT = 0.7
 MINIMAL_PRECISION = 0.5
-MINIMAL_RECALL = 0.7
-BEST_MODEL_SELECTION_CRITERION = 'balanced_precision_recall'  # max_precision, max_recall, balanced_precision_recall
+MINIMAL_RECALL = 0.6
+BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 LinearRegression_CLASSIFIER_PARAMETERS = {}
@@ -96,8 +96,8 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (10, 10),
-                                           'max_iter': 250,
+                                           'hidden_layer_sizes': (50, 50),
+                                           'max_iter': 1000,
                                            'solver': 'adam',
                                            'activation': 'relu'
                                        }
@@ -165,5 +165,5 @@ GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 
 # BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
 PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
-RANDOM_SEARCH_ITERATIONS = 50
+RANDOM_SEARCH_ITERATIONS = 5
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
