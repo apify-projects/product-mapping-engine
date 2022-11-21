@@ -28,18 +28,27 @@ if __name__ == '__main__':
         print('Actor input:')
         print(json.dumps(parameters, indent=2))
 
-    print(f"Uploading dataset {parameters['dataset_to_upload']} to the SFTP server")
+    with open("login.json", "r") as login_file:
+        parameters = {**json.load(login_file), **parameters}
+
+    print(f"Uploading dataset {parameters['datasets_to_upload']} to the SFTP server")
 
     now = datetime.now(timezone.utc)
     date_time = now.strftime("%Y_%m_%d_%H_%M_%S")
     file_name = f"competitors_db_{date_time}"
     complete_file_name = f"{file_name}.csv"
 
-    dataset_to_upload_client = client.dataset(parameters['dataset_to_upload'])
-    dataset_to_upload = pd.DataFrame(dataset_to_upload_client.list_items().items)
-    dataset_to_upload.to_csv(complete_file_name, encoding="utf-8", sep=";", index=False, header=True)
+    datasets_to_upload = []
+    for dataset_id in parameters["datasets_to_upload"]:
+        dataset_to_upload_client = client.dataset(dataset_id)
+        dataset_to_upload = pd.DataFrame(dataset_to_upload_client.list_items().items)
+        print(f"Partial dataset of shape {dataset_to_upload.shape}")
+        datasets_to_upload.append(dataset_to_upload)
+    complete_dataset_to_upload = pd.concat(datasets_to_upload, ignore_index=True)
 
-    max_file_size = parameters['max_file_size'] if 'max_file_size' in parameters else DEFAULT_MAX_FILE_SIZE
+    complete_dataset_to_upload.to_csv(complete_file_name, encoding="utf-8", sep=";", index=False, header=True)
+
+    max_file_size = float(parameters['max_file_size']) if 'max_file_size' in parameters else DEFAULT_MAX_FILE_SIZE
     file_stats = os.stat(complete_file_name)
     print(file_stats)
     print(f'File Size in Bytes is {file_stats.st_size}')
@@ -59,13 +68,13 @@ if __name__ == '__main__':
 
     print("Connection successfully established")
 
-    print(f"Total amount of items: {dataset_to_upload.shape[0]}")
+    print(f"Total amount of items: {complete_dataset_to_upload.shape[0]}")
 
     if complete_file_size_megabytes > max_file_size:
         desired_file_amount = math.ceil(complete_file_size_megabytes / max_file_size)
-        desired_file_row_count = math.ceil(dataset_to_upload.shape[0] / desired_file_amount)
+        desired_file_row_count = math.ceil(complete_dataset_to_upload.shape[0] / desired_file_amount)
         for e in range(desired_file_amount):
-            dataset_chunk_to_upload = dataset_to_upload[e * desired_file_row_count: (e + 1) * desired_file_row_count]
+            dataset_chunk_to_upload = complete_dataset_to_upload[e * desired_file_row_count: (e + 1) * desired_file_row_count]
             print(f"Chunk {e+1} amount of items: {dataset_chunk_to_upload.shape[0]}")
             chunk_file_name = f"{file_name}_part{e+1}.csv"
             dataset_chunk_to_upload.to_csv(chunk_file_name, encoding="utf-8", sep=";", index=False, header=True)

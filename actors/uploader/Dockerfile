@@ -11,7 +11,8 @@ RUN apt install -y libgl1-mesa-glx
 # in order to speed up the build
 COPY requirements.txt ./
 
-ARG GITHUB_TOKEN
+ARG SFTP_USERNAME
+ARG SFTP_PASSWORD
 
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get -y install nodejs
@@ -32,6 +33,8 @@ RUN echo "Python version:" \
 # Since we do this after installing the dependencies, quick build will be really fast
 # for most source file changes.
 COPY . ./
+
+RUN echo "{ \"username\": \"$SFTP_USERNAME\", \"password\": \"$SFTP_PASSWORD\" }" > login.json
 
 # Specify how to launch the source code of your actor.
 # By default, the main.py file is run
