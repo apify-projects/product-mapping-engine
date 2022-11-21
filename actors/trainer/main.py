@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
-        czech_dataset = True
+        czech_dataset = False
         if czech_dataset:
             default_kvs_client.set_record(
                 'INPUT',

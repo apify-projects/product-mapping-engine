@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = False
+LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = False
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
@@ -100,8 +100,8 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (50, 50),
-                                           'max_iter': 1000,
+                                           'hidden_layer_sizes': (15, 15),
+                                           'max_iter': 300,
                                            'solver': 'adam',
                                            'activation': 'relu'
                                        }
