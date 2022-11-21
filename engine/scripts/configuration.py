@@ -62,7 +62,7 @@ SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
 VALIDATION_DATA_PROPORTION = 0.2
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
-NUMBER_OF_TRAINING_RUNS = 1
+NUMBER_OF_TRAINING_RUNS = 10
 PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
@@ -100,8 +100,8 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
 NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (15, 15),
-                                           'max_iter': 300,
+                                           'hidden_layer_sizes': (10, 10),
+                                           'max_iter': 250,
                                            'solver': 'adam',
                                            'activation': 'relu'
                                        }
