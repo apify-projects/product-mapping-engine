@@ -17,6 +17,30 @@ def multi_run_filter_wrapper(args):
     """
     return filter_possible_product_pairs_parallelly(*args)
 
+def filter_preprepared_product_pairs(dataset1, dataset2, descriptive_words):
+    pairs_dataset_idx = {}
+    for idx, product in dataset1.iterrows():
+        data_subset_idx, idx_start, idx_to = filter_products(
+            product,
+            descriptive_words['all_texts'].iloc[idx].values,
+            dataset2,
+            idx,
+            idx,
+            len(dataset1),
+            pd.DataFrame(),
+            descriptive_words
+        )
+
+        # TODO this is duplicate code, deal with it
+        if len(data_subset_idx) == 0:
+            print(f'No corresponding product for product "{product["name"]}" at index {idx}')
+            data_subset_idx = []
+        else:
+            data_subset_idx = data_subset_idx.tolist()
+
+        pairs_dataset_idx[idx] = data_subset_idx
+
+    return pairs_dataset_idx
 
 def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu):
     """

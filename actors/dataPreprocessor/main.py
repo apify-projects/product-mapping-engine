@@ -44,21 +44,47 @@ if __name__ == '__main__':
         default_kvs_client.set_record(
             'INPUT',
             {
-                'task_id': 'Final-Xcite-Amazon',
-                'dataset_to_preprocess': 'qLWfgpocod6qlBPjj',
-                'attribute_names': {
-                    'id': 'productUrl',
-                    'name': 'name',
-                    'brand': 'brand',
-                    'short_description': 'shortDescription',
-                    'long_description': 'longDescription',
-                    'specification': 'specifications',
-                    'image': 'images',
-                    'price': 'price',
-                    'url': 'productUrl',
-                    'code': ['productSpecificId', 'shopSpecificId']
+                'task_id': 'Extra-Xcite',
+                'source': {
+                    'eshop_name': "extra",
+                    'dataset_id': 'J0MpblfbcF5jEQ0OI',
+                    'attribute_names': {
+                        'id': 'url',
+                        'name': 'name',
+                        # TODO extra dataset should contain brand
+                        #'brand': 'brand',
+                        'short_description': 'shortDescription',
+                        'long_description': 'longDescription',
+                        'specification': 'specification',
+                        'image': 'images',
+                        'price': 'price',
+                        'url': 'url',
+                        'code': ['productSpecificId', 'shopSpecificId']
+                    },
+                    'specification_format': 'correct',
+                    'fix_prices': False,
+                    'connecting_attribute': "url"
                 },
-                'specification_format': 'parameter-value'
+                'target': {
+                    'eshop_name': "xcite",
+                    'dataset_id': 'g35C7bU89t4IvAlJP',
+                    'attribute_names': {
+                        'id': 'productUrl',
+                        'name': 'name',
+                        'brand': 'brand',
+                        'short_description': 'shortDescription',
+                        'long_description': 'longDescription',
+                        'specification': 'specifications',
+                        'image': 'images',
+                        'price': 'price',
+                        'url': 'productUrl',
+                        'code': ['productSpecificId', 'shopSpecificId'],
+                        'extraUrl': 'extraUrl'
+                    },
+                    'specification_format': 'parameter-value',
+                    'fix_prices': True,
+                    'source_connecting_attribute': "extraUrl"
+                },
             }
         )
 
@@ -66,42 +92,75 @@ if __name__ == '__main__':
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
 
-    # Read the dataset
-    scraped_dataset_id = parameters['dataset_to_preprocess']
-    scraped_dataset_client = client.dataset(scraped_dataset_id)
-    scraped_dataset = pd.DataFrame(scraped_dataset_client.list_items().items).fillna("") # PM system expects empty strings, not nulls
-    print(scraped_dataset.info())
+    source_dataset = {}
+    target_dataset = pd.DataFrame()
+    for dataset in ['source', 'target']:
+        dataset_parameters = parameters[dataset]
+        # Read the dataset
+        scraped_dataset_id = dataset_parameters['dataset_id']
+        scraped_dataset_client = client.dataset(scraped_dataset_id)
+        scraped_dataset = pd.DataFrame(scraped_dataset_client.list_items().items).fillna("") # PM system expects empty strings, not nulls
 
-    # Change attributes of the dataset to the ones needed by the Product Mapping system
-    product_mapping_dataset = pd.DataFrame()
-    attribute_names = parameters['attribute_names']
-    for product_mapping_attribute, scraped_attribute in attribute_names.items():
-        if type(scraped_attribute) is list:
-            product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute].apply(squishAttributesIntoAListAttribute, axis=1)
+        # Change attributes of the dataset to the ones needed by the Product Mapping system
+        partial_product_mapping_dataset = pd.DataFrame()
+        attribute_names = dataset_parameters['attribute_names']
+        for product_mapping_attribute, scraped_attribute in attribute_names.items():
+            if type(scraped_attribute) is list:
+                partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute].apply(squishAttributesIntoAListAttribute, axis=1)
+            else:
+                partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute]
+
+        if dataset_parameters['specification_format'] == 'parameter-value':
+            partial_product_mapping_dataset['specification'] = partial_product_mapping_dataset['specification'].apply(fix_specification)
+
+        if dataset_parameters['fix_prices']:
+            partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].apply(fix_price)
+
+        # Download images
+        '''
+        product_mapping_dataset['image'] = download_images(product_mapping_dataset)
+    
+        target_kvs_name = 'PM-Prepro-Images-' + parameters['task_id'] + '-' + scraped_dataset_id
+        target_kvs_id = client.key_value_stores().get_or_create(name=target_kvs_name)['id']
+        target_kvs_client = client.key_value_store(target_kvs_id)
+    
+        upload_images_to_kvs(product_mapping_dataset, target_kvs_client)
+        '''
+
+        if dataset == 'target':
+            target_dataset = partial_product_mapping_dataset
         else:
-            product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute]
+            connecting_attribute = parameters[dataset]['connecting_attribute']
+            for index, product_row in partial_product_mapping_dataset.iterrows():
+                product = dict(product_row)
+                source_dataset[product[connecting_attribute]] = product
 
-    if parameters['specification_format'] == 'parameter-value':
-        product_mapping_dataset['specification'] = product_mapping_dataset['specification'].apply(fix_specification)
+    target_connecting_attribute = parameters['target']['source_connecting_attribute']
+    dataset_to_upload = []
+    for index, target_product_row in target_dataset.iterrows():
+        target_product = dict(target_product_row)
+        corresponding_source_product = source_dataset[target_product[target_connecting_attribute]]
+        del target_product[target_connecting_attribute]
 
-    product_mapping_dataset['price'] = product_mapping_dataset['price'].apply(fix_price)
+        corresponding_source_product = {f"{key}1": val for key, val in corresponding_source_product.items()}
+        target_product = {f"{key}2": val for key, val in target_product.items()}
 
-    # Download images
+        candidate_pair = {**corresponding_source_product, **target_product}
+        dataset_to_upload.append(candidate_pair)
+
     '''
-    product_mapping_dataset['image'] = download_images(product_mapping_dataset)
-
-    target_kvs_name = 'PM-Prepro-Images-' + parameters['task_id'] + '-' + scraped_dataset_id
-    target_kvs_id = client.key_value_stores().get_or_create(name=target_kvs_name)['id']
-    target_kvs_client = client.key_value_store(target_kvs_id)
-
-    upload_images_to_kvs(product_mapping_dataset, target_kvs_client)
-    '''
-
     # Save to file for debugging
-    product_mapping_dataset.to_json('finalizedXcite.json', orient='records')
+    product_mapping_dataset.to_json('xcite_extra.json', orient='records')
+    '''
 
-    # Upload the changed dataset
-    target_dataset_name = 'PM-Prepro-Data-' + parameters['task_id'] + '-' + scraped_dataset_id
-    target_dataset_id = client.datasets().get_or_create(name=target_dataset_name)['id']
-    target_dataset_client = client.dataset(target_dataset_id)
-    target_dataset_client.push_items(product_mapping_dataset.to_dict('records'))
+    # Upload the preprocessed dataset
+    preprocessed_dataset_name = 'PM-Prepro-Data-' + parameters['task_id'] + '-' + scraped_dataset_id
+    preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
+    preprocessed_dataset_client = client.dataset(preprocessed_dataset_id)
+
+    for e in range(ceil(len(dataset_to_upload) / 500)):
+        chunk_to_upload = dataset_to_upload[e * 500: (e+1) * 500]
+        preprocessed_dataset_client.push_items(chunk_to_upload)
+
+    print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
+

@@ -104,6 +104,27 @@ if __name__ == '__main__':
                 }
             )
 
+    # TODO delete
+    default_kvs_client.set_record(
+        'INPUT',
+        {
+            "task_id": "fixed-v4-extra-xcite-mapping",
+            'pair_dataset': "Kt9teYI7aaxvTSusd",
+            "dataset_1_output_attributes": {
+                "shopSpecificId1": "extraSku",
+                "url1": "extraUrl"
+            },
+            "dataset_2_output_attributes": {
+                "SKU2": "competitorSku",
+                "productUrl2": "competitorUrl",
+                "competitor2": "competitor"
+            },
+            "augment_outgoing_data": True,
+            "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
+            "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
+        }
+    )
+
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
@@ -122,19 +143,35 @@ if __name__ == '__main__':
             print(task_id + '-precomputed-matches' + '.csv')
             dataset_precomputed_matches = pd.read_csv(task_id + '-precomputed-matches' + '.csv')
 
+    pair_dataset = None
+    dataset1 = None
+    dataset2 = None
+    images_kvs_1_client = None
+    images_kvs_2_client = None
+
     # Prepare storages and read data
-    dataset_1_client = client.dataset(parameters['dataset_1'])
-    dataset_2_client = client.dataset(parameters['dataset_2'])
-    images_kvs_1_client = client.key_value_store(parameters['images_kvs_1'])
-    images_kvs_2_client = client.key_value_store(parameters['images_kvs_2'])
+    if 'pair_dataset' in parameters:
+        pair_dataset_client = client.dataset(parameters['pair_dataset'])
+        dataset_items = pair_dataset_client.list_items().items
+        if dataset_items[0] == {}:
+            dataset_items = dataset_items[1:]
 
-    dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
-    dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
+        pair_dataset = pd.DataFrame(dataset_items)
+        dataset_shape = pair_dataset.shape
+        print(f"Working on dataset of shape: {dataset_shape[0]}x{dataset_shape[1]}")
+    else:
+        dataset_1_client = client.dataset(parameters['dataset_1'])
+        dataset_2_client = client.dataset(parameters['dataset_2'])
+        images_kvs_1_client = client.key_value_store(parameters['images_kvs_1'])
+        images_kvs_2_client = client.key_value_store(parameters['images_kvs_2'])
 
-    dataset1 = dataset1.drop_duplicates(subset=['url'], ignore_index=True)
-    dataset2 = dataset2.drop_duplicates(subset=['url'], ignore_index=True)
-    print(dataset1.shape)
-    print(dataset2.shape)
+        dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
+        dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
+
+        dataset1 = dataset1.drop_duplicates(subset=['url'], ignore_index=True)
+        dataset2 = dataset2.drop_duplicates(subset=['url'], ignore_index=True)
+        print(dataset1.shape)
+        print(dataset2.shape)
 
     model_key_value_store_info = client.key_value_stores().get_or_create(
         name=task_id + '-product-mapping-model-output'
@@ -143,6 +180,7 @@ if __name__ == '__main__':
 
     default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
 
+    # TODO delete the "False" and move behind the computation
     augment_outgoing_data = parameters['augment_outgoing_data']
     if False and augment_outgoing_data:
         augmented_dataset1 = pd.DataFrame(
@@ -161,7 +199,11 @@ if __name__ == '__main__':
         if start_from_chunk:
             first_chunk = start_from_chunk['value'] + 1
 
-    data_count = dataset1.shape[0]
+    if pair_dataset is not None:
+        data_count = pair_dataset.shape[0]
+    else:
+        data_count = dataset1.shape[0]
+
     if not is_on_platform:
         CHUNK_SIZE = data_count
 
@@ -171,15 +213,22 @@ if __name__ == '__main__':
                                                                 (current_chunk + 1) * CHUNK_SIZE))
             print('---------------------------------------------\n\n')
 
-        dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
+        pair_dataset_chunk = None
+        dataset1_chunk = None
+
+        if pair_dataset is not None:
+            pair_dataset_chunk = pair_dataset.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
+        else:
+            dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
 
         predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
-                dataset1_chunk,
-                dataset2,
-                dataset_precomputed_matches,
-                images_kvs_1_client,
-                images_kvs_2_client,
+                pair_dataset=pair_dataset_chunk,
+                dataset1=dataset1_chunk,
+                dataset2=dataset2,
+                images_kvs1_client=images_kvs_1_client,
+                images_kvs2_client=images_kvs_2_client,
+                precomputed_pairs_matching_scores=dataset_precomputed_matches,
                 model_key_value_store_client=model_key_value_store,
                 task_id=task_id,
                 is_on_platform=is_on_platform
@@ -187,11 +236,14 @@ if __name__ == '__main__':
 
         all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
 
-        predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
-                                                                  on='id1', how='left') \
-            .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
-        # TODO remove upon resolution
-        predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
+        if pair_dataset_chunk is not None:
+            predicted_matching_pairs = predicted_matching_pairs.merge(pair_dataset_chunk, how='left', on=['id1', 'id2'])
+        else:
+            predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
+                                                                      on='id1', how='left') \
+                .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
+            # TODO remove upon resolution
+            predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
 
         if SAVE_PRECOMPUTED_MATCHES:
             if not is_on_platform:

@@ -12,14 +12,13 @@ if __name__ == '__main__':
     default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
 
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
-
+    load_dataset_locally = True
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
         czech_dataset = True
         if czech_dataset:
             default_kvs_client.set_record(
-
                 'INPUT',
                 {
                     "task_id": "full-cs-dataset",
@@ -57,7 +56,13 @@ if __name__ == '__main__':
     output_key_value_store_client = client.key_value_store(output_key_value_store_info['id'])
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
-
+    if load_dataset_locally:
+        labeled_dataset = pd.read_csv('full-cs-dataset-all_pairs.csv')
+        labeled_dataset = labeled_dataset.fillna('')
+        images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
+        labeled_dataset['image1'] = images_lengths
+        images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
+        labeled_dataset['image2'] = images_lengths2
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,

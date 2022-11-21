@@ -217,6 +217,11 @@ def preprocess_textual_data(dataset,
         dataset['specification'] = preprocess_specifications(dataset['specification'])
 
     if 'code' in dataset.columns:
+        # Standardize format
+        dataset['code'] = dataset['code'].apply(
+            lambda code: code if isinstance(code, str) else json.dumps(code)
+        )
+
         dataset['code'] = dataset['code'].apply(
             lambda code_string: code_string.replace(' ,', ',').replace(', ', ',').replace('[', '').replace(']', '').replace('"', '').replace("'", "").split(',')
         )
@@ -306,7 +311,9 @@ def parse_specifications(dataset):
     parsed_dataset = []
 
     for product_specification in dataset:
-        product_specification = json.loads(product_specification)
+        if not isinstance(product_specification, list):
+            product_specification = json.loads(product_specification)
+
         specification_dict = {}
         for item in product_specification:
             item['value'] = str(item['value'])

@@ -14,7 +14,8 @@ from sklearn.model_selection import train_test_split
 from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_THRESHES_FOR_AUC, \
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
-    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT
+    BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
+    SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION
 
 
 def setup_classifier(classifier_type):
@@ -78,19 +79,18 @@ def is_valid_combination_of_parameters(classifier_type, parameters):
     return True
 
 
-def train_classifier(classifier, data, task_id):
+def train_classifier(classifier, data, task_id, train_data=None, test_data=None):
     """
     Train classifier on given dataset
     @param classifier: classifier to train
     @param data: dataset used for training
     @param task_id: id of the task
+    @param train_data: train data if passed
+    @param test_data: test data if passed
     @return: train and test datasets with predictions and statistics
     """
-    if PERFORM_TRAIN_TEST_SPLIT:
-        train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
-    else:
-        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
+    if train_data is None and test_data is None:
+        train_data, test_data = create_train_test_data(data, task_id)
 
     classifier.fit(train_data)
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
@@ -105,6 +105,29 @@ def train_classifier(classifier, data, task_id):
     )
     classifier.save()
     return train_stats, test_stats
+
+
+def create_train_test_data(data, task_id):
+    """
+    Create or load train and test data from all data
+    @param data: dataframe to create train and test data
+    @param task_id: id of the task
+    @return: dataframes with train and test data
+    """
+    if PERFORM_TRAIN_TEST_SPLIT:
+        if SAVE_TRAIN_TEST_SPLIT:
+            train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
+            train_data.to_csv(task_id + '-train_data.csv', index=False)
+            test_data.to_csv(task_id + '-test_data.csv', index=False)
+
+            train_data = train_data.drop(columns=['id1', 'id2'])
+            test_data = test_data.drop(columns=['id1', 'id2'])
+        else:
+            train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
+    else:
+        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
+    return train_data, test_data
 
 
 def sample_data_according_to_weights(data, weights, sample_proportion):
@@ -126,8 +149,8 @@ def ensemble_models_training(similarities, classifier_type, task_id):
     if PERFORM_TRAIN_TEST_SPLIT:
         train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
     else:
-        train_data = pd.read_csv(task_id+'-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id+'-test_data.csv').drop(columns=['id1', 'id2'])
+        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
     predicted_scores_train = []
     predicted_scores_test = []
 
@@ -172,9 +195,6 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     classifiers, classifier_parameters = setup_classifier(classifier_type)
     best_classifier = None
     best_classifier_f1_score = -1
-    best_classifier_accuracy = -1
-    best_train_stats = None
-    best_test_stats = None
     similarities_without_ids = similarities.drop(columns=['id1', 'id2'])
     if not isinstance(classifiers, list) or len(classifiers) == 1:
         if isinstance(classifiers, list) and len(classifiers) == 1:
@@ -186,9 +206,25 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
 
         return classifiers, train_stats, test_stats
     rows_to_dataframe = []
+    if SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA:
+        train_data, test_data = create_train_test_data(similarities, task_id)
+        validation_data = train_data.sample(frac=VALIDATION_DATA_PROPORTION)
+        validation_data.to_csv('validation_data_params_search.csv', index=False)
+        train_data_params_search = train_data.drop(validation_data.index)
+        train_data_params_search.to_csv('train_data_params_search.csv', index=False)
+    sub_train_data = pd.read_csv('train_data_params_search.csv')
+    validation_data = pd.read_csv('validation_data_params_search.csv')
     for classifier in classifiers:
+        if 'predicted_scores' in validation_data.columns:
+            validation_data = validation_data.drop('predicted_scores', axis=1)
+        if 'predicted_match' in validation_data.columns:
+            validation_data = validation_data.drop('predicted_match', axis=1)
+        if 'predicted_scores' in sub_train_data.columns:
+            sub_train_data = sub_train_data.drop('predicted_scores', axis=1)
+        if 'predicted_match' in sub_train_data.columns:
+            sub_train_data = sub_train_data.drop('predicted_match', axis=1)
         if NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS == 1:
-            train_stats, test_stats = train_classifier(classifier, similarities_without_ids, task_id)
+            train_stats, test_stats = train_classifier(classifier, None, task_id, sub_train_data, validation_data)
         else:
             train_stats_array = []
             test_stats_array = []
@@ -209,12 +245,10 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
         if test_stats['f1_score'] > best_classifier_f1_score:
             best_classifier = classifier
             best_classifier_f1_score = test_stats['f1_score']
-            best_classifier_accuracy = test_stats['accuracy']
-            best_train_stats = train_stats
-            best_test_stats = test_stats
+
+    best_train_stats, best_test_stats = train_classifier(best_classifier, similarities_without_ids, task_id)
     print(f'{PERFORMED_PARAMETERS_SEARCH.upper()} SEARCH PERFORMED')
-    print(f'Best classifier test F1 score: {best_classifier_f1_score}')
-    print(f'Best classifier test accuracy: {best_classifier_accuracy}')
+    print_best_classifier_results(best_train_stats, best_test_stats)
     print(f'Best classifier parameters')
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
@@ -282,11 +316,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
             test_data_results = compute_prediction_accuracies(test_data, 'test', print_classifier_results=False)
 
             # compare results and select the best thresh
-            if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
-                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+            if BEST_MODEL_SELECTION_CRITERION == 'max_f1':
+                if test_data_results['f1_score'] > optimal_value:
                     optimal_threshold = thresh
-                    optimal_value = abs(
-                        test_data_results['precision'] - test_data_results['recall'])
+                    optimal_value = test_data_results['f1_score']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
                 if is_model_better_than_previous(test_data_results, 'precision', optimal_value, 'recall',
                                                  MINIMAL_RECALL, optimal_minimal_value):
@@ -299,6 +332,10 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
                     optimal_threshold = thresh
                     optimal_value = test_data_results['recall']
                     optimal_minimal_value = test_data_results['precision']
+            elif BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+                    optimal_threshold = thresh
+                    optimal_value = abs(test_data_results['precision'] - test_data_results['recall'])
             else:
                 raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
@@ -483,7 +520,7 @@ def select_best_classifier(classifiers):
     best_minimal_value = -1
 
     for classifier in classifiers:
-        if BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+        if BEST_MODEL_SELECTION_CRITERION == 'max_f1':
             if classifier['test_stats']['f1_score'] > best_compared_value:
                 best_classifier = classifier['classifier']
                 best_train_stats = classifier['train_stats']
@@ -505,6 +542,12 @@ def select_best_classifier(classifiers):
                 best_test_stats = classifier['test_stats']
                 best_compared_value = classifier['test_stats']['recall']
                 best_minimal_value = classifier['test_stats']['precision']
+        elif BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
+            if abs(classifier['test_stats']['precision'] - classifier['test_stats']['recall']) < best_compared_value:
+                best_classifier = classifier['classifier']
+                best_train_stats = classifier['train_stats']
+                best_test_stats = classifier['test_stats']
+                best_compared_value = abs(classifier['test_stats']['precision'] - classifier['test_stats']['recall'])
         else:
             raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
