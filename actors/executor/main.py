@@ -8,7 +8,7 @@ from apify_client import ApifyClient
 from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
 from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
 
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 200
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
 def calculate_dataset_changes(dataset_output_attributes):
@@ -27,31 +27,14 @@ def output_results (
     predicted_matching_pairs,
     is_on_platform,
     current_chunk,
-    dataset1_output_attributes,
-    dataset2_output_attributes,
-    augment_outgoing_data,
-    augmenting_dataset1,
-    augmenting_dataset2
 ):
-    if augment_outgoing_data:
-        output_data = predicted_matching_pairs[['id1', 'id2']]
-        output_data = output_data.merge(augmenting_dataset1, how='left', left_on="id1", right_on="url1")
-        augmenting_dataset2.info()
-        # TODO parametrize instead of "productUrl2"
-        output_data = output_data.merge(augmenting_dataset2, how='left', left_on="id2", right_on="productUrl2")
-
-        columns1, renames1 = calculate_dataset_changes(dataset1_output_attributes)
-        output_data = output_data.rename(columns=renames1)
-        columns2, renames2 = calculate_dataset_changes(dataset2_output_attributes)
-        output_data = output_data.rename(columns=renames2)
-
-        output_data = output_data[columns1 + columns2]
-    else:
-        output_data = predicted_matching_pairs
-
+    output_data = predicted_matching_pairs
     output_dataset_client.push_items(
         output_data.to_dict(orient='records')
     )
+
+    print(f"Chunk {current_chunk} processed")
+    print(f"Found {predicted_matching_pairs.shape[0]} matches")
 
     if is_on_platform:
         default_kvs_client.set_record(
@@ -88,19 +71,7 @@ if __name__ == '__main__':
                     "dataset_1": "YRJd6DPu3Cbd9SrjZ",
                     "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
                     "dataset_2": "lTVsLhiQXQoFIo52D",
-                    "images_kvs_2": "SLsfIZYZjjHzoQNtb",
-                    "dataset_1_output_attributes": {
-                        "shopSpecificId1": "extraSku",
-                        "url1": "extraUrl"
-                    },
-                    "dataset_2_output_attributes": {
-                        "SKU2": "competitorSku",
-                        "productUrl2": "competitorUrl",
-                        "competitor2": "competitor"
-                    },
-                    "augment_outgoing_data": True,
-                    "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
-                    "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
                 }
             )
 
@@ -109,19 +80,7 @@ if __name__ == '__main__':
             'INPUT',
             {
                 "task_id": "fixed-v4-extra-xcite-mapping",
-                'pair_dataset': "Kt9teYI7aaxvTSusd",
-                "dataset_1_output_attributes": {
-                    "shopSpecificId1": "extraSku",
-                    "url1": "extraUrl"
-                },
-                "dataset_2_output_attributes": {
-                    "SKU2": "competitorSku",
-                    "productUrl2": "competitorUrl",
-                    "competitor2": "competitor"
-                },
-                "augment_outgoing_data": True,
-                "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
-                "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
+                'pair_dataset': "OwYNOL0srq5urThEE"
             }
         )
 
@@ -180,19 +139,6 @@ if __name__ == '__main__':
 
     default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
 
-    # TODO delete the "False" and move behind the computation
-    augment_outgoing_data = parameters['augment_outgoing_data']
-    if False and augment_outgoing_data:
-        augmented_dataset1 = pd.DataFrame(
-            client.dataset(parameters['augmented_dataset_1']).list_items().items
-        ).add_suffix("1")
-
-        augmented_dataset2 = pd.DataFrame(
-            client.dataset(parameters['augmented_dataset_2']).list_items().items
-        ).add_suffix("2")
-    else:
-        augmented_dataset1 = augmented_dataset2 = None
-
     first_chunk = 0
     if is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
@@ -209,8 +155,8 @@ if __name__ == '__main__':
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
-            print('Searching matches for products {}:{}'.format(current_chunk * CHUNK_SIZE + 1,
-                                                                (current_chunk + 1) * CHUNK_SIZE))
+            print('Searching matches for products {}:{}'.format(current_chunk * CHUNK_SIZE,
+                                                                (current_chunk + 1) * CHUNK_SIZE - 1))
             print('---------------------------------------------\n\n')
 
         pair_dataset_chunk = None
@@ -265,12 +211,7 @@ if __name__ == '__main__':
             default_kvs_client,
             predicted_matching_pairs,
             is_on_platform,
-            current_chunk,
-            parameters["dataset_1_output_attributes"],
-            parameters["dataset_2_output_attributes"],
-            augment_outgoing_data,
-            augmented_dataset1,
-            augmented_dataset2
+            current_chunk
         )
 
-        print("Done\n")
+    print("Done\n")
