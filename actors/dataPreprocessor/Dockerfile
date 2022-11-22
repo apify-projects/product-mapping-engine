@@ -27,7 +27,7 @@ RUN echo "Python version:" \
  && echo "Installing dependencies from requirements.txt:" \
  && pip install -r requirements.txt \
  && echo "All installed Python packages:" \
- && pip freeze \
+ && pip freeze
 RUN git clone -b DatasetPreprocessor https://ssh:$GITHUB_TOKEN@github.com/apify-projects/product-mapping-engine.git product_mapping_repository \
  && ln -s product_mapping_repository/engine product_mapping_engine \
  && (cd product_mapping_engine/scripts/dataset_handler/preprocessing/images/image_hash_creator && npm install)
