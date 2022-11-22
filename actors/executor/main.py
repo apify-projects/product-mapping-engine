@@ -8,7 +8,7 @@ from apify_client import ApifyClient
 from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
 from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
 
-CHUNK_SIZE = 200
+CHUNK_SIZE = 500
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
 def calculate_dataset_changes(dataset_output_attributes):
@@ -163,9 +163,9 @@ if __name__ == '__main__':
         dataset1_chunk = None
 
         if pair_dataset is not None:
-            pair_dataset_chunk = pair_dataset.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
+            pair_dataset_chunk = pair_dataset.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
         else:
-            dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE]
+            dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
 
         predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
