@@ -104,26 +104,26 @@ if __name__ == '__main__':
                 }
             )
 
-    # TODO delete
-    default_kvs_client.set_record(
-        'INPUT',
-        {
-            "task_id": "fixed-v4-extra-xcite-mapping",
-            'pair_dataset': "Kt9teYI7aaxvTSusd",
-            "dataset_1_output_attributes": {
-                "shopSpecificId1": "extraSku",
-                "url1": "extraUrl"
-            },
-            "dataset_2_output_attributes": {
-                "SKU2": "competitorSku",
-                "productUrl2": "competitorUrl",
-                "competitor2": "competitor"
-            },
-            "augment_outgoing_data": True,
-            "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
-            "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
-        }
-    )
+        # TODO delete
+        default_kvs_client.set_record(
+            'INPUT',
+            {
+                "task_id": "fixed-v4-extra-xcite-mapping",
+                'pair_dataset': "Kt9teYI7aaxvTSusd",
+                "dataset_1_output_attributes": {
+                    "shopSpecificId1": "extraSku",
+                    "url1": "extraUrl"
+                },
+                "dataset_2_output_attributes": {
+                    "SKU2": "competitorSku",
+                    "productUrl2": "competitorUrl",
+                    "competitor2": "competitor"
+                },
+                "augment_outgoing_data": True,
+                "augmented_dataset_1": "J0MpblfbcF5jEQ0OI",
+                "augmented_dataset_2": "R2yxBEbgCOA8hyO9u",
+            }
+        )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
