@@ -33,6 +33,8 @@ RUN git clone -b DatasetPreprocessor https://ssh:$GITHUB_TOKEN@github.com/apify-
  && ln -s product_mapping_repository/engine product_mapping_engine \
  && (cd product_mapping_engine/scripts/dataset_handler/preprocessing/images/image_hash_creator && npm install)
 
+RUN (cd product_mapping_engine && pip install -r requirements.txt)
+
 RUN ls -l
 
 # Next, copy the remaining files and directories with the source code.
