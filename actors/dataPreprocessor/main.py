@@ -6,8 +6,7 @@ import pandas as pd
 from apify_client import ApifyClient
 from price_parser import Price
 
-from product_mapping_engine.scripts.dataset_handler.dataset_upload.dataset_preprocessor import download_images, \
-    upload_images_to_kvs
+from product_mapping_engine.scripts.dataset_handler.dataset_upload.dataset_preprocessor import download_images, upload_images_to_kvs
 
 def fix_price(price_string):
     price = Price.fromstring(price_string)
