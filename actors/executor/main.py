@@ -28,7 +28,7 @@ def output_results (
     is_on_platform,
     current_chunk,
 ):
-    output_data = predicted_matching_pairs
+    output_data = predicted_matching_pairs[["id1", "url1", "id2", "url2", "predicted_scores"]]
     output_dataset_client.push_items(
         output_data.to_dict(orient='records')
     )
@@ -137,8 +137,6 @@ if __name__ == '__main__':
     )
     model_key_value_store = client.key_value_store(model_key_value_store_info['id'])
 
-    default_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
-
     first_chunk = 0
     if is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
@@ -152,6 +150,10 @@ if __name__ == '__main__':
 
     if not is_on_platform:
         CHUNK_SIZE = data_count
+
+    #dataset_collection_client = client.datasets()
+    #output_dataset_info = dataset_collection_client.get_or_create(name=f"{}")
+    output_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
@@ -202,12 +204,8 @@ if __name__ == '__main__':
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
         predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
 
-        dataset_collection_client = client.datasets()
-        apify_dataset_info = dataset_collection_client.get_or_create(name="sample-pm-results")
-        apify_dataset_client = client.dataset(apify_dataset_info['id'])
-
         output_results(
-            apify_dataset_client,
+            output_dataset_client,
             default_kvs_client,
             predicted_matching_pairs,
             is_on_platform,
