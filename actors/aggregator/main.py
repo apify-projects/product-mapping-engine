@@ -99,6 +99,9 @@ if __name__ == '__main__':
 
     final_dataset['originalPrice'] = fixed_original_price
     final_dataset['discountAmount'] = final_dataset['originalPrice'] - final_dataset['netPrice']
+
+    final_dataset = final_dataset.fillna('')
+
     final_dataset.to_csv("final_dataset.csv")
 
     aggregation_kvs_info = client.key_value_stores().get_or_create(
