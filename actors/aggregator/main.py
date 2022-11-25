@@ -7,8 +7,6 @@ import pysftp
 from datetime import datetime, timezone
 from price_parser import Price
 
-DEFAULT_MAX_FILE_SIZE = 100
-
 def fix_price(price_string):
     price = Price.fromstring(price_string)
     price_amount = price.amount_float
