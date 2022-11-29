@@ -168,7 +168,7 @@ if __name__ == '__main__':
     product_mapping_model_name = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
 
     # Upload the preprocessed dataset
-    preprocessed_dataset_name = 'PM-Prepro-Data-' + parameters['task_id'] + '-' + scraped_dataset_id
+    preprocessed_dataset_name = 'PM-Prepro-Data-' + product_mapping_model_name + '-' + scraped_dataset_id
     preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
     preprocessed_dataset_client = client.dataset(preprocessed_dataset_id)
 
