@@ -27,10 +27,24 @@ if __name__ == '__main__':
     now = datetime.now(timezone.utc)
     date_time = now.strftime("%Y_%m_%d")
     scrape_id = f"{date_time}_scrape_{parameters['scrapeId']}"
+    scrape_info_kvs_name = f"pm-scrape-{scrape_id}-info"
 
-    taskIds = parameters["taskIds"]
-    for taskId in taskIds:
-        scraper_task_client = client.task(taskId)
+    scrape_info_kvs_id = client.key_value_stores().get_or_create(name=scrape_info_kvs_name)['id']
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+
+    scrape_info_kvs_client.set_record("source_dataset_id", parameters["source_dataset_id"])
+    scrape_info_kvs_client.set_record("product_mapping_model_name", parameters["product_mapping_model_name"])
+
+    competitors = parameters["competitor_scraper_task_ids"]
+    for competitor_name, competitor_scraper_task_id in competitors.items():
+        competitor_kvs_record = {
+            "finished": False
+        }
+        scrape_info_kvs_client.set_record(competitor_name, competitor_kvs_record)
+
+    for competitor_name, competitor_scraper_task_id in competitors.items():
+        scraper_task_client = client.task(competitor_scraper_task_id)
         scraper_task_client.start(task_input={
-            "scrape_id": scrape_id
+            "scrape_info_kvs_id": scrape_info_kvs_id,
+            "competitor_name": competitor_name
         })

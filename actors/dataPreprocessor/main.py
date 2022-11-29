@@ -94,14 +94,14 @@ if __name__ == '__main__':
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
 
-    scrapeId = "no_scrape_id"
-    if "competitor_scrape_run_id" in parameters:
-        competitor_scrape_run_client = client.run(parameters["competitor_scrape_run_id"])
-        competitor_scrape_run_info = competitor_scrape_run_client.get()
-        parameters["target"]["dataset_id"] = competitor_scrape_run_info.defaultDatasetId
+    competitor_scrape_run_client = client.run(parameters["competitor_scrape_run_id"])
+    competitor_scrape_run_info = competitor_scrape_run_client.get()
 
-        input = competitor_scrape_run_client.key_value_store().get_record("INPUT")["value"]
-        scrape_id = input["scrape_id"]
+    scraped_dataset_id = competitor_scrape_run_info.defaultDatasetId
+    parameters["target"]["dataset_id"] = scraped_dataset_id
+    scraper_input = competitor_scrape_run_client.key_value_store().get_record("INPUT")["value"]
+    scrape_info_kvs_id = scraper_input["scrape_info_kvs_id"]
+    competitor_name = scraper_input["competitor_name"]
 
     source_dataset = {}
     target_dataset = pd.DataFrame()
@@ -164,6 +164,9 @@ if __name__ == '__main__':
     product_mapping_dataset.to_json('xcite_extra.json', orient='records')
     '''
 
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+    product_mapping_model_name = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
+
     # Upload the preprocessed dataset
     preprocessed_dataset_name = 'PM-Prepro-Data-' + parameters['task_id'] + '-' + scraped_dataset_id
     preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
@@ -175,11 +178,15 @@ if __name__ == '__main__':
 
     print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
 
+    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
+    competitor_record["scraped_dataset_id"] = scraped_dataset_id
+    competitor_record["preprocessed_dataset_id"] = preprocessed_dataset_id
+    scrape_info_kvs_client.set_record(competitor_record)
+
     if parameters["run_executor"]:
         executor_task_client = client.task(parameters["executor_task_id"])
         executor_task_client.start(task_input={
-            "scrape_id": scrape_id,
-            "pair_dataset": preprocessed_dataset_id,
-            "task_id": parameters["task_id"]
+            "scrape_info_kvs_id": scrape_info_kvs_id,
+            "competitor_name": competitor_name
         })
 

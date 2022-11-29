@@ -79,8 +79,9 @@ if __name__ == '__main__':
         default_kvs_client.set_record(
             'INPUT',
             {
-                "task_id": "fixed-v4-extra-xcite-mapping",
-                'pair_dataset': "OwYNOL0srq5urThEE"
+                "scrape_info_kvs_id": "placeholder",
+                "competitor_name": "xcite",
+                "aggregator_task_id": "placeholder"
             }
         )
 
@@ -88,7 +89,16 @@ if __name__ == '__main__':
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
 
-    task_id = parameters['task_id']
+    scrape_info_kvs_id = parameters["scrape_info_kvs_id"]
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+
+    task_id = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
+
+    competitor_name = parameters["competitor_name"]
+    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
+
+    preprocessed_dataset_id = competitor_record["preprocessed_dataset_id"]
+    parameters['pair_dataset'] = preprocessed_dataset_id
 
     # Load precomputed matches
     dataset_precomputed_matches = None
@@ -153,7 +163,8 @@ if __name__ == '__main__':
 
     #dataset_collection_client = client.datasets()
     #output_dataset_info = dataset_collection_client.get_or_create(name=f"{}")
-    output_dataset_client = client.dataset(os.environ['APIFY_DEFAULT_DATASET_ID'])
+    output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
+    output_dataset_client = client.dataset(output_dataset_id)
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
@@ -212,9 +223,14 @@ if __name__ == '__main__':
             current_chunk
         )
 
-    aggregator_task_client = client.task(parameters["aggregator_task_id"])
-    aggregator_task_client.start(task_input={
-        "scrape_id": parameters["scrape_id"]
-    })
+    competitor_record["mapped_dataset_id"] = output_dataset_id
+    scrape_info_kvs_client.set_record(competitor_name, competitor_record)
+
+    if is_on_platform:
+        aggregator_task_client = client.task(parameters["aggregator_task_id"])
+        aggregator_task_client.start(task_input={
+            "scrape_info_kvs_id": scrape_info_kvs_id,
+            "competitor_name": competitor_name
+        })
 
     print("Done\n")

@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import time
 import pandas as pd
 from apify_client import ApifyClient
 import pysftp
@@ -32,7 +33,12 @@ if __name__ == '__main__':
         print('Actor input:')
         print(json.dumps(parameters, indent=2))
 
-    print("before loading")
+    scrape_info_kvs_id = parameters["scrape_info_kvs_id"]
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+    competitor_name = parameters["competitor_name"]
+
+    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
+    source_dataset_id = scrape_info_kvs_client.get_record("source_dataset_id")["value"]
 
     source_dataset_attributes = [
         "shopSpecificId",
@@ -48,17 +54,11 @@ if __name__ == '__main__':
         "productUrl"
     ]
 
-    source_dataset = pd.DataFrame(client.dataset(parameters["source_dataset"]).list_items(fields=",".join(source_dataset_attributes)).items)
-    print("source loaded")
-    competitor_dataset = pd.DataFrame(client.dataset(parameters["competitor_dataset"]).list_items(fields=",".join(competitor_dataset_attributes)).items)
-    print("competitor loaded")
-    mapped_pairs_dataset = pd.DataFrame(client.dataset(parameters["mapped_pairs_dataset"]).list_items().items)
-    print("mapped pairs loaded")
+    source_dataset = pd.DataFrame(client.dataset(source_dataset_id).list_items(fields=",".join(source_dataset_attributes)).items)
 
-    print(source_dataset.info())
-    print(competitor_dataset.info())
+    competitor_dataset = pd.DataFrame(client.dataset(competitor_record["scraped_dataset_id"]).list_items(fields=",".join(competitor_dataset_attributes)).items)
 
-    print("after loading")
+    mapped_pairs_dataset = pd.DataFrame(client.dataset(competitor_record["mapped_dataset_id"]).list_items().items)
 
     preprocessed_source_dataset = source_dataset[source_dataset_attributes].rename(columns={
         "shopSpecificId": "SKUID",
@@ -71,19 +71,15 @@ if __name__ == '__main__':
         "productUrl": "url2"
     })
 
-    print("Before merge")
-
     final_dataset = mapped_pairs_dataset[["url1", "url2"]]\
         .merge(preprocessed_source_dataset, on="url1")\
         .merge(preprocessed_competitor_dataset, on="url2")
 
-    print("After merge")
-
-    competitor = parameters["competitor_name"]
-
-    final_dataset["COMPID"] = competitor
-    final_dataset["date"] = parameters["scraping_date"]
-    final_dataset["competitor"] = competitor
+    now = datetime.now(timezone.utc)
+    date = now.strftime("%Y_%m_%d")
+    final_dataset["COMPID"] = competitor_name
+    final_dataset["date"] = date
+    final_dataset["competitor"] = competitor_name
 
     final_dataset = final_dataset.rename(columns={"url2": "skuUrl"}).drop(columns=["url1"])
 
@@ -103,12 +99,12 @@ if __name__ == '__main__':
     final_dataset.to_csv("final_dataset.csv")
 
     aggregation_kvs_info = client.key_value_stores().get_or_create(
-        name=f"pm-aggregation-{parameters['scrape_id']}"
+        name=f"pm-aggregation-{parameters['scrape_info_kvs_id']}"
     )
     aggregation_kvs_client = client.key_value_store(aggregation_kvs_info["id"])
 
     aggregation_dataset_info = client.datasets().get_or_create(
-        name=f"pm-aggregation-{parameters['scrape_id']}"
+        name=f"pm-aggregation-{parameters['scrape_info_kvs_id']}"
     )
     aggregation_dataset_client = client.dataset(aggregation_dataset_info["id"])
 
@@ -116,18 +112,24 @@ if __name__ == '__main__':
         final_dataset.to_dict(orient='records')
     )
 
-    processed_competitors_response = aggregation_kvs_client.get_record("processed_competitors")
-    if processed_competitors_response:
-        if parameters["upload"]:
-            processed_competitors = set(processed_competitors_response["value"])
-    else:
-        processed_competitors = set([])
+    scrape_info_kvs_client.set_record("aggregated_dataset_id", aggregation_dataset_info["id"])
 
-    processed_competitors.add(competitor)
-    aggregation_kvs_client.set_record('processed_competitors', list(processed_competitors))
-    if processed_competitors == set(parameters["competitor_list"]):
-        if parameters["upload"]:
-            uploader_task_client = client.task(parameters["uploader_task_id"])
-            uploader_task_client.start(task_input={
-                "datasets_to_upload": [aggregation_dataset_info["id"]],
-            })
+    competitor_record["finished"] = True
+    scrape_info_kvs_client.set_record(competitor_name, competitor_record)
+
+    # TODO fix race condition and remove this quick hack
+    time.sleep(15)
+
+    everything_aggregated = True
+    competitors_list = scrape_info_kvs_client.get_record("competitors_list")["value"]
+    for checked_competitor_name in competitors_list:
+        checked_competitor_record = scrape_info_kvs_client.get_record(checked_competitor_name)["value"]
+        if not checked_competitor_record["finished"]:
+            everything_aggregated = False
+            break
+
+    if everything_aggregated and parameters["upload"]:
+        uploader_task_client = client.task(parameters["uploader_task_id"])
+        uploader_task_client.start(task_input={
+            "datasets_to_upload": [aggregation_dataset_info["id"]],
+        })
