@@ -43,7 +43,10 @@ if __name__ == '__main__':
         default_kvs_client.set_record(
             'INPUT',
             {
-                'task_id': 'Extra-Xcite',
+                "run_executor": True,
+                "task_id": "Extra-Xcite",
+                "competitor_scrape_run_id": "tstIvNcnhKJ98XFjg",
+                "executor_task_id": "aqX9cgYmSfpVWRGhg",
                 'source': {
                     'eshop_name': "extra",
                     'dataset_id': 'J0MpblfbcF5jEQ0OI',
@@ -90,6 +93,15 @@ if __name__ == '__main__':
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
+
+    scrapeId = "no_scrape_id"
+    if "competitor_scrape_run_id" in parameters:
+        competitor_scrape_run_client = client.run(parameters["competitor_scrape_run_id"])
+        competitor_scrape_run_info = competitor_scrape_run_client.get()
+        parameters["target"]["dataset_id"] = competitor_scrape_run_info.defaultDatasetId
+
+        input = competitor_scrape_run_client.key_value_store().get_record("INPUT")["value"]
+        scrape_id = input["scrape_id"]
 
     source_dataset = {}
     target_dataset = pd.DataFrame()
@@ -162,4 +174,12 @@ if __name__ == '__main__':
         preprocessed_dataset_client.push_items(chunk_to_upload)
 
     print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
+
+    if parameters["run_executor"]:
+        executor_task_client = client.task(parameters["executor_task_id"])
+        executor_task_client.start(task_input={
+            "scrape_id": scrape_id,
+            "pair_dataset": preprocessed_dataset_id,
+            "task_id": parameters["task_id"]
+        })
 

@@ -26,11 +26,11 @@ if __name__ == '__main__':
 
     now = datetime.now(timezone.utc)
     date_time = now.strftime("%Y_%m_%d")
-    scrapeId = f"{date_time}_scrape_{parameters['scrapeId']}"
+    scrape_id = f"{date_time}_scrape_{parameters['scrapeId']}"
 
     taskIds = parameters["taskIds"]
     for taskId in taskIds:
         scraper_task_client = client.task(taskId)
         scraper_task_client.start(task_input={
-            "scrapeId": scrapeId
+            "scrape_id": scrape_id
         })

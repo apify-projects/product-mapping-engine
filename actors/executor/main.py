@@ -212,4 +212,9 @@ if __name__ == '__main__':
             current_chunk
         )
 
+    aggregator_task_client = client.task(parameters["aggregator_task_id"])
+    aggregator_task_client.start(task_input={
+        "scrape_id": parameters["scrape_id"]
+    })
+
     print("Done\n")

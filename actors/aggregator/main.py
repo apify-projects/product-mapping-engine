@@ -48,11 +48,11 @@ if __name__ == '__main__':
         "productUrl"
     ]
 
-    source_dataset = pd.DataFrame(client.dataset(parameters["sourceDataset"]).list_items(fields=",".join(source_dataset_attributes)).items)
+    source_dataset = pd.DataFrame(client.dataset(parameters["source_dataset"]).list_items(fields=",".join(source_dataset_attributes)).items)
     print("source loaded")
-    competitor_dataset = pd.DataFrame(client.dataset(parameters["competitorDataset"]).list_items(fields=",".join(competitor_dataset_attributes)).items)
+    competitor_dataset = pd.DataFrame(client.dataset(parameters["competitor_dataset"]).list_items(fields=",".join(competitor_dataset_attributes)).items)
     print("competitor loaded")
-    mapped_pairs_dataset = pd.DataFrame(client.dataset(parameters["mappedPairsDataset"]).list_items().items)
+    mapped_pairs_dataset = pd.DataFrame(client.dataset(parameters["mapped_pairs_dataset"]).list_items().items)
     print("mapped pairs loaded")
 
     print(source_dataset.info())
@@ -79,10 +79,10 @@ if __name__ == '__main__':
 
     print("After merge")
 
-    competitor = parameters["competitorName"]
+    competitor = parameters["competitor_name"]
 
     final_dataset["COMPID"] = competitor
-    final_dataset["date"] = parameters["scrapingDate"]
+    final_dataset["date"] = parameters["scraping_date"]
     final_dataset["competitor"] = competitor
 
     final_dataset = final_dataset.rename(columns={"url2": "skuUrl"}).drop(columns=["url1"])
@@ -103,12 +103,12 @@ if __name__ == '__main__':
     final_dataset.to_csv("final_dataset.csv")
 
     aggregation_kvs_info = client.key_value_stores().get_or_create(
-        name=f"pm-aggregation-{parameters['scrapeId']}"
+        name=f"pm-aggregation-{parameters['scrape_id']}"
     )
     aggregation_kvs_client = client.key_value_store(aggregation_kvs_info["id"])
 
     aggregation_dataset_info = client.datasets().get_or_create(
-        name=f"pm-aggregation-{parameters['scrapeId']}"
+        name=f"pm-aggregation-{parameters['scrape_id']}"
     )
     aggregation_dataset_client = client.dataset(aggregation_dataset_info["id"])
 
@@ -125,9 +125,9 @@ if __name__ == '__main__':
 
     processed_competitors.add(competitor)
     aggregation_kvs_client.set_record('processed_competitors', list(processed_competitors))
-    if processed_competitors == set(parameters["competitorList"]):
+    if processed_competitors == set(parameters["competitor_list"]):
         if parameters["upload"]:
-            uploader_task_client = client.task(parameters["uploaderTaskId"])
+            uploader_task_client = client.task(parameters["uploader_task_id"])
             uploader_task_client.start(task_input={
                 "datasets_to_upload": [aggregation_dataset_info["id"]],
             })
