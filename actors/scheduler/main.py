@@ -25,8 +25,8 @@ if __name__ == '__main__':
         print(json.dumps(parameters, indent=2))
 
     now = datetime.now(timezone.utc)
-    date_time = now.strftime("%Y_%m_%d")
-    scrape_id = f"{date_time}_scrape_{parameters['scrapeId']}"
+    date_time = now.strftime("%Y-%m-%d")
+    scrape_id = f"{date_time}-scrape-{parameters['scrapeId']}"
     scrape_info_kvs_name = f"pm-scrape-{scrape_id}-info"
 
     scrape_info_kvs_id = client.key_value_stores().get_or_create(name=scrape_info_kvs_name)['id']
