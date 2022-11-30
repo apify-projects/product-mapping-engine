@@ -35,12 +35,16 @@ if __name__ == '__main__':
     scrape_info_kvs_client.set_record("source_dataset_id", parameters["source_dataset_id"])
     scrape_info_kvs_client.set_record("product_mapping_model_name", parameters["product_mapping_model_name"])
 
+    competitors_list = []
     competitors = parameters["competitor_scraper_task_ids"]
     for competitor_name, competitor_scraper_task_id in competitors.items():
         competitor_kvs_record = {
             "finished": False
         }
         scrape_info_kvs_client.set_record(competitor_name, competitor_kvs_record)
+        competitors_list.append(competitor_name)
+
+    scrape_info_kvs_client.set_record("competitors_list", competitors_list)
 
     for competitor_name, competitor_scraper_task_id in competitors.items():
         scraper_task_client = client.task(competitor_scraper_task_id)
