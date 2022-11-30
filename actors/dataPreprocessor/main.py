@@ -99,7 +99,9 @@ if __name__ == '__main__':
 
     scraped_dataset_id = competitor_scrape_run_info["items"][0]["defaultDatasetId"]
     parameters["target"]["dataset_id"] = scraped_dataset_id
-    scraper_input = competitor_scrape_run_client.key_value_store().get_record("INPUT")["value"]
+
+    scraper_kvs_client = client.key_value_store(competitor_scrape_run_info["items"][0]["defaultKeyValueStoreId"])
+    scraper_input = scraper_kvs_client.get_record("INPUT")["value"]
     scrape_info_kvs_id = scraper_input["scrape_info_kvs_id"]
     competitor_name = scraper_input["competitor_name"]
 
