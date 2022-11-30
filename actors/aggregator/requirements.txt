@@ -3,3 +3,4 @@
 # for how to format them
 pandas
 pysftp
+price-parser
