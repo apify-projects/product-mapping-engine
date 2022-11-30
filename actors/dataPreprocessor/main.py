@@ -185,7 +185,7 @@ if __name__ == '__main__':
     competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
     competitor_record["scraped_dataset_id"] = scraped_dataset_id
     competitor_record["preprocessed_dataset_id"] = preprocessed_dataset_id
-    scrape_info_kvs_client.set_record(competitor_record)
+    scrape_info_kvs_client.set_record(competitor_name, competitor_record)
 
     if parameters["run_executor"]:
         executor_task_client = client.task(parameters["executor_task_id"])
