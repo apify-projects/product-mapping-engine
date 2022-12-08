@@ -77,14 +77,23 @@ if __name__ == '__main__':
     else:
         run_executor = False
 
+    no_scraped_items = False
     source_dataset = {}
     target_dataset = pd.DataFrame()
+    target_scraped_data = pd.DataFrame()
     for dataset in ['source', 'target']:
         dataset_parameters = parameters[dataset]
         # Read the dataset
         scraped_dataset_id = dataset_parameters['dataset_id']
         scraped_dataset_client = client.dataset(scraped_dataset_id)
-        scraped_dataset = pd.DataFrame(scraped_dataset_client.list_items().items).fillna("") # PM system expects empty strings, not nulls
+        scraped_data = scraped_dataset_client.list_items().items
+        scraped_dataset = pd.DataFrame(scraped_data).fillna("") # PM system expects empty strings, not nulls
+        if dataset == "target":
+            target_scraped_data = scraped_data
+
+            if scraped_dataset.shape[0] == 0:
+                no_scraped_items = True
+                break
 
         # Change attributes of the dataset to the ones needed by the Product Mapping system
         partial_product_mapping_dataset = pd.DataFrame()
@@ -122,36 +131,47 @@ if __name__ == '__main__':
                 product = dict(product_row)
                 source_dataset[product[connecting_attribute]] = product
 
-    target_connecting_attribute = parameters['target']['source_connecting_attribute']
-    dataset_to_upload = []
-    for index, target_product_row in target_dataset.iterrows():
-        target_product = dict(target_product_row)
-        corresponding_source_product = source_dataset[target_product[target_connecting_attribute]]
-        del target_product[target_connecting_attribute]
+    if not no_scraped_items:
+        target_connecting_attribute = parameters['target']['source_connecting_attribute']
+        dataset_to_upload = []
+        for index, target_product_row in target_dataset.iterrows():
+            target_product = dict(target_product_row)
+            corresponding_source_product = source_dataset[target_product[target_connecting_attribute]]
+            del target_product[target_connecting_attribute]
 
-        corresponding_source_product = {f"{key}1": val for key, val in corresponding_source_product.items()}
-        target_product = {f"{key}2": val for key, val in target_product.items()}
+            corresponding_source_product = {f"{key}1": val for key, val in corresponding_source_product.items()}
+            target_product = {f"{key}2": val for key, val in target_product.items()}
 
-        candidate_pair = {**corresponding_source_product, **target_product}
-        dataset_to_upload.append(candidate_pair)
+            candidate_pair = {**corresponding_source_product, **target_product}
+            dataset_to_upload.append(candidate_pair)
 
-    '''
-    # Save to file for debugging
-    product_mapping_dataset.to_json('xcite_extra.json', orient='records')
-    '''
-    # Upload the preprocessed dataset
-    preprocessed_dataset_name = 'PM-Prepro-Data-' + scrape_info_kvs_id + '-' + competitor_name
-    preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
-    preprocessed_dataset_client = client.dataset(preprocessed_dataset_id)
+        '''
+        # Save to file for debugging
+        product_mapping_dataset.to_json('xcite_extra.json', orient='records')
+        '''
+        # Upload the preprocessed dataset
+        preprocessed_dataset_name = 'PM-Prepro-Data-' + scrape_info_kvs_id + '-' + competitor_name
+        preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
+        preprocessed_dataset_client = client.dataset(preprocessed_dataset_id)
 
-    for e in range(ceil(len(dataset_to_upload) / 500)):
-        chunk_to_upload = dataset_to_upload[e * 500: (e+1) * 500]
-        preprocessed_dataset_client.push_items(chunk_to_upload)
+        for e in range(ceil(len(dataset_to_upload) / 500)):
+            chunk_to_upload = dataset_to_upload[e * 500: (e+1) * 500]
+            preprocessed_dataset_client.push_items(chunk_to_upload)
 
-    print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
+        print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
 
-    competitor_record["preprocessed_dataset_id"] = preprocessed_dataset_id
-    scrape_info_kvs_client.set_record(competitor_name, competitor_record)
+        # Upload the scraped data so that it can later be used by aggregator
+        aggregated_scraped_dataset_name = 'PM-Scraped-Data-' + scrape_info_kvs_id + '-' + competitor_name
+        aggregated_scraped_dataset_id = client.datasets().get_or_create(name=aggregated_scraped_dataset_name)['id']
+        aggregated_scraped_dataset_client = client.dataset(aggregated_scraped_dataset_id)
+
+        for e in range(ceil(len(target_scraped_data) / 500)):
+            chunk_to_upload = target_scraped_data[e * 500: (e + 1) * 500]
+            aggregated_scraped_dataset_client.push_items(chunk_to_upload)
+
+        competitor_record["preprocessed_dataset_id"] = preprocessed_dataset_id
+        competitor_record["scraped_dataset_id"] = aggregated_scraped_dataset_id
+        scrape_info_kvs_client.set_record(competitor_name, competitor_record)
 
     if run_executor:
         executor_task_client = client.task(parameters["executor_task_id"])
