@@ -40,55 +40,12 @@ if __name__ == '__main__':
 
     if not is_on_platform:
         # Set default input if not on platform
-        default_kvs_client.set_record(
-            'INPUT',
-            {
-                "run_executor": True,
-                "task_id": "Extra-Xcite",
-                "competitor_scrape_run_id": "tstIvNcnhKJ98XFjg",
-                "executor_task_id": "aqX9cgYmSfpVWRGhg",
-                'source': {
-                    'eshop_name': "extra",
-                    'dataset_id': 'J0MpblfbcF5jEQ0OI',
-                    'attribute_names': {
-                        'id': 'url',
-                        'name': 'name',
-                        # TODO extra dataset should contain brand
-                        #'brand': 'brand',
-                        'short_description': 'shortDescription',
-                        'long_description': 'longDescription',
-                        'specification': 'specification',
-                        'image': 'images',
-                        'price': 'price',
-                        'url': 'url',
-                        'code': ['productSpecificId', 'shopSpecificId']
-                    },
-                    'specification_format': 'correct',
-                    'fix_prices': False,
-                    'connecting_attribute': "url"
-                },
-                'target': {
-                    'eshop_name': "xcite",
-                    'dataset_id': 'g35C7bU89t4IvAlJP',
-                    'attribute_names': {
-                        'id': 'productUrl',
-                        'name': 'name',
-                        'brand': 'brand',
-                        'short_description': 'shortDescription',
-                        'long_description': 'longDescription',
-                        'specification': 'specifications',
-                        'image': 'images',
-                        'price': 'price',
-                        'url': 'productUrl',
-                        'code': ['productSpecificId', 'shopSpecificId'],
-                        'extraUrl': 'extraUrl'
-                    },
-                    'specification_format': 'parameter-value',
-                    'fix_prices': True,
-                    'source_connecting_attribute': "extraUrl"
-                },
-            }
-        )
+        with open("input.json", "r") as input_file:
+            # Set default input if not on platform
+            default_kvs_client.set_record(
+                'INPUT',
+                json.load(input_file)
+            )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
@@ -96,8 +53,6 @@ if __name__ == '__main__':
 
     competitor_scrape_run_client = client.run(parameters["competitor_scrape_run_id"])
     competitor_scrape_run_info = competitor_scrape_run_client.get()
-
-    print(competitor_scrape_run_info)
 
     scraped_dataset_id = competitor_scrape_run_info["defaultDatasetId"]
     parameters["target"]["dataset_id"] = scraped_dataset_id
