@@ -7,7 +7,7 @@
       "title": "Give your hello world message",
       "type": "array",
       "description": "",
-      "editor": "textfield"
+      "editor": "json"
     }
   },
   "required": []
