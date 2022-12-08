@@ -1,6 +1,7 @@
 import json
 import os
 from math import ceil
+import time
 
 import pandas as pd
 from apify_client import ApifyClient
