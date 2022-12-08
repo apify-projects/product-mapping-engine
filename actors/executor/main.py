@@ -80,8 +80,8 @@ if __name__ == '__main__':
             'INPUT',
             {
                 "aggregator_task_id": "QuaYjF9KbNyVhLLfV",
-                "scrape_info_kvs_id": "lPwRadVadOzV6R42F",
-                "competitor_name": "eddy"
+                "scrape_info_kvs_id": "R1QSHBiTu7vLDiogI",
+                "competitor_name": "amazon"
             }
         )
 

@@ -108,7 +108,7 @@ if __name__ == '__main__':
                 if dataset == "target":
                     target_scraped_data = scraped_data
 
-                    if scraped_dataset.shape[0] == 0:
+                    if scraped_dataset.empty:
                         no_scraped_items = True
                         break
 
