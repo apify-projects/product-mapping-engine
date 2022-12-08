@@ -44,7 +44,7 @@ if __name__ == '__main__':
     else:
         chunk_size = math.ceil(len(all_queries) / parallelization_factor)
         for e in range(parallelization_factor):
-            query_chunks.append(queries[e * chunk_size: (e+1) * chunk_size])
+            query_chunks.append(all_queries[e * chunk_size: (e+1) * chunk_size])
 
     competitors_list = []
     competitors = parameters["competitor_scraper_task_ids"]
