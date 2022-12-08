@@ -79,9 +79,9 @@ if __name__ == '__main__':
         default_kvs_client.set_record(
             'INPUT',
             {
-                "scrape_info_kvs_id": "placeholder",
-                "competitor_name": "xcite",
-                "aggregator_task_id": "placeholder"
+                "aggregator_task_id": "QuaYjF9KbNyVhLLfV",
+                "scrape_info_kvs_id": "lPwRadVadOzV6R42F",
+                "competitor_name": "eddy"
             }
         )
 
@@ -180,6 +180,8 @@ if __name__ == '__main__':
         else:
             dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
 
+        pair_dataset_chunk[["url1", "url2"]].to_csv("executor_input_dataset.csv", index=False)
+
         predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
                 pair_dataset=pair_dataset_chunk,
@@ -201,8 +203,9 @@ if __name__ == '__main__':
             predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
                                                                       on='id1', how='left') \
                 .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
-            # TODO remove upon resolution
-            predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
+
+        # TODO remove upon resolution
+        predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
 
         if SAVE_PRECOMPUTED_MATCHES:
             if not is_on_platform:

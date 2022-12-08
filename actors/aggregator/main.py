@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
         scrape_info_kvs_client.set_record("aggregated_dataset_id", aggregation_dataset_info["id"])
 
-        if mapped_pairs_dataset.shape[0] > 0:
+        if not mapped_pairs_dataset.empty:
             preprocessed_source_dataset = source_dataset[source_dataset_attributes].rename(columns={
                 "shopSpecificId": "SKUID",
                 "url": "url1"

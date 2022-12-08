@@ -68,7 +68,8 @@ if __name__ == '__main__':
             run_info = scraper_task_client.start(task_input={
                 "scrape_info_kvs_id": scrape_info_kvs_id,
                 "competitor_name": competitor_name,
-                "queries": query_chunks[e]
+                "queries": query_chunks[e],
+                "trigger_preprocessing": e == parallelization_factor - 1
             })
             competitor_kvs_record["scraper_run_ids"].append(run_info["id"])
 
