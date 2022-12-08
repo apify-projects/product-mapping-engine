@@ -22,9 +22,9 @@
     "fix_prices": false,
     "connecting_attribute": "url"
   },
-  "competitor_scrape_run_id": "Cz2ktMkMWb29wdpMu",
+  "competitor_scrape_run_id": "qNUwMgVa4mIQFffte",
   "target": {
-    "eshop_name": "amazon",
+    "eshop_name": "jarir",
     "attribute_names": {
       "id": "productUrl",
       "name": "name",

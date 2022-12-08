@@ -86,6 +86,8 @@ if __name__ == '__main__':
         if dataset_parameters['fix_prices']:
             partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].apply(fix_price)
 
+        partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].fillna("")
+
         # Download images
         '''
         product_mapping_dataset['image'] = download_images(product_mapping_dataset)
