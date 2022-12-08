@@ -15,11 +15,12 @@ def fix_price(price_string):
 
 def fix_specification(specification):
     fixed_specification = []
-    for parameter, value in specification.items():
-        fixed_specification.append({
-            'key': parameter,
-            'value': value
-        })
+    if specification:
+        for parameter, value in specification.items():
+            fixed_specification.append({
+                'key': parameter,
+                'value': value
+            })
 
     return fixed_specification
 
@@ -61,6 +62,20 @@ if __name__ == '__main__':
     scraper_input = scraper_kvs_client.get_record("INPUT")["value"]
     scrape_info_kvs_id = scraper_input["scrape_info_kvs_id"]
     competitor_name = scraper_input["competitor_name"]
+
+    run_executor = parameters["run_executor"]
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
+
+    if "scraper_run_ids" in competitor_record:
+        for scraper_run_id in competitor_record["scraper_run_ids"]:
+            scraper_run_client = client.run(scraper_run_id)
+            scraper_run_info = scraper_run_client.get()
+            if scraper_run_info["status"] != "SUCCEEDED":
+                run_executor = False
+                break
+    else:
+        run_executor = False
 
     source_dataset = {}
     target_dataset = pd.DataFrame()
@@ -124,12 +139,8 @@ if __name__ == '__main__':
     # Save to file for debugging
     product_mapping_dataset.to_json('xcite_extra.json', orient='records')
     '''
-
-    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
-    product_mapping_model_name = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
-
     # Upload the preprocessed dataset
-    preprocessed_dataset_name = 'PM-Prepro-Data-' + product_mapping_model_name + '-' + scraped_dataset_id
+    preprocessed_dataset_name = 'PM-Prepro-Data-' + scrape_info_kvs_id + '-' + competitor_name
     preprocessed_dataset_id = client.datasets().get_or_create(name=preprocessed_dataset_name)['id']
     preprocessed_dataset_client = client.dataset(preprocessed_dataset_id)
 
@@ -139,12 +150,10 @@ if __name__ == '__main__':
 
     print(f"{len(dataset_to_upload)} items uploaded to dataset {preprocessed_dataset_id}")
 
-    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
-    competitor_record["scraped_dataset_id"] = scraped_dataset_id
     competitor_record["preprocessed_dataset_id"] = preprocessed_dataset_id
     scrape_info_kvs_client.set_record(competitor_name, competitor_record)
 
-    if parameters["run_executor"]:
+    if run_executor:
         executor_task_client = client.task(parameters["executor_task_id"])
         executor_task_client.start(task_input={
             "scrape_info_kvs_id": scrape_info_kvs_id,

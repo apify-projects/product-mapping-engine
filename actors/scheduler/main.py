@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from apify_client import ApifyClient
 from datetime import datetime, timezone
@@ -35,20 +36,41 @@ if __name__ == '__main__':
     scrape_info_kvs_client.set_record("source_dataset_id", parameters["source_dataset_id"])
     scrape_info_kvs_client.set_record("product_mapping_model_name", parameters["product_mapping_model_name"])
 
+    parallelization_factor = parameters["parallelization_factor"] if "parallelization_factor" in parameters else 1
+    all_queries = parameters["queries"]
+    query_chunks = []
+    if parallelization_factor == 1:
+        query_chunks.append(all_queries)
+    else:
+        chunk_size = math.ceil(len(all_queries) / parallelization_factor)
+        for e in range(parallelization_factor):
+            query_chunks.append(queries[e * chunk_size: (e+1) * chunk_size])
+
     competitors_list = []
     competitors = parameters["competitor_scraper_task_ids"]
+    competitor_kvs_records = {}
     for competitor_name, competitor_scraper_task_id in competitors.items():
         competitor_kvs_record = {
             "finished": False
         }
+        competitor_kvs_records[competitor_name] = competitor_kvs_record
         scrape_info_kvs_client.set_record(competitor_name, competitor_kvs_record)
         competitors_list.append(competitor_name)
 
     scrape_info_kvs_client.set_record("competitors_list", competitors_list)
 
     for competitor_name, competitor_scraper_task_id in competitors.items():
+        competitor_kvs_record = competitor_kvs_records[competitor_name]
+        competitor_kvs_record["scraper_run_ids"] = []
         scraper_task_client = client.task(competitor_scraper_task_id)
-        scraper_task_client.start(task_input={
-            "scrape_info_kvs_id": scrape_info_kvs_id,
-            "competitor_name": competitor_name
-        })
+
+        for e in range(parallelization_factor):
+            run_info = scraper_task_client.start(task_input={
+                "scrape_info_kvs_id": scrape_info_kvs_id,
+                "competitor_name": competitor_name,
+                "queries": query_chunks[e]
+            })
+            competitor_kvs_record["scraper_run_ids"].append(run_info["id"])
+
+        scrape_info_kvs_client.set_record(competitor_name, competitor_kvs_record)
+
