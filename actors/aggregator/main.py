@@ -89,6 +89,9 @@ if __name__ == '__main__':
                 .merge(preprocessed_source_dataset, on="url1")\
                 .merge(preprocessed_competitor_dataset, on="url2")
 
+
+            final_dataset = final_dataset.drop_duplicates()
+
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
             final_dataset["COMPID"] = competitor_name
@@ -106,7 +109,7 @@ if __name__ == '__main__':
                 fixed_original_price.append(original_price)
 
             final_dataset['originalPrice'] = fixed_original_price
-            final_dataset['discountAmount'] = final_dataset['originalPrice'] - final_dataset['netPrice']
+            final_dataset['discountAmount'] = (final_dataset['originalPrice'] - final_dataset['netPrice']).round(2)
 
             final_dataset = final_dataset.fillna('')
 
