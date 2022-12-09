@@ -13,6 +13,37 @@ def fix_price(price_string):
     price_amount = price.amount_float
     return price_amount
 
+discountAttributes = [
+    "bundle",
+    "freeInstallation",
+    "freeItem",
+    "couponDiscount",
+    "bankPromo"
+]
+
+def getDiscountTypeOrName(row, whatToGet):
+    typeOrName = ""
+    for attribute in discountAttributes:
+        if row[attribute]:
+            if typeOrName != "":
+                typeOrName += ";"
+
+            if whatToGet == "type":
+                typeOrName += attribute
+            else:
+                typeOrName += row[attribute]
+
+    return typeOrName
+
+
+def getDiscountType(row):
+    return getDiscountTypeOrName(row, "type")
+
+
+def getDiscountName(row):
+    return getDiscountTypeOrName(row, "name")
+
+
 if __name__ == '__main__':
     # Read input
     client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
@@ -55,9 +86,11 @@ if __name__ == '__main__':
             "productUrl"
         ]
 
+        competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes
+
         source_dataset = pd.DataFrame(client.dataset(source_dataset_id).list_items(fields=",".join(source_dataset_attributes)).items)
 
-        competitor_dataset = pd.DataFrame(client.dataset(competitor_record["scraped_dataset_id"]).list_items(fields=",".join(competitor_dataset_attributes)).items)
+        competitor_dataset = pd.DataFrame(client.dataset(competitor_record["scraped_dataset_id"]).list_items(fields=",".join(competitor_dataset_attributes_to_fetch)).items)
 
         mapped_pairs_dataset = pd.DataFrame(client.dataset(competitor_record["mapped_dataset_id"]).list_items().items)
 
@@ -79,7 +112,11 @@ if __name__ == '__main__':
                 "url": "url1"
             })
 
-            preprocessed_competitor_dataset = competitor_dataset[competitor_dataset_attributes].rename(columns={
+            print(competitor_dataset.info())
+            competitor_dataset["discountType"] = competitor_dataset[discountAttributes].apply(getDiscountType, axis=1)
+            competitor_dataset["discountName"] = competitor_dataset[discountAttributes].apply(getDiscountName, axis=1)
+
+            preprocessed_competitor_dataset = competitor_dataset[competitor_dataset_attributes + ["discountType", "discountName"]].rename(columns={
                 "SKU": "CSKUID",
                 "price": "netPrice",
                 "productUrl": "url2"
@@ -88,7 +125,6 @@ if __name__ == '__main__':
             final_dataset = mapped_pairs_dataset[["url1", "url2"]]\
                 .merge(preprocessed_source_dataset, on="url1")\
                 .merge(preprocessed_competitor_dataset, on="url2")
-
 
             final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"])
 
@@ -113,7 +149,7 @@ if __name__ == '__main__':
 
             final_dataset = final_dataset.fillna('')
 
-            final_dataset.to_csv("final_dataset.csv")
+            #final_dataset.to_csv("final_dataset.csv")
 
             aggregation_dataset_client.push_items(
                 final_dataset.to_dict(orient='records')
