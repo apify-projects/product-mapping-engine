@@ -22,9 +22,9 @@
     "fix_prices": false,
     "connecting_attribute": "url"
   },
-  "competitor_scrape_run_id": "nzZ4idglrUhnesjeJ",
+  "competitor_scrape_run_id": "KeNQyYEGJX9bxFx8H",
   "target": {
-    "eshop_name": "jarir",
+    "eshop_name": "eddy",
     "attribute_names": {
       "id": "productUrl",
       "name": "name",

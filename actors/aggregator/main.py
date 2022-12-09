@@ -90,7 +90,7 @@ if __name__ == '__main__':
                 .merge(preprocessed_competitor_dataset, on="url2")
 
 
-            final_dataset = final_dataset.drop_duplicates()
+            final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"])
 
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
