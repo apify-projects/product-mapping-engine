@@ -159,18 +159,21 @@ if __name__ == '__main__':
         scrape_info_kvs_client.set_record(competitor_name, competitor_record)
 
         # TODO fix race condition and remove this quick hack
-        time.sleep(15)
+        time.sleep(1)
 
-        everything_aggregated = True
-        competitors_list = scrape_info_kvs_client.get_record("competitors_list")["value"]
-        for checked_competitor_name in competitors_list:
-            checked_competitor_record = scrape_info_kvs_client.get_record(checked_competitor_name)["value"]
-            if not checked_competitor_record["finished"]:
-                everything_aggregated = False
-                break
+        if not scrape_info_kvs_client.get_record("upload_triggered")["value"]:
+            scrape_info_kvs_client.set_record("upload_triggered", True)
 
-        if everything_aggregated and parameters["upload"]:
-            uploader_task_client = client.task(parameters["uploader_task_id"])
-            uploader_task_client.start(task_input={
-                "datasets_to_upload": [aggregation_dataset_info["id"]],
-            })
+            everything_aggregated = True
+            competitors_list = scrape_info_kvs_client.get_record("competitors_list")["value"]
+            for checked_competitor_name in competitors_list:
+                checked_competitor_record = scrape_info_kvs_client.get_record(checked_competitor_name)["value"]
+                if not checked_competitor_record["finished"]:
+                    everything_aggregated = False
+                    break
+
+            if everything_aggregated and parameters["upload"]:
+                uploader_task_client = client.task(parameters["uploader_task_id"])
+                uploader_task_client.start(task_input={
+                    "datasets_to_upload": [aggregation_dataset_info["id"]],
+                })
