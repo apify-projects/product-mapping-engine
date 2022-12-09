@@ -159,9 +159,10 @@ if __name__ == '__main__':
         scrape_info_kvs_client.set_record(competitor_name, competitor_record)
 
         # TODO fix race condition and remove this quick hack
-        time.sleep(1)
+        time.sleep(15)
 
-        if not scrape_info_kvs_client.get_record("upload_triggered")["value"]:
+        upload_triggered_record = scrape_info_kvs_client.get_record("upload_triggered")
+        if not upload_triggered_record or upload_triggered_record["value"] is False:
             scrape_info_kvs_client.set_record("upload_triggered", True)
 
             everything_aggregated = True
