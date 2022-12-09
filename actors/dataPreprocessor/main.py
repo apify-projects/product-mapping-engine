@@ -104,7 +104,7 @@ if __name__ == '__main__':
                 scraped_dataset_id = dataset_parameters['dataset_id']
                 scraped_dataset_client = client.dataset(scraped_dataset_id)
                 scraped_data = scraped_dataset_client.list_items().items
-                scraped_dataset = pd.DataFrame(scraped_data).fillna("") # PM system expects empty strings, not nulls
+                scraped_dataset = pd.DataFrame(scraped_data).fillna("").drop_duplicates() # PM system expects empty strings, not nulls
                 if dataset == "target":
                     target_scraped_data = scraped_data
 
