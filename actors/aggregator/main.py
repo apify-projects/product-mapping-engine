@@ -141,7 +141,7 @@ if __name__ == '__main__':
             final_dataset['originalPrice'] = final_dataset['originalPrice'].apply(fix_price)
             fixed_original_price = []
             for index, row in final_dataset.iterrows():
-                original_price = row["netPrice"] if row["originalPrice"] is None else row["originalPrice"]
+                original_price = row["netPrice"] if not row["originalPrice"] else row["originalPrice"]
                 fixed_original_price.append(original_price)
 
             final_dataset['originalPrice'] = fixed_original_price
