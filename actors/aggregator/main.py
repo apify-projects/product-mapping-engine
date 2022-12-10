@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 .merge(preprocessed_source_dataset, on="url1")\
                 .merge(preprocessed_competitor_dataset, on="url2")
 
-            final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"])
+            final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"]).fillna("")
 
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             final_dataset['originalPrice'] = final_dataset['originalPrice'].apply(fix_price)
             fixed_original_price = []
             for index, row in final_dataset.iterrows():
-                original_price = row["netPrice"] if not row["originalPrice"] else row["originalPrice"]
+                original_price = row["netPrice"] if not row["originalPrice"] or math.isnan(row["originalPrice"]) else row["originalPrice"]
                 fixed_original_price.append(original_price)
 
             final_dataset['originalPrice'] = fixed_original_price
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
             final_dataset = final_dataset.fillna('')
 
-            #final_dataset.to_csv("final_dataset.csv")
+            final_dataset.to_csv("final_dataset.csv")
 
             aggregation_dataset_client.push_items(
                 final_dataset.to_dict(orient='records')
