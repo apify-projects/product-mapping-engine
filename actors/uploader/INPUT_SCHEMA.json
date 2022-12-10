@@ -7,7 +7,7 @@
       "title": "List of datasets to upload",
       "type": "array",
       "description": "",
-      "editor": "textfield"
+      "editor": "json"
     },
     "max_file_size": {
       "title": "Maximum size of an uploaded file in MB",
