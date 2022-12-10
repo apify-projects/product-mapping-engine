@@ -511,7 +511,7 @@ def convert_keyword_dicts_to_dataframe(detected_keywords_df):
     """
     detected_keywords_list = []
     for _, row in detected_keywords_df.iterrows():
-        dict_list = [d[1] for d in row.iteritems()]
+        dict_list = [d[1] for d in row.items()]
         merged_detected_keywords = {}
         for item in dict_list:
             for key in item.keys():

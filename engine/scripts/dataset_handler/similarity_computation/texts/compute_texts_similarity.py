@@ -29,7 +29,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
     """
     match_ratios_list = []
 
-    for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
+    for (product1_idx, product1), products2_list in zip(dataset1.items(), dataset2):
         if are_there_markers:
             product1_no_markers = remove_markers(copy.deepcopy(product1))
         else:
@@ -37,7 +37,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
         bnd1 = [word for word in product1 if BRAND_MARK in word]
         id1 = [word for word in product1 if ID_MARK in word]
 
-        for product2_idx, product2 in products2_list.iteritems():
+        for product2_idx, product2 in products2_list.items():
             match_ratios = {}
 
             # detect and compare ids

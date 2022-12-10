@@ -28,7 +28,8 @@ def filter_preprepared_product_pairs(dataset1, dataset2, descriptive_words):
             idx,
             len(dataset1),
             pd.DataFrame(),
-            descriptive_words
+            descriptive_words,
+            preprepared_filtering=True
         )
 
         # TODO this is duplicate code, deal with it
@@ -109,42 +110,56 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
 
 
 def filter_products(product, product_descriptive_words, dataset, idx_from, idx_to, dataset_start_index,
-                    no_price_products, descriptive_words):
+                    no_price_products, descriptive_words, preprepared_filtering=False):
     """
     Filter products in dataset according to the price, category and word similarity to reduce number of comparisons
     @param product: given product for which we want to filter dataset
     @param product_descriptive_words: descriptive words of the product
-    @param dataset:  dataset of products to be filtered sorted according to the price
+    @param dataset: dataset of products to be filtered sorted according to the price
     @param idx_from: starting index for searching for product with similar price in dataset
     @param idx_to: ending index for searching for product with similar price in dataset
     @param dataset_start_index: starting index to index the products from second dataset in descriptive words
     @param no_price_products: dataframe of products with no specified price
     @param descriptive_words: dictionary of descriptive words for each text column in products
+    @param preprepared_filtering: use for production mapping - the pairs are already pre-prepared, just check them
     @return: Filtered dataset of products that are possibly the same as given product
     """
-    if 'price' not in product.index.values or 'price' not in dataset:
-        data_filtered = dataset
+    if preprepared_filtering:
+        target_price = dataset.iloc[idx_from]['price']
+        if not target_price or pd.isna(target_price):
+            data_filtered = dataset.iloc[[idx_from]]
+        else:
+            print(target_price)
+            min_price = product['price'] * MIN_MATCH_PRICE_RATIO
+            max_price = product['price'] * MAX_MATCH_PRICE_RATIO
+            if target_price < min_price or max_price < target_price:
+                data_filtered = pd.DataFrame()
+            else:
+                data_filtered = dataset.iloc[[idx_from]]
     else:
-        last_price = dataset.iloc[idx_from]['price']
-
-        min_price = product['price'] * MIN_MATCH_PRICE_RATIO
-        while last_price < min_price and idx_from < len(dataset) - 1:
-            idx_from += 1
+        if 'price' not in product.index.values or 'price' not in dataset:
+            data_filtered = dataset
+        else:
             last_price = dataset.iloc[idx_from]['price']
 
-        last_price = dataset.iloc[idx_to]['price']
-        max_price = product['price'] * MAX_MATCH_PRICE_RATIO
-        while last_price <= max_price and idx_to < len(dataset) - 1:
-            idx_to += 1
+            min_price = product['price'] * MIN_MATCH_PRICE_RATIO
+            while last_price < min_price and idx_from < len(dataset) - 1:
+                idx_from += 1
+                last_price = dataset.iloc[idx_from]['price']
+
             last_price = dataset.iloc[idx_to]['price']
+            max_price = product['price'] * MAX_MATCH_PRICE_RATIO
+            while last_price <= max_price and idx_to < len(dataset) - 1:
+                idx_to += 1
+                last_price = dataset.iloc[idx_to]['price']
 
-        if idx_to == len(dataset) - 1:
-            data_filtered = dataset.iloc[idx_from:]
-        else:
-            data_filtered = dataset.iloc[idx_from:idx_to]
+            if idx_to == len(dataset) - 1:
+                data_filtered = dataset.iloc[idx_from:]
+            else:
+                data_filtered = dataset.iloc[idx_from:idx_to]
 
-        if not no_price_products.empty:
-            data_filtered = pd.concat([data_filtered, no_price_products])
+            if not no_price_products.empty:
+                data_filtered = pd.concat([data_filtered, no_price_products])
 
     '''
     if 'category' in product.index.values and 'category' in dataset:
