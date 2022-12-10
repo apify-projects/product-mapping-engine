@@ -26,12 +26,14 @@ def getDiscountTypeOrName(row, whatToGet):
     for attribute in discountAttributes:
         if row[attribute]:
             if typeOrName != "":
-                typeOrName += ";"
+                typeOrName += ","
 
+            typeOrName += '"'
             if whatToGet == "type":
                 typeOrName += attribute
             else:
                 typeOrName += row[attribute]
+            typeOrName += '"'
 
     return typeOrName
 
