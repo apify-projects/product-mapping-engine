@@ -75,7 +75,7 @@ if __name__ == '__main__':
                 for scraper_run_id in competitor_record["scraper_run_ids"]:
                     scraper_run_client = client.run(scraper_run_id)
                     scraper_run_info = scraper_run_client.get()
-                    if scraper_run_info["status"] != "SUCCEEDED":
+                    if scraper_run_info["status"] != "SUCCEEDED" and scraper_run_info["status"] != "TIMED-OUT":
                         everything_ready = False
                         break
             else:
