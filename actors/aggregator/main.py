@@ -32,7 +32,11 @@ def getDiscountTypeOrName(row, whatToGet):
             if whatToGet == "type":
                 typeOrName += attribute
             else:
-                typeOrName += row[attribute]
+                value = row[attribute]
+                if not isinstance(value, str):
+                    value = json.dumps(value)
+
+                typeOrName += value
             typeOrName += '"'
 
     return typeOrName
