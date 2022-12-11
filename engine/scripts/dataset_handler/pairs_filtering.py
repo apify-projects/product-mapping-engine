@@ -129,7 +129,6 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         if not target_price or pd.isna(target_price):
             data_filtered = dataset.iloc[[idx_from]]
         else:
-            print(target_price)
             min_price = product['price'] * MIN_MATCH_PRICE_RATIO
             max_price = product['price'] * MAX_MATCH_PRICE_RATIO
             if target_price < min_price or max_price < target_price:
