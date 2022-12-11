@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import re
-
+import unicodedata
 import majka
 import numpy as np
 import pandas as pd
@@ -79,6 +79,7 @@ def remove_useless_spaces_and_characters(text):
     text = text.replace('⅓', '1/3')
     text = text.replace('¼', '1/4')
     text = text.replace('⅕', '1/5')
+    text = unicodedata.normalize("NFD", text)
     text = text.replace('(', '')
     text = text.replace(')', '')
     return text
