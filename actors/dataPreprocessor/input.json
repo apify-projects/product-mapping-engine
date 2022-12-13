@@ -1,6 +1,6 @@
 {
   "executor_task_id": "aqX9cgYmSfpVWRGhg",
-  "run_executor": true,
+  "run_executor": false,
   "source": {
     "eshop_name": "extra",
     "dataset_id": "J0MpblfbcF5jEQ0OI",
@@ -22,9 +22,9 @@
     "fix_prices": false,
     "connecting_attribute": "url"
   },
-  "competitor_scrape_run_id": "KeNQyYEGJX9bxFx8H",
+  "competitor_scrape_run_id": "VJhKBnJHcwUVLzbN0",
   "target": {
-    "eshop_name": "eddy",
+    "eshop_name": "amazon",
     "attribute_names": {
       "id": "productUrl",
       "name": "name",

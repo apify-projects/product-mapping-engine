@@ -116,11 +116,18 @@ if __name__ == '__main__':
                 # Change attributes of the dataset to the ones needed by the Product Mapping system
                 partial_product_mapping_dataset = pd.DataFrame()
                 attribute_names = dataset_parameters['attribute_names']
+                print(scraped_dataset.info())
                 for product_mapping_attribute, scraped_attribute in attribute_names.items():
                     if type(scraped_attribute) is list:
-                        partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute].apply(squishAttributesIntoAListAttribute, axis=1)
+                        attributes_to_fetch = []
+                        for attribute in scraped_attribute:
+                            if attribute in scraped_dataset:
+                                attributes_to_fetch.append(attribute)
+
+                        partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[attributes_to_fetch].apply(squishAttributesIntoAListAttribute, axis=1)
                     else:
-                        partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute]
+                        if scraped_attribute in scraped_dataset:
+                            partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[scraped_attribute]
 
                 if dataset_parameters['specification_format'] == 'parameter-value':
                     partial_product_mapping_dataset['specification'] = partial_product_mapping_dataset['specification'].apply(fix_specification)
