@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import pandas as pd
 from apify_client import ApifyClient
@@ -13,8 +14,6 @@ if __name__ == '__main__':
 
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
     load_dataset_locally = True
-    # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
-    #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
         czech_dataset = True
         if czech_dataset:
@@ -22,7 +21,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "full-cs-dataset",
-                    "classifier_type": "NeuralNetwork",
+                    "classifier_type": "LogisticRegression",
                     "dataset_id": "hnSwb2SaERXcvbXQ6",
                     "images_kvs_1": "dEoB1XWso0B0cY6AC",
                     "images_kvs_2": "lBhezRArqcep8rMER"
@@ -33,7 +32,7 @@ if __name__ == '__main__':
                 'INPUT',
                 {
                     "task_id": "fixed-v4-extra-xcite-mapping",
-                    "classifier_type": "NeuralNetwork",
+                    "classifier_type": "LogisticRegression",
                     "dataset_id": "TyXf5pvH3eg7AES8g",
                     "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
                     "images_kvs_2": "SLsfIZYZjjHzoQNtb"
@@ -56,13 +55,28 @@ if __name__ == '__main__':
     output_key_value_store_client = client.key_value_store(output_key_value_store_info['id'])
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
+
+    # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
-        labeled_dataset = pd.read_csv('full-cs-dataset-all_pairs.csv')
+        task_id = 'promapen'
+        classifier_type = 'NeuralNetwork'
+        if task_id == 'promapcz':
+            labeled_dataset = pd.read_csv('promapcz-all_pairs.csv')
+        elif task_id == 'promapen':
+            labeled_dataset = pd.read_csv('promapen-all_pairs.csv')
+        elif task_id == 'amazon_walmart':
+            labeled_dataset = pd.read_csv('amazon_walmart.csv')
+        elif task_id == 'amazon_google':
+            labeled_dataset = pd.read_csv('amazon_google.csv')
+        else:
+            sys.exit('No task to run selected')
         labeled_dataset = labeled_dataset.fillna('')
-        images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
-        labeled_dataset['image1'] = images_lengths
-        images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
-        labeled_dataset['image2'] = images_lengths2
+        if 'image1' in labeled_dataset.columns:
+            images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
+            labeled_dataset['image1'] = images_lengths
+            images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
+            labeled_dataset['image2'] = images_lengths2
+
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,
