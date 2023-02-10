@@ -6,6 +6,7 @@ import pandas as pd
 from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_data_and_train_model
+from product_mapping_engine.scripts.configuration import DATA_FOLDER
 
 if __name__ == '__main__':
     # Read input
@@ -40,8 +41,8 @@ if __name__ == '__main__':
             )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
-    print('Actor input:')
-    print(json.dumps(parameters, indent=2))
+    # print('Actor input:')
+    # print(json.dumps(parameters, indent=2))
 
     task_id = parameters['task_id']
     classifier_type = parameters['classifier_type']
@@ -56,26 +57,28 @@ if __name__ == '__main__':
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
 
-    # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
+    # classifier_type: LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
         task_id = 'promapen'
         classifier_type = 'NeuralNetwork'
+        print('Task id: ' + task_id)
+        print('Classifier type: ' + classifier_type)
         if task_id == 'promapcz':
-            labeled_dataset = pd.read_csv('promapcz-all_pairs.csv')
+            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/promapcz.csv')
         elif task_id == 'promapen':
-            labeled_dataset = pd.read_csv('promapen-all_pairs.csv')
+            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/promapen.csv')
         elif task_id == 'amazon_walmart':
-            labeled_dataset = pd.read_csv('amazon_walmart.csv')
+            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/amazon_walmart.csv')
         elif task_id == 'amazon_google':
-            labeled_dataset = pd.read_csv('amazon_google.csv')
+            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/amazon_google.csv')
         else:
             sys.exit('No task to run selected')
         labeled_dataset = labeled_dataset.fillna('')
-        if 'image1' in labeled_dataset.columns:
-            images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
-            labeled_dataset['image1'] = images_lengths
-            images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
-            labeled_dataset['image2'] = images_lengths2
+    if 'image1' in labeled_dataset.columns:
+        images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
+        labeled_dataset['image1'] = images_lengths
+        images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
+        labeled_dataset['image2'] = images_lengths2
 
     stats = load_data_and_train_model(
         classifier_type,
@@ -86,4 +89,5 @@ if __name__ == '__main__':
         task_id=task_id,
         is_on_platform=is_on_platform
     )
+
     output_key_value_store_client.set_record('stats', stats)
