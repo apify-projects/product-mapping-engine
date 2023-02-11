@@ -66,6 +66,7 @@ def load_vocabulary(vocabulary_file):
     with open(vocabulary_file, encoding='utf-8') as f:
         return [line.rstrip() for line in f]
 
+
 def create_currencies_dict():
     """
     Load files with currencies and their possible shortcuts and symbols and create dict from them
@@ -91,7 +92,7 @@ def create_currencies_dict():
     for currency in currencies_merged:
         currency_name_list = currency.split(',')
         for currency_name in currency_name_list:
-            currencies_dict[currency_name] = {'value':1, 'basic': currency_name}
+            currencies_dict[currency_name] = {'value': 1, 'basic': currency_name}
     return currencies_dict, original_currencies_names
 
 
@@ -221,6 +222,7 @@ def is_word_in_unit_list(word):
     @return: true if the word is in the dictionary of units
     """
     return word in UNITS_DICT.keys()
+
 
 def is_unit_mark_in_word(word):
     """

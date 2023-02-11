@@ -6,6 +6,8 @@ LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = False
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
+DATA_FOLDER = 'data'
+MODEL_FOLDER = 'model'
 
 # TEXT PREPROCESSING CONFIGURATION
 # Text column names that should be preprocessed and used for similarity computations
@@ -20,7 +22,7 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED = {'long_descript
                                                                                 'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # czech, english
+LANGUAGE = 'english'  # czech, english
 TEXT_HASH_SIZE = 16
 
 # KEYWORDS DETECTION CONFIGURATION
@@ -54,11 +56,11 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
-SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
+SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = True
 VALIDATION_DATA_PROPORTION = 0.2
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
@@ -67,6 +69,9 @@ PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
+LOAD_PRECOMPUTED_MODEL = True
+SAVE_COMPUTED_MODEL = False
+MODEL_NAME = 'promapcz_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
 
 # EVALUATION CONFIGURATION
 NUMBER_OF_THRESHES = 100
@@ -80,7 +85,6 @@ MINIMAL_RECALL = 0.5
 BEST_MODEL_SELECTION_CRITERION = 'max_f1'  # max_precision, max_recall, balanced_precision_recall, max_f1
 
 # CLASSIFIER PARAMETERS CONFIGURATION
-LinearRegression_CLASSIFIER_PARAMETERS = {}
 LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'none',
                                             'solver': 'newton-cg',
                                             'max_iter': 50,
@@ -99,39 +103,31 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {
-                                           'hidden_layer_sizes': (10, 10),
-                                           'max_iter': 500,
-                                           'solver': 'adam',
-                                           'activation': 'relu'
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 50),
+                                       'activation': 'relu',
+                                       'solver': 'lbfgs',
+                                       'batch_size': 'auto',
+                                       'learning_rate': 'adaptive',
+                                       'learning_rate_init': 0.001,
+                                       'max_iter': 50
                                        }
-LinearRegression_CLASSIFIER_PARAMETERS = {}
-
 Bagging_CLASSIFIER_PARAMETERS = {
-    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
-    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
-    ] * 10
+                         {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+                     ] * 10
 }
-
 Boosting_CLASSIFIER_PARAMETERS = {
-    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
-    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
-    ] * 15
+                         {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+                     ] * 15
 }
-
 AdaBoost_CLASSIFIER_PARAMETERS = {
     'base_estimator': LogisticRegression(),
     'n_estimators': 400
 }
-
 GradientBoosting_CLASSIFIER_PARAMETERS = {}
 
 # CLASSIFIER PARAMETERS CONFIGURATION FOR PARAMETERS SEARCH
-LinearRegression_CLASSIFIER_PARAMETERS_SEARCH = {}
 LogisticRegression_CLASSIFIER_PARAMETERS_SEARCH = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                                                    'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
                                                    'max_iter': [10, 20, 50, 100, 200, 500],
@@ -159,8 +155,6 @@ NeuralNetwork_CLASSIFIER_PARAMETERS_SEARCH = {'hidden_layer_sizes': [(10, 10), (
                                               'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                               'learning_rate_init': [0.01, 0.001, 0.0001],
                                               'max_iter': [50, 100, 500]}
-
-LinearRegression_CLASSIFIER_PARAMETERS_SEARCH_SEARCH = {}
 AdaBoost_CLASSIFIER_PARAMETERS_SEARCH = {
     'base_estimator': LogisticRegression(),
     'n_estimators': [400, 100]
@@ -168,7 +162,6 @@ AdaBoost_CLASSIFIER_PARAMETERS_SEARCH = {
 GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 
 # BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
-PERFORMED_PARAMETERS_SEARCH = 'random'  # grid, random, none
-RANDOM_SEARCH_ITERATIONS = 2
+PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
+RANDOM_SEARCH_ITERATIONS = 100
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
-

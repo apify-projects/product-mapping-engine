@@ -1,4 +1,5 @@
 import itertools
+import pickle
 import random
 import warnings
 from math import ceil
@@ -15,7 +16,8 @@ from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_
     PRINT_ROC_AND_STATISTICS, PERFORMED_PARAMETERS_SEARCH, RANDOM_SEARCH_ITERATIONS, \
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
     BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
-    SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION
+    SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION, LOAD_PRECOMPUTED_MODEL, \
+    SAVE_COMPUTED_MODEL, MODEL_NAME, DATA_FOLDER, MODEL_FOLDER
 
 
 def setup_classifier(classifier_type):
@@ -58,7 +60,8 @@ def setup_classifier(classifier_type):
                         else:
                             classifier_parameters_random[parameter_name] = random.uniform(min_val, max_val)
                     else:
-                        classifier_parameters_random[parameter_name] = random.choice(classifier_parameters[parameter_name])
+                        classifier_parameters_random[parameter_name] = random.choice(
+                            classifier_parameters[parameter_name])
                 else:
                     classifier_parameters_random[parameter_name] = classifier_parameters[parameter_name]
             if is_valid_combination_of_parameters(classifier_type, classifier_parameters_random):
@@ -99,8 +102,16 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
     """
     if train_data is None and test_data is None:
         train_data, test_data = create_train_test_data(data, task_id)
-
-    classifier.fit(train_data)
+    if LOAD_PRECOMPUTED_MODEL:
+        if MODEL_NAME == 'none':
+            filename = f'{MODEL_FOLDER}/{task_id}_{classifier.name}'
+        else:
+            filename = f'{MODEL_FOLDER}/{MODEL_NAME}'
+        classifier = pickle.load(open(filename, 'rb'))
+    else:
+        classifier.fit(train_data)
+        if SAVE_COMPUTED_MODEL:
+            pickle.dump(classifier, open(f'{MODEL_FOLDER}/{task_id}_{classifier.name}', 'wb'))
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
     test_data['predicted_scores'] = classifier.predict(test_data, predict_outputs=False)
 
@@ -111,7 +122,6 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
         True,
         'trainer data'
     )
-    classifier.save()
     return train_stats, test_stats
 
 
@@ -125,16 +135,16 @@ def create_train_test_data(data, task_id):
     if PERFORM_TRAIN_TEST_SPLIT:
         if SAVE_TRAIN_TEST_SPLIT:
             train_data, test_data = train_test_split(data, test_size=TEST_DATA_PROPORTION)
-            train_data.to_csv(task_id + '-train_data.csv', index=False)
-            test_data.to_csv(task_id + '-test_data.csv', index=False)
+            train_data.to_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities.csv', index=False)
+            test_data.to_csv(f'{DATA_FOLDER}/{task_id}-test_data_similarities.csv', index=False)
 
             train_data = train_data.drop(columns=['id1', 'id2'])
             test_data = test_data.drop(columns=['id1', 'id2'])
         else:
             train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
     else:
-        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
+        train_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-test_data_similarities.csv').drop(columns=['id1', 'id2'])
     return train_data, test_data
 
 
@@ -157,8 +167,8 @@ def ensemble_models_training(similarities, classifier_type, task_id):
     if PERFORM_TRAIN_TEST_SPLIT:
         train_data, test_data = train_test_split(data.drop(columns=['id1', 'id2']), test_size=TEST_DATA_PROPORTION)
     else:
-        train_data = pd.read_csv(task_id + '-train_data.csv').drop(columns=['id1', 'id2'])
-        test_data = pd.read_csv(task_id + '-test_data.csv').drop(columns=['id1', 'id2'])
+        train_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities.csv').drop(columns=['id1', 'id2'])
+        test_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-test_data_similarities.csv').drop(columns=['id1', 'id2'])
     predicted_scores_train = []
     predicted_scores_test = []
 
@@ -208,7 +218,7 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
 
-        train_stats, test_stats = train_classifier(classifiers, similarities_without_ids, task_id)
+        train_stats, test_stats = train_classifier(classifiers, similarities, task_id)
         warnings.warn(
             f'Warning: {PERFORMED_PARAMETERS_SEARCH} search not performed as there is only one model to train')
 
@@ -217,11 +227,11 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     if SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA:
         train_data, test_data = create_train_test_data(similarities, task_id)
         validation_data = train_data.sample(frac=VALIDATION_DATA_PROPORTION)
-        validation_data.to_csv('validation_data_params_search.csv', index=False)
+        validation_data.to_csv(f'{DATA_FOLDER}/{task_id}-validation_data_similarities_params_search.csv', index=False)
         train_data_params_search = train_data.drop(validation_data.index)
-        train_data_params_search.to_csv('train_data_params_search.csv', index=False)
-    sub_train_data = pd.read_csv('train_data_params_search.csv')
-    validation_data = pd.read_csv('validation_data_params_search.csv')
+        train_data_params_search.to_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities_params_search.csv', index=False)
+    sub_train_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities_params_search.csv')
+    validation_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-validation_data_similarities_params_search.csv')
     for classifier in classifiers:
         if 'predicted_scores' in validation_data.columns:
             validation_data = validation_data.drop('predicted_scores', axis=1)
@@ -267,7 +277,7 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
                                                                                 'test_f1_score', 'test_accuracy',
                                                                                 'test_precision', 'test_recall'])
     models_results = models_results.sort_values(by=['test_f1_score'], ascending=False)
-    models_results.to_csv(f'results/{classifier_type}_models_comparison.csv')
+    models_results.to_csv(f'{MODEL_FOLDER}/{classifier_type}_models_comparison_{PERFORMED_PARAMETERS_SEARCH}.csv')
     return best_classifier, best_train_stats, best_test_stats
 
 
@@ -397,6 +407,7 @@ def compute_prediction_accuracies(data, data_type, print_classifier_results=True
     Compute  f1 score, accuracy, precision, recall and show confusion matrix
     @param data: all dataset used for training and prediction
     @param data_type: whether data are train or test
+    @param print_classifier_results: True when classifier results should be printed
     @return:  f1 score, accuracy, recall, specificity, precision
     """
     data_count = data.shape[0]

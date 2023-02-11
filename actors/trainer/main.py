@@ -59,18 +59,12 @@ if __name__ == '__main__':
 
     # classifier_type: LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
-        task_id = 'promapen'
+        task_id = 'promapcz'
         classifier_type = 'NeuralNetwork'
         print('Task id: ' + task_id)
         print('Classifier type: ' + classifier_type)
-        if task_id == 'promapcz':
-            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/promapcz.csv')
-        elif task_id == 'promapen':
-            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/promapen.csv')
-        elif task_id == 'amazon_walmart':
-            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/amazon_walmart.csv')
-        elif task_id == 'amazon_google':
-            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/amazon_google.csv')
+        if task_id in ['promapcz', 'promapen', 'amazon_google', 'amazon_walmart']:
+            labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/{task_id}.csv')
         else:
             sys.exit('No task to run selected')
         labeled_dataset = labeled_dataset.fillna('')

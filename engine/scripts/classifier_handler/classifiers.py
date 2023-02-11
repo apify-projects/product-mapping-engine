@@ -70,40 +70,6 @@ class Classifier:
     def set_threshold(self, threshold):
         self.weights['threshold'] = threshold
 
-    def save(self, path='results/models', key_value_store=None):
-        if key_value_store is None:
-            if not os.path.exists(path):
-                os.makedirs(path)
-
-            model_filename = f'{self.name}_model.sav'
-            weights_filename = f'{self.name}_weights.sav'
-
-            pickle.dump(self.model, open(os.path.join(path, model_filename), 'wb'))
-            pickle.dump(self.weights, open(os.path.join(path, weights_filename), 'wb'))
-            if self.use_pca:
-                pca_filename = f'{self.name}_pca.sav'
-                pickle.dump(self.pca, open(os.path.join(path, pca_filename), 'wb'))
-        else:
-            key_value_store.set_record('model', pickle.dumps(self.model))
-            key_value_store.set_record('weights', pickle.dumps(self.weights))
-            if self.use_pca:
-                key_value_store.set_record('pca', pickle.dumps(self.pca))
-
-    def load(self, path='results/models', key_value_store=None):
-        if key_value_store is None:
-            model_filename = f'{self.name}_model.sav'
-            weights_filename = f'{self.name}_weights.sav'
-            self.model = pickle.load(open(os.path.join(path, model_filename), 'rb'))
-            self.weights = pickle.load(open(os.path.join(path, weights_filename), 'rb'))
-            if self.use_pca:
-                pca_filename = f'{self.name}_pca.sav'
-                self.pca = pickle.load(open(os.path.join(path, pca_filename), 'rb'))
-        else:
-            self.model = pickle.loads(key_value_store.get_record('model')['value'])
-            self.weights = pickle.loads(key_value_store.get_record('weights')['value'])
-            if self.use_pca:
-                self.pca = pickle.loads(key_value_store.get_record('pca')['value'])
-
     def perform_pca(self, data, train_pca=False):
         principal_component_count = PRINCIPAL_COMPONENT_COUNT
 

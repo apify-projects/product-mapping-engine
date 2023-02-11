@@ -24,7 +24,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
     @param descriptive_words: descriptive words from both datasets
     @param similarities_to_compute: similarities that should be computed
     @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
-    @param are_there_markers: whether there are markers detecting units, ids, brands etc in the datasets
+    @param are_there_markers: whether there are markers detecting units, ids, brands, etc; in the datasets
     @return: dataset of pair similarity scores
     """
     match_ratios_list = []
@@ -236,6 +236,7 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
     tf_idfs = {}
     descriptive_words = {}
     for column in COLUMNS_TO_BE_PREPROCESSED:
+        print(column)
         if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and 'cos' in
                 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
             tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
@@ -333,7 +334,7 @@ def chunks(dictionary, dict_num):
     """
     Split dictionary into several same parts
     @param dictionary: dictionary to be split
-    @param dict_num: number or parts
+    @param dict_num: number of parts
     @return: list of dict_num dictionaries of the same size
     """
     it = iter(dictionary)
@@ -347,7 +348,7 @@ def multi_run_text_similarities_wrapper(args):
     @param args: Arguments of the function
     @return: call the compute_similarity_of_texts in parallel way
     """
-    return compute_text_similarities_parallelly(*args)
+    return compute_text_similarities_parallely(*args)
 
 
 def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
@@ -377,6 +378,7 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
 
     return similarity_scores
 
+
 def merge_ids_and_codes(product_ids_and_codes):
     union = list(set(product_ids_and_codes['all_ids_list']) | set(product_ids_and_codes['code']))
 
@@ -384,6 +386,7 @@ def merge_ids_and_codes(product_ids_and_codes):
         union[e] = union[e].replace(ID_MARK, '')
 
     return union
+
 
 def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                   dataset2_starting_index, pool, num_cpu):
@@ -470,9 +473,9 @@ def create_empty_dataframe_with_ids(dataset1, dataset2):
     return df_all_similarities
 
 
-def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, tf_idfs, dataset2_starting_index):
+def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, tf_idfs, dataset2_starting_index):
     """
-    Compute similarity score of each pair in both datasets parallelly for each column
+    Compute similarity score of each pair in both datasets parallely for each column
     @param dataset1: first list of texts where each is list of words
     @param dataset2: second list of texts where each is list of words
     @param descriptive_words: descriptive words from both datasets

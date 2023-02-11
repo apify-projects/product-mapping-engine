@@ -20,7 +20,7 @@ from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, \
-    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE
+    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE, DATA_FOLDER
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
     parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier
 
@@ -35,7 +35,8 @@ def split_dataframes(dataset):
     if 'code' in dataset.columns:
         codes_column_if_present = ['code']
 
-    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts'] + codes_column_if_present
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + [
+        'all_texts'] + codes_column_if_present
     dataset_without_marks = dataset[[col for col in columns_without_marks + ['price']]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
     dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks] + codes_column_if_present]
@@ -97,7 +98,6 @@ def create_image_and_text_similarities(dataset1,
                     'id2': dataset2['id'][target_id],
                     'image2': dataset2['image'][target_id],
                 })
-
         image_similarities = create_image_similarities_data(pool, num_cpu, pair_identifications,
                                                             dataset_folder=dataset_folder,
                                                             dataset_images_kvs1=dataset_images_kvs1,
@@ -134,7 +134,7 @@ def create_hashes_from_all_texts(dataset):
     @return: array with hashes computed from all texts describing products
     """
     columns_to_join = ['name', 'short_description', 'long_description', 'specification_text']
-    all_texts = dataset.apply(lambda x: flatten(list(x[c] for c in columns_to_join)), axis=1)
+    all_texts = dataset.apply(lambda x: flatten(list(x[c] for c in columns_to_join if c in x)), axis=1)
     all_text_column = [''.join(text) for text in all_texts.values] + dataset['price'].astype(str).values
     hashes = [hash_text_using_sha256(text) for text in all_text_column]
     return hashes
@@ -183,7 +183,6 @@ def remove_precomputed_matches_and_extract_them(
 
 
 def prepare_data_for_classifier(
-        is_on_platform,
         dataset1,
         dataset2,
         dataset_precomputed_matches,
@@ -193,7 +192,6 @@ def prepare_data_for_classifier(
 ):
     """
     Preprocess data, possibly filter data pairs and compute similarities
-    @param is_on_platform: True if this is running on the platform
     @param dataset1: Source dataframe of products
     @param dataset2: Target dataframe with products to be searched in for the same products
     @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
@@ -283,7 +281,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     print('{}_unlabeled_data.csv'.format(task_id))
     labeled_dataset = None
     try:
-        labeled_dataset = pd.read_csv('{}_unlabeled_data.csv'.format(task_id))
+        labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/{task_id}_unlabeled_data.csv')
     except OSError as e:
         print(e)
         print(
@@ -301,17 +299,17 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
                                                 indicator=True)
         labeled_dataset = labeled_dataset[labeled_dataset['_merge'] == 'left_only'].drop(columns='_merge')
 
-    matching_pairs = labeled_dataset[['id1', 'id2', 'match']]
     predicted_pairs = preprocessed_pairs[['id1', 'id2', 'predicted_scores', 'predicted_match']]
 
     print("Predicted pairs")
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
 
-    merged_data = predicted_pairs.merge(labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2', 'name1', 'name2']], on=['id1', 'id2'], how='outer')
+    merged_data = predicted_pairs.merge(labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2', 'name1', 'name2']],
+                                        on=['id1', 'id2'], how='outer')
     merged_data.info()
-    merged_data.to_csv("filtered.csv")
+    merged_data.to_csv(f'{DATA_FOLDER}/filtered.csv')
 
-    predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
+    predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv(f'{DATA_FOLDER}/predicted.csv')
 
     merged_data['match'] = merged_data['match'].fillna(0)
     merged_data['predicted_scores'] = merged_data['predicted_scores'].fillna(0)
@@ -319,7 +317,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
 
     merged_data_to_save = merged_data[merged_data['match'] == 1]
     merged_data_to_save = merged_data_to_save[merged_data_to_save['predicted_match'] == 0]
-    merged_data_to_save.to_csv("merged.csv")
+    merged_data_to_save.to_csv(f'{DATA_FOLDER}/merged.csv')
 
     columns_to_drop = ['id1', 'id2', 'url1', 'url2', 'price1', 'price2']
     for column in columns_to_drop:
@@ -360,14 +358,13 @@ def load_model_create_dataset_and_predict_matches(
     classifier, _ = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
 
-    preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
+    preprocessed_pairs_file_path = f'{DATA_FOLDER}/preprocessed_pairs_{task_id}.csv'
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
         preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(
-            is_on_platform,
             dataset1,
             dataset2,
             precomputed_pairs_matching_scores,
@@ -390,7 +387,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
             preprocessed_pairs_to_predict
         )
-        preprocessed_pairs.to_csv("predictions.csv")
+        preprocessed_pairs.to_csv(f'{DATA_FOLDER}/predictions.csv')
 
         if not is_on_platform:
             evaluate_executor_results(classifier, preprocessed_pairs, task_id, 'new executor data',
@@ -440,7 +437,6 @@ def load_model_create_dataset_and_predict_matches(
 
 def load_data_and_train_model(
         classifier_type,
-        dataset_folder='',
         dataset_dataframe=None,
         images_kvs1_client=None,
         images_kvs2_client=None,
@@ -451,7 +447,6 @@ def load_data_and_train_model(
     """
     Load dataset and train and save model
     @param classifier_type: classifier type
-    @param dataset_folder: (optional) folder containing data
     @param dataset_dataframe: dataframe of pairs to be compared
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
@@ -461,20 +456,20 @@ def load_data_and_train_model(
     @return: train and test stats after training
     """
     # Loading and preprocessing part
-    similarities_file_path = "similarities_{}.csv".format(task_id)
+    similarities_file_path = f'{DATA_FOLDER}/{task_id}_similarities.csv'
     similarities_file_exists = os.path.exists(similarities_file_path)
 
     if LOAD_PRECOMPUTED_SIMILARITIES and similarities_file_exists:
         similarities = pd.read_csv(similarities_file_path)
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
-            os.path.join(dataset_folder, "product_pairs.csv"))
+            f'{DATA_FOLDER}/product_pairs.csv')
 
         product_pairs1 = product_pairs.filter(regex='1')
         product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
         product_pairs2 = product_pairs.filter(regex='2')
         product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-        preprocessed_pairs, _ = prepare_data_for_classifier(is_on_platform, product_pairs1, product_pairs2, None,
+        preprocessed_pairs, _ = prepare_data_for_classifier(product_pairs1, product_pairs2, None,
                                                             images_kvs1_client,
                                                             images_kvs2_client, filter_data=False)
         if 'birthdate' in preprocessed_pairs.columns:
@@ -509,9 +504,7 @@ def load_data_and_train_model(
                 train_stats, test_stats = train_classifier(classifier, similarities, task_id)
         classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
     best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
-    best_classifier.save(key_value_store=output_key_value_store_client)
     feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
-
     if PRINT_FEATURE_IMPORTANCE:
         best_classifier.print_feature_importance(feature_names)
 

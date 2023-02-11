@@ -173,6 +173,7 @@ def add_all_texts_column(dataset):
     dataset['all_texts'] = joined_rows
     return dataset
 
+
 def preprocess_textual_data(dataset,
                             id_detection=True,
                             color_detection=True,
@@ -218,7 +219,9 @@ def preprocess_textual_data(dataset,
 
     if 'code' in dataset.columns:
         dataset['code'] = dataset['code'].apply(
-            lambda code_string: code_string.replace(' ,', ',').replace(', ', ',').replace('[', '').replace(']', '').replace('"', '').replace("'", "").split(',')
+            lambda code_string: code_string.replace(' ,', ',').replace(', ', ',').replace('[', '').replace(']',
+                                                                                                           '').replace(
+                '"', '').replace("'", "").split(',')
         )
 
     dataset = reindex_and_merge_dataframes(dataset, detected_keywords)
@@ -304,7 +307,7 @@ def parse_specifications(dataset):
     @return: list of dicts containing parsed products specifications
     """
     parsed_dataset = []
-
+    i = 0
     for product_specification in dataset:
         product_specification = json.loads(product_specification)
         specification_dict = {}
