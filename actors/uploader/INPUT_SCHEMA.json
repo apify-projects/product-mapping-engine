@@ -1,0 +1,38 @@
+{
+  "title": "Input schema for the example_python actor.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "datasets_to_upload": {
+      "title": "List of datasets to upload",
+      "type": "array",
+      "description": "",
+      "editor": "json"
+    },
+    "max_file_size": {
+      "title": "Maximum size of an uploaded file in MB",
+      "type": "string",
+      "description": "",
+      "editor": "textfield"
+    },
+    "host": {
+      "title": "SFTP server address",
+      "type": "string",
+      "description": "",
+      "editor": "textfield"
+    },
+    "port": {
+      "title": "SFTP server port",
+      "type": "string",
+      "description": "",
+      "editor": "textfield"
+    },
+    "path": {
+      "title": "Path on the SFTP server where the datasets should be uploaded",
+      "type": "string",
+      "description": "",
+      "editor": "textfield"
+    }
+  },
+  "required": []
+}

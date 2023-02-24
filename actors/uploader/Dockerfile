@@ -11,7 +11,8 @@ RUN apt install -y libgl1-mesa-glx
 # in order to speed up the build
 COPY requirements.txt ./
 
-ARG GITHUB_TOKEN
+ARG SFTP_USERNAME
+ARG SFTP_PASSWORD
 
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get -y install nodejs
@@ -19,7 +20,6 @@ RUN apt-get -y install nodejs
 # Install the packages specified in requirements.txt,
 # Print the installed Python version, pip version
 # and all installed packages with their versions for debugging
-# TODO change the branch to master or deploy
 RUN echo "Python version:" \
  && python --version \
  && echo "Pip version:" \
@@ -27,15 +27,14 @@ RUN echo "Python version:" \
  && echo "Installing dependencies from requirements.txt:" \
  && pip install -r requirements.txt \
  && echo "All installed Python packages:" \
- && pip freeze \
- && git clone -b DatasetPreprocessor https://ssh:$GITHUB_TOKEN@github.com/apify-projects/product-mapping-engine.git product_mapping_repository \
- && ln -s product_mapping_repository/engine product_mapping_engine \
- && (cd product_mapping_engine/scripts/dataset_handler/preprocessing/images/image_hash_creator && npm install)
+ && pip freeze
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after installing the dependencies, quick build will be really fast
 # for most source file changes.
 COPY . ./
+
+RUN echo "{ \"username\": \"$SFTP_USERNAME\", \"password\": \"$SFTP_PASSWORD\" }" > login.json
 
 # Specify how to launch the source code of your actor.
 # By default, the main.py file is run

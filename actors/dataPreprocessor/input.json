@@ -1,0 +1,48 @@
+{
+  "executor_task_id": "aqX9cgYmSfpVWRGhg",
+  "run_executor": true,
+  "source": {
+    "eshop_name": "extra",
+    "dataset_id": "J0MpblfbcF5jEQ0OI",
+    "attribute_names": {
+      "id": "url",
+      "name": "name",
+      "short_description": "shortDescription",
+      "long_description": "longDescription",
+      "specification": "specification",
+      "image": "images",
+      "price": "price",
+      "url": "url",
+      "code": [
+        "productSpecificId",
+        "shopSpecificId"
+      ]
+    },
+    "specification_format": "correct",
+    "fix_prices": false,
+    "connecting_attribute": "url"
+  },
+  "competitor_scrape_run_id": "SqVXGqFjAFYXeigZo",
+  "target": {
+    "eshop_name": "xcite",
+    "attribute_names": {
+      "id": "productUrl",
+      "name": "name",
+      "brand": "brand",
+      "short_description": "shortDescription",
+      "long_description": "longDescription",
+      "specification": "specifications",
+      "image": "images",
+      "price": "price",
+      "url": "productUrl",
+      "code": [
+        "productSpecificId",
+        "shopSpecificId"
+      ],
+      "extraUrl": "extraUrl"
+    },
+    "specification_format": "parameter-value",
+    "fix_prices": true,
+    "source_connecting_attribute": "extraUrl"
+  }
+}

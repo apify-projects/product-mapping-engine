@@ -47,7 +47,8 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         "specification1",
         "image1",
         "price1",
-        "url1"
+        "url1",
+        "code1"
     ]
     dataset2_columns = [
         "id2",
@@ -57,15 +58,17 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         "specification2",
         "image2",
         "price2",
-        "url2"
+        "url2",
+        "code2"
     ]
     columns_to_upload = dataset1_columns + dataset2_columns + ["match"]
 
-    dataset_to_upload = pd.read_csv(pairs_dataset_path)
+    dataset_to_upload = pd.read_csv(pairs_dataset_path).fillna("")
+    dataset_to_upload.to_json("whatishappening.json", orient='records')
 
     dataset_to_upload = dataset_to_upload[columns_to_upload]
     print(dataset_to_upload)
-    dataset_to_upload["long_description1"] = dataset_to_upload["long_description2"].fillna("")
+    dataset_to_upload["long_description1"] = dataset_to_upload["long_description1"].fillna("")
     dataset_to_upload["long_description2"] = dataset_to_upload["long_description2"].fillna("")
 
     to_upload_labeled, to_upload_unlabeled = train_test_split(dataset_to_upload, test_size=0.2)
@@ -84,7 +87,8 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         "specification1": "specification",
         "image1": "image",
         "price1": "price",
-        "url1": "url"
+        "url1": "url",
+        "code1": "code"
     })
     dataset1_client.push_items(dataset1_to_upload.to_dict('records'))
 
@@ -97,7 +101,8 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
         "specification2": "specification",
         "image2": "image",
         "price2": "price",
-        "url2": "url"
+        "url2": "url",
+        "code2": "code"
     })
     dataset2_client.push_items(dataset2_to_upload.to_dict('records'))
 
@@ -138,7 +143,7 @@ def upload_dataset_to_platform(task_id, pairs_dataset_path, images_path):
 
 
 upload_dataset_to_platform(
-    "extra-xcite-mapping",
+    "fixed-v4-extra-xcite-mapping",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images_finalized"),
 )

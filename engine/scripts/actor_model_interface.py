@@ -6,7 +6,7 @@ from multiprocessing import Pool
 
 import pandas as pd
 
-from .dataset_handler.pairs_filtering import filter_possible_product_pairs
+from .dataset_handler.pairs_filtering import filter_possible_product_pairs, filter_preprepared_product_pairs
 from .dataset_handler.similarity_computation.images.compute_hashes_similarity import \
     create_image_similarities_data
 
@@ -31,10 +31,14 @@ def split_dataframes(dataset):
     @param dataset: preprocessed dataframe
     @return: two dataframes with detected keywords and without them
     """
-    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts']
+    codes_column_if_present = []
+    if 'code' in dataset.columns:
+        codes_column_if_present = ['code']
+
+    columns_without_marks = [col for col in dataset.columns if 'no_detection' in col] + ['all_texts'] + codes_column_if_present
     dataset_without_marks = dataset[[col for col in columns_without_marks + ['price']]]
     dataset_without_marks.columns = dataset_without_marks.columns.str.replace('_no_detection', '')
-    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks]]
+    dataset = dataset[[col for col in dataset.columns if col not in columns_without_marks] + codes_column_if_present]
     return dataset, dataset_without_marks
 
 
@@ -185,7 +189,8 @@ def prepare_data_for_classifier(
         dataset_precomputed_matches,
         images_kvs1_client,
         images_kvs2_client,
-        filter_data
+        data_already_paired=True,
+        filter_data=False
 ):
     """
     Preprocess data, possibly filter data pairs and compute similarities
@@ -195,14 +200,15 @@ def prepare_data_for_classifier(
     @param dataset_precomputed_matches: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @param filter_data: True whether filtering during similarity computations should be performed
+    @param data_already_paired: True if the data in dataset1 and dataset2 already correspond to pairs
+    @param filter_data: True if filtering during similarity computations should be performed
     @return: dataframe with image and text similarities, dataset with precomputed similarities (for executor only)
     """
     # setup parallelling stuff
     pool = Pool()
-    num_cpu = os.cpu_count() - 1
-    if not is_on_platform:
-        num_cpu -= 2
+
+    # The minimum is required for
+    num_cpu = min(dataset1.shape[0], dataset2.shape[0], os.cpu_count() - 1)
 
     # preprocess data
     print("Text preprocessing started")
@@ -234,7 +240,10 @@ def prepare_data_for_classifier(
     if filter_data:
         # filter product pairs
         print("Filtering started")
-        pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks,
+        if data_already_paired:
+            pairs_dataset_idx = filter_preprepared_product_pairs(dataset1, dataset2, descriptive_words)
+        else:
+            pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks,
                                                           descriptive_words, pool, num_cpu)
         pairs_count = 0
         for key, target_ids in pairs_dataset_idx.items():
@@ -305,7 +314,9 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     print("Predicted pairs")
     print(predicted_pairs[predicted_pairs['predicted_match'] == 1].shape)
 
-    merged_data = predicted_pairs.merge(matching_pairs, on=['id1', 'id2'], how='outer')
+    merged_data = predicted_pairs.merge(labeled_dataset[['id1', 'id2', 'match', 'price1', 'price2', 'name1', 'name2']], on=['id1', 'id2'], how='outer')
+    merged_data.info()
+    merged_data.to_csv("filtered.csv")
 
     predicted_pairs[predicted_pairs['predicted_match'] == 1][['id1', 'id2']].to_csv("predicted.csv")
 
@@ -325,26 +336,32 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     print(data_type)
     print(stats)
 
+def split_pair_dataset_into_constituents(pair_dataset):
+    product_pairs1 = pair_dataset.filter(regex='1')
+    product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
+    product_pairs2 = pair_dataset.filter(regex='2')
+    product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
+    return product_pairs1, product_pairs2
 
 def load_model_create_dataset_and_predict_matches(
-        dataset1,
-        dataset2,
-        precomputed_pairs_matching_scores,
-        images_kvs1_client,
-        images_kvs2_client,
-        classifier_type,
+        pair_dataset=None,
+        dataset1=None,
+        dataset2=None,
+        images_kvs1_client=None,
+        images_kvs2_client=None,
+        precomputed_pairs_matching_scores=None,
         model_key_value_store_client=None,
         task_id="basic",
         is_on_platform=IS_ON_PLATFORM
 ):
     """
     For each product in first dataset find same products in the second dataset
-    @param dataset1: Source dataset of products
-    @param dataset2: Target dataset with products to be searched in for the same products
+    @param pair_dataset: dtaset of candidate pairs if available
+    @param dataset1: Source dataset of products if there is no pair_dataset available
+    @param dataset2: Target dataset with products to be searched in for the same products if there is no pair_dataset available
     @param precomputed_pairs_matching_scores: Dataframe with already precomputed matching pairs
     @param images_kvs1_client: key-value-store client where the images for the source dataset are stored
     @param images_kvs2_client: key-value-store client where the images for the target dataset are stored
-    @param classifier_type: Classifier used for product matching
     @param model_key_value_store_client: key-value-store client where the classifier model is stored
     @param task_id: unique identification of the current Product Mapping task
     @param is_on_platform: True if this is running on the platform
@@ -352,14 +369,21 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
+    training_parameters = model_key_value_store_client.get_record('parameters')['value']
+    classifier_type = training_parameters['classifier_type']
+
     classifier, _ = setup_classifier(classifier_type)
     classifier.load(key_value_store=model_key_value_store_client)
+
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)
 
     if LOAD_PRECOMPUTED_SIMILARITIES and preprocessed_pairs_file_exists:
         preprocessed_pairs = pd.read_csv(preprocessed_pairs_file_path)
     else:
+        if pair_dataset is not None:
+            dataset1, dataset2 = split_pair_dataset_into_constituents(pair_dataset)
+
         preprocessed_pairs, precomputed_pairs_matching_scores = prepare_data_for_classifier(
             is_on_platform,
             dataset1,
@@ -367,6 +391,7 @@ def load_model_create_dataset_and_predict_matches(
             precomputed_pairs_matching_scores,
             images_kvs1_client,
             images_kvs2_client,
+            data_already_paired=pair_dataset is not None,
             filter_data=True
         )
 
@@ -384,6 +409,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs['predicted_match'], preprocessed_pairs['predicted_scores'] = classifier.predict(
             preprocessed_pairs_to_predict
         )
+        preprocessed_pairs.to_csv("predictions.csv")
 
         if not is_on_platform:
             evaluate_executor_results(classifier, preprocessed_pairs, task_id, 'new executor data',
@@ -422,6 +448,7 @@ def load_model_create_dataset_and_predict_matches(
             ignore_index=True)
     else:
         all_product_pairs_matching_scores = new_product_pairs_matching_scores
+
     if not is_on_platform:
         evaluate_executor_results(classifier, all_product_pairs_matching_scores, task_id, 'all executor data', None)
 
@@ -462,11 +489,8 @@ def load_data_and_train_model(
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
             os.path.join(dataset_folder, "product_pairs.csv"))
 
-        product_pairs1 = product_pairs.filter(regex='1')
-        product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
-        product_pairs2 = product_pairs.filter(regex='2')
-        product_pairs2.columns = product_pairs2.columns.str.replace("2", "")
-        preprocessed_pairs, _ = prepare_data_for_classifier(is_on_platform, product_pairs1, product_pairs2, None,
+        dataset1, dataset2 = split_pair_dataset_into_constituents(product_pairs)
+        preprocessed_pairs, _ = prepare_data_for_classifier(is_on_platform, dataset1, dataset2, None,
                                                             images_kvs1_client,
                                                             images_kvs2_client, filter_data=False)
         if 'birthdate' in preprocessed_pairs.columns:
@@ -484,18 +508,21 @@ def load_data_and_train_model(
 
     # Training part
     classifiers = []
-    for _ in range(NUMBER_OF_TRAINING_RUNS):
-        if classifier_type in ['Bagging', 'Boosting']:
-            classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type)
-        elif PERFORMED_PARAMETERS_SEARCH is not None:
-            classifier, train_stats, test_stats = parameters_search_and_best_model_training(
-                similarities,
-                classifier_type
-            )
-        else:
-            classifier, _ = setup_classifier(classifier_type)
-            train_stats, test_stats = train_classifier(classifier, similarities.drop(columns=['id1', 'id2']))
-
+    if PERFORMED_PARAMETERS_SEARCH is not 'none':
+        classifier, train_stats, test_stats = parameters_search_and_best_model_training(
+            similarities,
+            classifier_type,
+            task_id
+        )
+        classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
+    else:
+        for _ in range(NUMBER_OF_TRAINING_RUNS):
+            if classifier_type in ['Bagging', 'Boosting']:
+                classifier, train_stats, test_stats = ensemble_models_training(similarities, classifier_type, task_id)
+            else:
+                classifier, _ = setup_classifier(classifier_type)
+                print(classifier)
+                train_stats, test_stats = train_classifier(classifier, similarities, task_id)
         classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
     best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
     best_classifier.save(key_value_store=output_key_value_store_client)

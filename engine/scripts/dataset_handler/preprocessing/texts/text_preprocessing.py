@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import re
-
+import unicodedata
 import majka
 import numpy as np
 import pandas as pd
@@ -75,6 +75,11 @@ def remove_useless_spaces_and_characters(text):
     text = re.sub(r'(?<=\d)x(?=\d)', r'×', text)
     # text = re.sub(r'(?<=\d)x', r'', text)
     text = text.replace(' × ', '×')
+    text = text.replace('½', '1/2')
+    text = text.replace('⅓', '1/3')
+    text = text.replace('¼', '1/4')
+    text = text.replace('⅕', '1/5')
+    text = unicodedata.normalize("NFKD", text)
     text = text.replace('(', '')
     text = text.replace(')', '')
     return text
@@ -173,7 +178,6 @@ def add_all_texts_column(dataset):
     dataset['all_texts'] = joined_rows
     return dataset
 
-
 def preprocess_textual_data(dataset,
                             id_detection=True,
                             color_detection=True,
@@ -197,24 +201,35 @@ def preprocess_textual_data(dataset,
         if column in dataset:
             dataset[column] = preprocess_text(dataset[column].values)
             dataset[column + '_no_detection'] = copy.deepcopy(dataset[column])
-            brand_detection, color_detection, id_detection, numbers_detection, units_detection = \
+            column_brand_detection, column_color_detection, column_id_detection, column_numbers_detection, column_units_detection = \
                 update_keywords_detection_from_config(
                     column, id_detection, brand_detection, color_detection, numbers_detection,
                     units_detection
                 )
             dataset[column], detected_keywords_df[column] = detect_ids_brands_colors_and_units(
                 dataset[column],
-                id_detection,
-                color_detection,
-                brand_detection,
-                units_detection,
-                numbers_detection
+                column_id_detection,
+                column_color_detection,
+                column_brand_detection,
+                column_units_detection,
+                column_numbers_detection
             )
+
     dataset = add_all_texts_column(dataset)
     detected_keywords = convert_keyword_dicts_to_dataframe(detected_keywords_df)
 
     if 'specification' in dataset.columns:
         dataset['specification'] = preprocess_specifications(dataset['specification'])
+
+    if 'code' in dataset.columns:
+        # Standardize format
+        dataset['code'] = dataset['code'].apply(
+            lambda code: code if isinstance(code, str) else json.dumps(code)
+        )
+
+        dataset['code'] = dataset['code'].apply(
+            lambda code_string: code_string.replace(' ,', ',').replace(', ', ',').replace('[', '').replace(']', '').replace('"', '').replace("'", "").split(',')
+        )
 
     dataset = reindex_and_merge_dataframes(dataset, detected_keywords)
     return dataset
@@ -287,6 +302,7 @@ def preprocess_specifications(dataset):
                 units_detection=True
             )
             specification_dict_preprocessed[' '.join(name[0])] = ' '.join(text_detected[0])
+
         preprocessed_dataset.append(specification_dict_preprocessed)
     return preprocessed_dataset
 
@@ -300,7 +316,9 @@ def parse_specifications(dataset):
     parsed_dataset = []
 
     for product_specification in dataset:
-        product_specification = json.loads(product_specification)
+        if not isinstance(product_specification, list):
+            product_specification = json.loads(product_specification)
+
         specification_dict = {}
         for item in product_specification:
             item['value'] = str(item['value'])

@@ -12,31 +12,30 @@ if __name__ == '__main__':
     default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
 
     is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
-
     # classifier_type: LinearRegression, LogisticRegression, SupportVectorMachine,
     #                  DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if not is_on_platform:
-        full_dataset = True
-        if full_dataset:
+        czech_dataset = False
+        if czech_dataset:
             default_kvs_client.set_record(
                 'INPUT',
                 {
                     "task_id": "full-cs-dataset",
                     "classifier_type": "NeuralNetwork",
-                    "dataset_id": "WRkXWRupE9x4hU9Gx",
-                    "images_kvs_1": "GAajPigzewo36wdak",
-                    "images_kvs_2": "UsXhHO2HBfplCnlmb"
+                    "dataset_id": "hnSwb2SaERXcvbXQ6",
+                    "images_kvs_1": "dEoB1XWso0B0cY6AC",
+                    "images_kvs_2": "lBhezRArqcep8rMER"
                 }
             )
         else:
             default_kvs_client.set_record(
                 'INPUT',
                 {
-                    "task_id": "extra-xcite-mapping",
+                    "task_id": "fixed-v4-extra-xcite-mapping",
                     "classifier_type": "NeuralNetwork",
-                    "dataset_id": "AzT4gUuFh6EaismqR",
-                    "images_kvs_1": "iCdo7OawbdUx8MJVk",
-                    "images_kvs_2": "cBi3fhJ7xAc9jl5HI"
+                    "dataset_id": "TyXf5pvH3eg7AES8g",
+                    "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
                 }
             )
 

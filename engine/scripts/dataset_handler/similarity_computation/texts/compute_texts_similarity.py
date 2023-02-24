@@ -29,7 +29,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
     """
     match_ratios_list = []
 
-    for (product1_idx, product1), products2_list in zip(dataset1.iteritems(), dataset2):
+    for (product1_idx, product1), products2_list in zip(dataset1.items(), dataset2):
         if are_there_markers:
             product1_no_markers = remove_markers(copy.deepcopy(product1))
         else:
@@ -37,7 +37,7 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
         bnd1 = [word for word in product1 if BRAND_MARK in word]
         id1 = [word for word in product1 if ID_MARK in word]
 
-        for product2_idx, product2 in products2_list.iteritems():
+        for product2_idx, product2 in products2_list.items():
             match_ratios = {}
 
             # detect and compare ids
@@ -370,10 +370,20 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
                     if item1 == item2:
                         matches += 1
             score = matches / len(product1)
+            if matches == 0 and len(product1) > 0 and len(product2) > 0:
+                score = -1
+
             similarity_scores.append(score)
 
     return similarity_scores
 
+def merge_ids_and_codes(product_ids_and_codes):
+    union = list(set(product_ids_and_codes['all_ids_list']) | set(product_ids_and_codes['code']))
+
+    for e in range(len(union)):
+        union[e] = union[e].replace(ID_MARK, '')
+
+    return union
 
 def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs, descriptive_words,
                                   dataset2_starting_index, pool, num_cpu):
@@ -389,10 +399,6 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     @param dataset2_starting_index: starting index of the data from second dataset in tf_idfs and descriptive_words
     @return: Similarity scores for the product pairs
     """
-
-    print(dataset1['id'])
-    print(dataset2['id'])
-
     dataset1_subsets = [dataset1.iloc[list(product_pairs_idx_part.keys())] for product_pairs_idx_part in
                         chunks(product_pairs_idx, round(len(product_pairs_idx) / num_cpu))]
     dataset2_subsets = [[dataset2.iloc[d] for d in list(product_pairs_idx_part.values())] for product_pairs_idx_part in
@@ -419,9 +425,22 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
+    # TODO this should be parallel
     if 'code' in dataset1.columns and 'code' in dataset2.columns:
-        code_similarity = compute_similarity_of_codes(dataset1['code'], dataset2['code'], product_pairs_idx)
-        df_all_similarities['code'] = pd.Series(code_similarity)
+        df_all_similarities['code'] = pd.Series(
+            compute_similarity_of_codes(
+                dataset1['code'],
+                dataset2['code'],
+                product_pairs_idx
+            )
+        )
+        df_all_similarities['codes_and_ids'] = pd.Series(
+            compute_similarity_of_codes(
+                dataset1[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
+                dataset2[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
+                product_pairs_idx
+            )
+        )
 
     df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
     return df_all_similarities

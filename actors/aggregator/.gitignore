@@ -1,0 +1,9 @@
+venv/*
+__pycache__/*
+*.pdf
+*.csv
+.idea/*
+hashes_cropped_*
+images_cropped_*
+input.json
+login.json

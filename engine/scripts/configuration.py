@@ -2,9 +2,8 @@ from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
 IS_ON_PLATFORM = False
-NUMBER_OF_TRAINING_RUNS = 3
 LOAD_PRECOMPUTED_SIMILARITIES = False
-SAVE_PRECOMPUTED_SIMILARITIES = True
+SAVE_PRECOMPUTED_SIMILARITIES = False
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
 
@@ -36,7 +35,8 @@ MINIMAL_DETECTABLE_ID_LENGTH = 4
 NUMBER_OF_TOP_DESCRIPTIVE_WORDS = 50
 MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS = 0.5
 MIN_DESCRIPTIVE_WORDS_FOR_MATCH = 0
-MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
+MIN_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 1
+MIN_LONG_PRODUCT_NAME_SIMILARITY_FOR_MATCH = 2
 MIN_MATCH_PRICE_RATIO = 0.5
 MAX_MATCH_PRICE_RATIO = 2
 
@@ -54,31 +54,36 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 
 # TRAINING CONFIGURATION
+PERFORM_TRAIN_TEST_SPLIT = True
+SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
+VALIDATION_DATA_PROPORTION = 0.2
+SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
-PRINCIPAL_COMPONENT_COUNT = 20
+NUMBER_OF_TRAINING_RUNS = 10
+PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 
 # EVALUATION CONFIGURATION
-NUMBER_OF_THRESHES = 30
+NUMBER_OF_THRESHES = 100
 NUMBER_OF_THRESHES_FOR_AUC = 30
 PRINT_ROC_AND_STATISTICS = False
 PRINT_FEATURE_IMPORTANCE = False
 PRINT_CORRELATION_MATRIX = False
 CORRELATION_LIMIT = 0.7
-MINIMAL_PRECISION = 0.2
-MINIMAL_RECALL = 0.2
+MINIMAL_PRECISION = 0.5
+MINIMAL_RECALL = 0.6
 BEST_MODEL_SELECTION_CRITERION = 'max_precision'  # max_precision, max_recall, balanced_precision_recall
 
 # CLASSIFIER PARAMETERS CONFIGURATION
 LinearRegression_CLASSIFIER_PARAMETERS = {}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1',
-                                            'solver': 'lbfgs',
-                                            'max_iter': 100,
+LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'none',
+                                            'solver': 'newton-cg',
+                                            'max_iter': 50,
                                             'class_weight': 'balanced'}
 SupportVectorMachine_CLASSIFIER_PARAMETERS = {'kernel': 'poly',
                                               'degree': 5,
@@ -94,69 +99,67 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 10, 50),
-                                       'activation': 'relu',
-                                       'solver': 'adam',
-                                       'batch_size': 'auto',
-                                       'learning_rate': 'adaptive',
-                                       'learning_rate_init': 0.001,
-                                       'max_iter': 100}
-LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'l1',
-                                            'solver': 'lbfgs',
-                                            'max_iter': 100,
-                                            'class_weight': 'balanced'}
-
+NeuralNetwork_CLASSIFIER_PARAMETERS = {
+                                           'hidden_layer_sizes': (10, 10),
+                                           'max_iter': 250,
+                                           'solver': 'adam',
+                                           'activation': 'relu'
+                                       }
 LinearRegression_CLASSIFIER_PARAMETERS = {}
+
 Bagging_CLASSIFIER_PARAMETERS = {
-    'LogisticRegression': [{'class_weight': 'balanced'}],
-    'SupportVectorMachine': [{'kernel': 'rbf', 'class_weight': 'balanced', 'probability': True}],
-    'DecisionTree': [{'criterion': 'entropy', 'max_depth': 15, 'min_samples_split': 8, 'class_weight': 'balanced'}],
-    'RandomForests': [{'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 14,
-                       'class_weight': 'balanced'}],
+    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     'NeuralNetwork': [
-        {'hidden_layer_sizes': (50, 50), 'activation': 'tanh', 'solver': 'lbfgs', 'batch_size': 'auto',
-         'learning_rate': 'invscaling', 'learning_rate_init': 0.01, 'max_iter': 200}
-    ]
+        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+    ] * 10
 }
+
+Boosting_CLASSIFIER_PARAMETERS = {
+    #'LogisticRegression': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    #'NeuralNetwork': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {},{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    'NeuralNetwork': [
+        {'hidden_layer_sizes': (10, 10), 'max_iter': 200, 'activation': 'relu', 'solver': 'adam'}
+    ] * 15
+}
+
 AdaBoost_CLASSIFIER_PARAMETERS = {
     'base_estimator': LogisticRegression(),
     'n_estimators': 400
 }
+
 GradientBoosting_CLASSIFIER_PARAMETERS = {}
 
 # CLASSIFIER PARAMETERS CONFIGURATION FOR PARAMETERS SEARCH
 LinearRegression_CLASSIFIER_PARAMETERS_SEARCH = {}
 LogisticRegression_CLASSIFIER_PARAMETERS_SEARCH = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                                                    'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
-                                                   'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                                   'max_iter': [10, 20, 50, 100, 200, 500],
                                                    'class_weight': 'balanced'}
 SupportVectorMachine_CLASSIFIER_PARAMETERS_SEARCH = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                                                      'degree': [2, 3, 4, 5],
-                                                     'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
+                                                     'max_iter': [10, 20, 50, 100, 200, 500],
                                                      'class_weight': 'balanced',
                                                      'probability': True}
 DecisionTree_CLASSIFIER_PARAMETERS_SEARCH = {'criterion': ['gini', 'entropy'],
-                                             'max_depth': [5, 8, 12, 15, 18, 21],
-                                             'min_samples_split': [2, 5, 8, 11, 14, 17],
+                                             'max_depth': [5, 10, 15, 20],
+                                             'min_samples_split': [2, 5, 10, 15, 20],
                                              'class_weight': 'balanced'}
-RandomForests_CLASSIFIER_PARAMETERS_SEARCH = {'n_estimators': [50, 100, 150, 200, 250, 300, 400, 500],
+RandomForests_CLASSIFIER_PARAMETERS_SEARCH = {'n_estimators': [50, 100, 200, 500],
                                               'criterion': ['gini', 'entropy'],
-                                              'max_depth': [5, 8, 12, 15, 18, 21],
-                                              'min_samples_split': [2, 5, 8, 11, 14, 17],
+                                              'max_depth': [5, 10, 20, 50],
+                                              'min_samples_split': [2, 5, 10, 20],
                                               'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS_SEARCH = {'hidden_layer_sizes': [(10), (50), (100), (10, 10), (50, 50), (100, 100),
-                                                                     (10, 10, 10), (50, 50, 50), (100, 100, 100),
-                                                                     (50, 10, 50), (100, 50, 100)],
+NeuralNetwork_CLASSIFIER_PARAMETERS_SEARCH = {'hidden_layer_sizes': [(10, 10), (50, 50), (10, 50),
+                                                                     (10, 10, 10), (50, 50, 50),
+                                                                     (50, 10, 50), (10, 50, 10)],
                                               'activation': ['relu', 'logistic', 'tanh'],
                                               'solver': ['adam', 'sgd', 'lbfgs'],
                                               'batch_size': 'auto',
                                               'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                               'learning_rate_init': [0.01, 0.001, 0.0001],
                                               'max_iter': [50, 100, 500]}
-LogisticRegression_CLASSIFIER_PARAMETERS_SEARCH = {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
-                                                   'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'],
-                                                   'max_iter': [10, 20, 30, 50, 100, 150, 200, 300, 500],
-                                                   'class_weight': 'balanced'}
+
 LinearRegression_CLASSIFIER_PARAMETERS_SEARCH_SEARCH = {}
 AdaBoost_CLASSIFIER_PARAMETERS_SEARCH = {
     'base_estimator': LogisticRegression(),
@@ -166,5 +169,6 @@ GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 
 # BEST CLASSIFIER PARAMETERS SEARCH CONFIGURATION
 PERFORMED_PARAMETERS_SEARCH = 'none'  # grid, random, none
-RANDOM_SEARCH_ITERATIONS = 10
+RANDOM_SEARCH_ITERATIONS = 5
 NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS = 1
+

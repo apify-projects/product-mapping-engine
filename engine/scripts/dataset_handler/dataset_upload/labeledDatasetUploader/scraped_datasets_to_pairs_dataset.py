@@ -10,7 +10,7 @@ import importlib.machinery
 
 configuration = importlib.machinery.SourceFileLoader(
     'configuration',
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..", "configuration.py"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..", "configuration.py"),
 ).load_module()
 
 
@@ -62,33 +62,45 @@ def download_images(images_path, pair_index, product_index, pair):
 
 
 def transform_scraped_datasets_to_full_pairs_dataset(
-        url_pairs_dataset_path,
-        scraped_dataset1_path,
-        scraped_dataset2_path,
+        url_pairs_dataset_paths,
+        scraped_dataset1_paths,
+        scraped_dataset2_paths,
         full_pairs_dataset_path,
         images_path
 ):
     """
     Uses scraped data to construct a labeled dataset than can be uploaded to the platform
-    @param url_pairs_dataset_path: pairs of product URLs along with information about their match status
-    @param scraped_dataset1_path: scraped source dataset
-    @param scraped_dataset2_path: scraped target dataset
+    @param url_pairs_dataset_paths: array of datasets of pairs of product URLs along with information about their match status
+    @param scraped_dataset1_paths: array of scraped source datasets
+    @param scraped_dataset2_paths: array of scraped target datasets
     @param full_pairs_dataset_path: path to save the completed dataset to
     @param images_path: what folder to save the images to
     @return:
     """
-    url_pairs_dataset = pd.read_csv(url_pairs_dataset_path)
+    url_pairs_datasets = []
+    for path in url_pairs_dataset_paths:
+        url_pairs_datasets.append(pd.read_csv(path))
+    url_pairs_dataset = pd.concat(url_pairs_datasets)
 
-    scraped_dataset1 = pd.read_json(scraped_dataset1_path)
+    url_pairs_dataset.info()
+
+    scraped_datasets1 = []
+    for path in scraped_dataset1_paths:
+        scraped_datasets1.append(pd.read_json(path))
+    scraped_dataset1 = pd.concat(scraped_datasets1)
+
+    '''
     scraped_dataset1 = scraped_dataset1[
         ["name", "shortDescription", "longDescription", "specification", "images", "price", "url"]]
+    '''
     scraped_dataset1 = scraped_dataset1.rename(
         columns={
+            "images": "image",
             "shortDescription": "short_description",
             "longDescription": "long_description",
-            "images": "image"
         }
     )
+
     scraped_dataset1 = scraped_dataset1.rename(
         columns={
             "name": "name1",
@@ -97,27 +109,33 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "specification": "specification1",
             "image": "image1",
             "price": "price1",
-            "url": "url1"
+            "url": "url1",
+            "code": "code1"
         }
     )
 
     scraped_dataset1 = scraped_dataset1.astype({"price1": str}, errors='raise')
-    scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace("[^0-9]", "", regex=True)
+    scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace(".", ",", regex=False)
+    scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace("[^0-9,]", "", regex=True)
+    scraped_dataset1["price1"] = scraped_dataset1["price1"].str.replace(",", ".", regex=False)
     scraped_dataset1["id1"] = scraped_dataset1["url1"]
 
-    scraped_dataset2 = pd.read_json(scraped_dataset2_path)
-    scraped_dataset2 = scraped_dataset2[
-        ["productName", "shortDescription", "longDescription", "specifications", "images", "price", "productUrl"]]
-    scraped_dataset2 = scraped_dataset2.rename(
+    scraped_datasets2 = []
+    for path in scraped_dataset2_paths:
+        scraped_datasets2.append(pd.read_json(path))
+    scraped_dataset2 = pd.concat(scraped_datasets2)
+    scraped_dataset2[["brand"]].drop_duplicates()["brand"].to_json("brands.json", orient="records")
+
+    '''
+    scraped_dataset2 = scraped_dataset2[["productName", "shortDescription", "longDescription", "specifications", "images", "price", "productUrl"]]
+    '''
+    '''scraped_dataset2 = scraped_dataset2.rename(
         columns={
-            "productName": "name",
             "shortDescription": "short_description",
-            "longDescription": "long_description",
-            "specifications": "specification",
-            "images": "image",
-            "productUrl": "url"
+            "longDescription": "long_description"
         }
-    )
+    )'''
+
     scraped_dataset2 = scraped_dataset2.rename(
         columns={
             "name": "name2",
@@ -126,15 +144,22 @@ def transform_scraped_datasets_to_full_pairs_dataset(
             "specification": "specification2",
             "image": "image2",
             "price": "price2",
-            "url": "url2"
+            "url": "url2",
+            "code": "code2"
         }
     )
+
+
     scraped_dataset2 = scraped_dataset2.astype({"price2": str}, errors='raise')
-    scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace("[^0-9]", "", regex=True)
+    scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace(".", ",", regex=False)
+    scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace("[^0-9,]", "", regex=True)
+    scraped_dataset2["price2"] = scraped_dataset2["price2"].str.replace(",", ".", regex=False)
     scraped_dataset2["id2"] = scraped_dataset2["url2"]
 
     pairs_dataset = url_pairs_dataset.merge(scraped_dataset1, how='inner', left_on='source_url', right_on='url1')
     full_pairs_dataset = pairs_dataset.merge(scraped_dataset2, how='inner', left_on='target_url', right_on='url2')
+
+    full_pairs_dataset.info()
 
     full_pairs_dataset["match"] = full_pairs_dataset["match_type"].apply(
         lambda match_type: 1 if match_type == "match" else 0
@@ -195,13 +220,45 @@ transform_scraped_datasets_to_full_pairs_dataset(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "complete_cz_images"),
 )
 '''
+'''
 transform_scraped_datasets_to_full_pairs_dataset(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
-                 "aggregated.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
+                     "amazon.csv"),
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
+                     "xcite.csv"),
+    ],
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
                  "extra.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+    ],
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
                  "xcite.json"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images"),
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "amazon.json"),
+    ],
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_amazon.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_amazon_images_finalized"),
 )
+'''
+
+
+transform_scraped_datasets_to_full_pairs_dataset(
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "initial_files",
+                     "xcite.csv"),
+    ],
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "extra.json"),
+    ],
+    [
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "scraped_data",
+                 "xcite.json"),
+    ],
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite.csv"),
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "annotated_data", "extra_xcite_images_finalized"),
+)
+
+
