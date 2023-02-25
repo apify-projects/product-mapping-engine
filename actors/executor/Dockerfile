@@ -12,7 +12,7 @@ RUN apt install -y libgl1-mesa-glx
 COPY requirements.txt ./
 
 ARG GITHUB_TOKEN
-RUN install_dependencies.sh $GITHUB_TOKEN
+RUN bash install_dependencies.sh $GITHUB_TOKEN
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after installing the dependencies, quick build will be really fast
