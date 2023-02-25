@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Make this script's directory the CWD (from https://stackoverflow.com/questions/3349105/how-can-i-set-the-current-working-directory-to-the-directory-of-the-script-in-ba)
-cd "${0%/*}"
+# Make this script's directory the CWD
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 apt-get -y install nodejs
@@ -23,7 +23,7 @@ if [ -f "../../engine" ]; then
     ln -s ../../engine product_mapping_engine
 else
     git clone -b master https://ssh:$1@github.com/apify-projects/product-mapping-engine.git product_mapping_repository \
- && ln -s product_mapping_repository/engine product_mapping_engine \
+ && ln -s product_mapping_repository/engine product_mapping_engine
 fi
 
 (cd product_mapping_engine/scripts/dataset_handler/preprocessing/images/image_hash_creator && npm install)

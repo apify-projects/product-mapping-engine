@@ -11,6 +11,8 @@ RUN apt install -y libgl1-mesa-glx
 # in order to speed up the build
 COPY requirements.txt ./
 
+COPY install_dependencies.sh ./
+
 ARG GITHUB_TOKEN
 RUN bash install_dependencies.sh $GITHUB_TOKEN
 
