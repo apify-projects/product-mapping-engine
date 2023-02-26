@@ -20,12 +20,13 @@ RUN echo "Python version:" \
  && echo "All installed Python packages:" \
  && pip freeze
 
-RUN bash ../actors/executor/install_dependencies.sh
-
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after installing the dependencies, quick build will be really fast
 # for most source file changes.
 COPY . ./
+
+# Install dependencies of the executor actor which is run as part of this actor
+RUN bash actors/executor/install_dependencies.sh
 
 # Specify how to launch the source code of your actor.
 # By default, the "python3 -m src" command is run
