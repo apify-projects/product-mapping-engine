@@ -5,8 +5,8 @@ from math import ceil
 import pandas as pd
 from apify_client import ApifyClient
 
-from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
-from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
+from .product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
+from .product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
 
 CHUNK_SIZE = 500
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
@@ -46,8 +46,10 @@ def output_results (
 def perform_mapping (
     preprocessed_dataset_id,
     output_dataset_client,
-    client,
-    is_on_platform
+    data_client,
+    is_on_platform,
+    task_id,
+    parameters = {}
 ):
     # Pair dataset input
     parameters['pair_dataset'] = preprocessed_dataset_id
@@ -55,10 +57,10 @@ def perform_mapping (
     # Load precomputed matches
     dataset_precomputed_matches = None
     if LOAD_PRECOMPUTED_MATCHES:
-        dataset_collection_client = client.datasets()
+        dataset_collection_client = data_client.datasets()
         precomputed_matches_collection = dataset_collection_client.get_or_create(
             name=task_id + '-precomputed-matches')
-        precomputed_matches_client = client.dataset(precomputed_matches_collection['id'])
+        precomputed_matches_client = data_client.dataset(precomputed_matches_collection['id'])
         dataset_precomputed_matches = pd.DataFrame(precomputed_matches_client.list_items().items)
         if not is_on_platform and os.path.isfile(task_id + '-precomputed-matches' + '.csv'):
             print(task_id + '-precomputed-matches' + '.csv')
@@ -72,7 +74,7 @@ def perform_mapping (
 
     # Prepare storages and read data
     if 'pair_dataset' in parameters:
-        pair_dataset_client = client.dataset(parameters['pair_dataset'])
+        pair_dataset_client = data_client.dataset(parameters['pair_dataset'])
         dataset_items = pair_dataset_client.list_items().items
         if dataset_items[0] == {}:
             dataset_items = dataset_items[1:]
@@ -81,10 +83,10 @@ def perform_mapping (
         dataset_shape = pair_dataset.shape
         print(f"Working on dataset of shape: {dataset_shape[0]}x{dataset_shape[1]}")
     else:
-        dataset_1_client = client.dataset(parameters['dataset_1'])
-        dataset_2_client = client.dataset(parameters['dataset_2'])
-        images_kvs_1_client = client.key_value_store(parameters['images_kvs_1'])
-        images_kvs_2_client = client.key_value_store(parameters['images_kvs_2'])
+        dataset_1_client = data_client.dataset(parameters['dataset_1'])
+        dataset_2_client = data_client.dataset(parameters['dataset_2'])
+        images_kvs_1_client = data_client.key_value_store(parameters['images_kvs_1'])
+        images_kvs_2_client = data_client.key_value_store(parameters['images_kvs_2'])
 
         dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
         dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
@@ -94,10 +96,13 @@ def perform_mapping (
         print(dataset1.shape)
         print(dataset2.shape)
 
-    model_key_value_store_info = client.key_value_stores().get_or_create(
-        name=task_id + '-product-mapping-model-output'
-    )
-    model_key_value_store = client.key_value_store(model_key_value_store_info['id'])
+    if task_id != "__local__":
+        model_key_value_store_info = data_client.key_value_stores().get_or_create(
+            name=task_id + '-product-mapping-model-output'
+        )
+        model_key_value_store = data_client.key_value_store(model_key_value_store_info['id'])
+    else:
+        model_key_value_store = None
 
     first_chunk = 0
     if is_on_platform:
@@ -112,7 +117,7 @@ def perform_mapping (
 
     global CHUNK_SIZE
     if not is_on_platform:
-        CHUNK_SIZE = data_coun
+        CHUNK_SIZE = data_count
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
@@ -244,7 +249,9 @@ if __name__ == '__main__':
         preprocessed_dataset_id,
         output_dataset_client,
         client,
-        is_on_platform
+        is_on_platform,
+        task_id,
+        parameters
     )
 
     competitor_record["mapped_dataset_id"] = output_dataset_id
