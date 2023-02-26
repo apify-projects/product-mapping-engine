@@ -19,7 +19,7 @@ echo "Python version:" \
  && pip freeze \
 
 # Check if the product mapping engine was downloaded, if not, download it
-if [ -f "../../engine" ]; then
+if [ -d "../../engine" ]; then
     ln -s ../../engine product_mapping_engine
 else
     git clone -b master https://ssh:$1@github.com/apify-projects/product-mapping-engine.git product_mapping_repository \
