@@ -42,70 +42,13 @@ def output_results (
             current_chunk
         )
 
-if __name__ == '__main__':
-    # Read input
-    client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
-    default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
 
-    is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
-
-    if not is_on_platform:
-        czech_dataset = False
-        if czech_dataset:
-            default_kvs_client.set_record(
-                'INPUT',
-                {
-                    "task_id": "Alpha-Complete-CZ",
-                    "dataset_1": "9mk56pDWdfDZoCMiR",
-                    "images_kvs_1": "iNNZxJhjAatupQSV0",
-                    "dataset_2": "axCYJHLt6cmb1gbNJ",
-                    "images_kvs_2": "NNZ40CQnWh4KofXJB",
-                    "augment_outgoing_data": False
-                }
-            )
-        else:
-            default_kvs_client.set_record(
-                'INPUT',
-                {
-                    "task_id": "fixed-v4-extra-xcite-mapping",
-                    "dataset_1": "YRJd6DPu3Cbd9SrjZ",
-                    "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
-                    "dataset_2": "lTVsLhiQXQoFIo52D",
-                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
-                }
-            )
-
-        # TODO delete
-        default_kvs_client.set_record(
-            'INPUT',
-            {
-                "aggregator_task_id": "QuaYjF9KbNyVhLLfV",
-                "competitor_name": "eddy",
-                "scrape_info_kvs_id": "wcEII0IJOf1pBiBMr"
-            }
-        )
-
-    parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
-    print('Actor input:')
-    print(json.dumps(parameters, indent=2))
-
-    output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
-    output_dataset_client = client.dataset(output_dataset_id)
-
-    # TODO delete
-    if "different_user_token" in parameters:
-        client = ApifyClient(parameters["different_user_token"], api_url=os.environ['APIFY_API_BASE_URL'])
-
-    scrape_info_kvs_id = parameters["scrape_info_kvs_id"]
-    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
-
-    task_id = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
-
-    competitor_name = parameters["competitor_name"]
-    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
-
-    preprocessed_dataset_id = competitor_record["preprocessed_dataset_id"]
-
+def perform_mapping (
+    preprocessed_dataset_id,
+    output_dataset_client,
+    client,
+    is_on_platform
+):
     # Pair dataset input
     parameters['pair_dataset'] = preprocessed_dataset_id
 
@@ -180,7 +123,8 @@ if __name__ == '__main__':
         dataset1_chunk = None
 
         if pair_dataset is not None:
-            pair_dataset_chunk = pair_dataset.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
+            pair_dataset_chunk = pair_dataset.iloc[
+                                 current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
         else:
             dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
 
@@ -229,6 +173,78 @@ if __name__ == '__main__':
             is_on_platform,
             current_chunk
         )
+
+
+if __name__ == '__main__':
+    # Read input
+    client = ApifyClient(os.environ['APIFY_TOKEN'], api_url=os.environ['APIFY_API_BASE_URL'])
+    default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
+
+    is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
+
+    if not is_on_platform:
+        czech_dataset = False
+        if czech_dataset:
+            default_kvs_client.set_record(
+                'INPUT',
+                {
+                    "task_id": "Alpha-Complete-CZ",
+                    "dataset_1": "9mk56pDWdfDZoCMiR",
+                    "images_kvs_1": "iNNZxJhjAatupQSV0",
+                    "dataset_2": "axCYJHLt6cmb1gbNJ",
+                    "images_kvs_2": "NNZ40CQnWh4KofXJB",
+                    "augment_outgoing_data": False
+                }
+            )
+        else:
+            default_kvs_client.set_record(
+                'INPUT',
+                {
+                    "task_id": "fixed-v4-extra-xcite-mapping",
+                    "dataset_1": "YRJd6DPu3Cbd9SrjZ",
+                    "images_kvs_1": "OFXD6JAgZJ8XvFzfA",
+                    "dataset_2": "lTVsLhiQXQoFIo52D",
+                    "images_kvs_2": "SLsfIZYZjjHzoQNtb"
+                }
+            )
+
+        # TODO delete
+        default_kvs_client.set_record(
+            'INPUT',
+            {
+                "aggregator_task_id": "QuaYjF9KbNyVhLLfV",
+                "competitor_name": "eddy",
+                "scrape_info_kvs_id": "wcEII0IJOf1pBiBMr"
+            }
+        )
+
+    parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
+    print('Actor input:')
+    print(json.dumps(parameters, indent=2))
+
+    output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
+    output_dataset_client = client.dataset(output_dataset_id)
+
+    # TODO delete
+    if "different_user_token" in parameters:
+        client = ApifyClient(parameters["different_user_token"], api_url=os.environ['APIFY_API_BASE_URL'])
+
+    scrape_info_kvs_id = parameters["scrape_info_kvs_id"]
+    scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
+
+    task_id = scrape_info_kvs_client.get_record("product_mapping_model_name")["value"]
+
+    competitor_name = parameters["competitor_name"]
+    competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
+
+    preprocessed_dataset_id = competitor_record["preprocessed_dataset_id"]
+
+    perform_mapping(
+        preprocessed_dataset_id,
+        output_dataset_client,
+        client,
+        is_on_platform
+    )
 
     competitor_record["mapped_dataset_id"] = output_dataset_id
     scrape_info_kvs_client.set_record(competitor_name, competitor_record)
