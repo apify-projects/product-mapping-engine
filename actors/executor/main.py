@@ -110,8 +110,9 @@ def perform_mapping (
     else:
         data_count = dataset1.shape[0]
 
+    global CHUNK_SIZE
     if not is_on_platform:
-        CHUNK_SIZE = data_count
+        CHUNK_SIZE = data_coun
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
