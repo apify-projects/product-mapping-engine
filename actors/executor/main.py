@@ -80,14 +80,18 @@ if __name__ == '__main__':
             'INPUT',
             {
                 "aggregator_task_id": "QuaYjF9KbNyVhLLfV",
-                "scrape_info_kvs_id": "Iz2uy8trXyGDfmtnz",
-                "competitor_name": "amazon"
+                "competitor_name": "eddy",
+                "scrape_info_kvs_id": "wcEII0IJOf1pBiBMr"
             }
         )
 
     parameters = default_kvs_client.get_record(os.environ['APIFY_INPUT_KEY'])['value']
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
+
+    # TODO delete
+    if "different_user_token" in parameters:
+        client = ApifyClient(parameters["different_user_token"], api_url=os.environ['APIFY_API_BASE_URL'])
 
     scrape_info_kvs_id = parameters["scrape_info_kvs_id"]
     scrape_info_kvs_client = client.key_value_store(scrape_info_kvs_id)
