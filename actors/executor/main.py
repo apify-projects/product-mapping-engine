@@ -89,6 +89,9 @@ if __name__ == '__main__':
     print('Actor input:')
     print(json.dumps(parameters, indent=2))
 
+    output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
+    output_dataset_client = client.dataset(output_dataset_id)
+
     # TODO delete
     if "different_user_token" in parameters:
         client = ApifyClient(parameters["different_user_token"], api_url=os.environ['APIFY_API_BASE_URL'])
@@ -102,6 +105,8 @@ if __name__ == '__main__':
     competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
 
     preprocessed_dataset_id = competitor_record["preprocessed_dataset_id"]
+
+    # Pair dataset input
     parameters['pair_dataset'] = preprocessed_dataset_id
 
     # Load precomputed matches
@@ -164,11 +169,6 @@ if __name__ == '__main__':
 
     if not is_on_platform:
         CHUNK_SIZE = data_count
-
-    #dataset_collection_client = client.datasets()
-    #output_dataset_info = dataset_collection_client.get_or_create(name=f"{}")
-    output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
-    output_dataset_client = client.dataset(output_dataset_id)
 
     for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
         if is_on_platform:
