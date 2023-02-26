@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import sys
 from datetime import datetime
@@ -369,11 +370,19 @@ def load_model_create_dataset_and_predict_matches(
              dataframe with all precomputed and newly computed product pairs matching scores
              dataframe with newly computed product pairs matching scores
     """
-    training_parameters = model_key_value_store_client.get_record('parameters')['value']
-    classifier_type = training_parameters['classifier_type']
+    if task_id == "__local__":
+        classifiers_list_file_path = os.path.join("pretrained_classifiers", "classifiers.json")
+        with open(classifiers_list_file_path) as classifiers_list_file:
+            classifiers_list = json.load(classifiers_list_file)
+            classifier_info = classifiers_list[0]
+            classifier, _ = setup_classifier(classifier_info["classifier_type"])
+            classifier.load(path="pretrained_classifiers", model_name=classifier_info["classifier_name"])
+    else:
+        training_parameters = model_key_value_store_client.get_record('parameters')['value']
+        classifier_type = training_parameters['classifier_type']
 
-    classifier, _ = setup_classifier(classifier_type)
-    classifier.load(key_value_store=model_key_value_store_client)
+        classifier, _ = setup_classifier(classifier_type)
+        classifier.load(key_value_store=model_key_value_store_client)
 
     preprocessed_pairs_file_path = "preprocessed_pairs_{}.csv".format(task_id)
     preprocessed_pairs_file_exists = os.path.exists(preprocessed_pairs_file_path)

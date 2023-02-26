@@ -89,14 +89,17 @@ class Classifier:
             if self.use_pca:
                 key_value_store.set_record('pca', pickle.dumps(self.pca))
 
-    def load(self, path='results/models', key_value_store=None):
+    def load(self, path='results/models', key_value_store=None, model_name=None):
         if key_value_store is None:
-            model_filename = f'{self.name}_model.sav'
-            weights_filename = f'{self.name}_weights.sav'
+            if model_name is None:
+                model_name = self.name
+
+            model_filename = f'{model_name}_model.sav'
+            weights_filename = f'{model_name}_weights.sav'
             self.model = pickle.load(open(os.path.join(path, model_filename), 'rb'))
             self.weights = pickle.load(open(os.path.join(path, weights_filename), 'rb'))
             if self.use_pca:
-                pca_filename = f'{self.name}_pca.sav'
+                pca_filename = f'{model_name}_pca.sav'
                 self.pca = pickle.load(open(os.path.join(path, pca_filename), 'rb'))
         else:
             self.model = pickle.loads(key_value_store.get_record('model')['value'])
