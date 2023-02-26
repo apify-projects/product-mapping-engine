@@ -1,0 +1,6 @@
+[
+    {
+        "classifier_type": "NeuralNetwork",
+        "classifier_name": "NNBeta"
+    }
+]
