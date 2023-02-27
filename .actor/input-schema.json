@@ -15,6 +15,5 @@
       "description": "The number you want to add to the first number.",
       "editor": "number"
     }
-  },
-  "required": ["first_number", "second_number"]
+  }
 }
