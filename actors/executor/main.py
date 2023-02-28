@@ -46,6 +46,7 @@ def output_results (
 def perform_mapping (
     preprocessed_dataset_id,
     output_dataset_client,
+    default_kvs_client,
     data_client,
     is_on_platform,
     task_id,
@@ -248,6 +249,7 @@ if __name__ == '__main__':
     perform_mapping(
         preprocessed_dataset_id,
         output_dataset_client,
+        default_kvs_client,
         client,
         is_on_platform,
         task_id,
