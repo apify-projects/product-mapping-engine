@@ -26,11 +26,14 @@ async def main():
         output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
         output_dataset_client = client.dataset(output_dataset_id)
 
+        default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
+
         is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
 
         perform_mapping(
             pair_dataset_id,
             output_dataset_client,
+            default_kvs_client,
             data_client,
             is_on_platform,
             task_id="__local__"
