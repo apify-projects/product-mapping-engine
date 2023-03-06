@@ -5,8 +5,14 @@ from math import ceil
 import pandas as pd
 from apify_client import ApifyClient
 
-from .product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
-from .product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
+# A hack dealing with "attempted relative import with no known parent package" when executor is run directly,
+# compared to when it is run from the public actor.
+if __name__ == '__main__':
+    from product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
+    from product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
+else:
+    from .product_mapping_engine.scripts.actor_model_interface import load_model_create_dataset_and_predict_matches
+    from .product_mapping_engine.scripts.configuration import LOAD_PRECOMPUTED_MATCHES, SAVE_PRECOMPUTED_MATCHES
 
 CHUNK_SIZE = 500
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
