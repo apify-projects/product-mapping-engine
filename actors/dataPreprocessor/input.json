@@ -22,7 +22,7 @@
     "fix_prices": false,
     "connecting_attribute": "url"
   },
-  "competitor_scrape_run_id": "SqVXGqFjAFYXeigZo",
+  "competitor_scrape_run_id": "cJPf4QQdaapBOHo5i",
   "target": {
     "eshop_name": "xcite",
     "attribute_names": {
@@ -37,12 +37,15 @@
       "url": "productUrl",
       "code": [
         "productSpecificId",
-        "shopSpecificId"
+        "magentoProductId"
       ],
       "extraUrl": "extraUrl"
     },
-    "specification_format": "parameter-value",
+    "specification_format": "label-value",
+    "complex_price_format": true,
     "fix_prices": true,
+    "fix_descriptions": true,
+    "fix_images": true,
     "source_connecting_attribute": "extraUrl"
   }
 }
