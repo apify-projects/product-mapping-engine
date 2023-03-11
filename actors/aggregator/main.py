@@ -8,6 +8,12 @@ import pysftp
 from datetime import datetime, timezone
 from price_parser import Price
 
+def extract_price(price_object):
+    return price_object["formattedPrice"] if price_object and type(price_object) == dict else ""
+
+def extract_original_price(price_object):
+    return price_object["formattedPriceUnmodified"] if price_object and type(price_object) == dict else ""
+
 def fix_price(price_string):
     price = Price.fromstring(price_string)
     price_amount = price.amount_float
@@ -92,7 +98,7 @@ if __name__ == '__main__':
             "productUrl"
         ]
 
-        competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes
+        competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes + ["sku"]
 
         source_dataset = pd.DataFrame(client.dataset(source_dataset_id).list_items(fields=",".join(source_dataset_attributes)).items)
 
@@ -121,6 +127,12 @@ if __name__ == '__main__':
             print(competitor_dataset.info())
             competitor_dataset["discountType"] = competitor_dataset[discountAttributes].apply(getDiscountType, axis=1)
             competitor_dataset["discountName"] = competitor_dataset[discountAttributes].apply(getDiscountName, axis=1)
+
+            # xcite has a slightly different scraper output
+            if competitor_name == "xcite":
+                competitor_dataset["SKU"] = competitor_dataset["sku"]
+                competitor_dataset["originalPrice"] = competitor_dataset["price"].apply(extract_original_price)
+                competitor_dataset["price"] = competitor_dataset["price"].apply(extract_price)
 
             preprocessed_competitor_dataset = competitor_dataset[competitor_dataset_attributes + ["discountType", "discountName"]].rename(columns={
                 "SKU": "CSKUID",
