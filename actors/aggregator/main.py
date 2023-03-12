@@ -19,6 +19,15 @@ def fix_price(price_string):
     price_amount = price.amount_float
     return price_amount
 
+def calculate_discount_amount(product):
+    if product["netPrice"]:
+        if not product["originalPrice"]:
+            return 0
+        else:
+            return round(product["originalPrice"] - product["netPrice"], 2)
+
+    return None
+
 discountAttributes = [
     "bundle",
     "freeInstallation",
@@ -163,7 +172,7 @@ if __name__ == '__main__':
                 fixed_original_price.append(original_price)
 
             final_dataset['originalPrice'] = fixed_original_price
-            final_dataset['discountAmount'] = (final_dataset['originalPrice'] - final_dataset['netPrice']).round(2)
+            final_dataset['discountAmount'] = final_dataset[['originalPrice', 'netPrice']].apply(calculate_discount_amount, axis=1)
 
             final_dataset = final_dataset.fillna('')
 
