@@ -8,6 +8,13 @@ import pysftp
 from datetime import datetime, timezone
 from price_parser import Price
 
+def calculate_additional_filters(product):
+    if product["brand"].lower() == "apple":
+        if product["productSpecificId_source"] and product["productSpecificId_competitor"] and product["productSpecificId_source"] != product["productSpecificId_competitor"]:
+            return False
+
+    return True
+
 def extract_price(price_object):
     return price_object["formattedPrice"] if price_object and type(price_object) == dict else ""
 
@@ -95,6 +102,7 @@ if __name__ == '__main__':
 
         source_dataset_attributes = [
             "shopSpecificId",
+            "productSpecificId",
             "url"
         ]
 
@@ -104,7 +112,8 @@ if __name__ == '__main__':
             "brand",
             "price",
             "originalPrice",
-            "productUrl"
+            "productUrl",
+            "productSpecificId"
         ]
 
         competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes + ["sku"]
@@ -134,6 +143,8 @@ if __name__ == '__main__':
             })
 
             print(competitor_dataset.info())
+            discountAttributes = competitor_dataset.columns.intersection(set(discountAttributes))
+
             competitor_dataset["discountType"] = competitor_dataset[discountAttributes].apply(getDiscountType, axis=1)
             competitor_dataset["discountName"] = competitor_dataset[discountAttributes].apply(getDiscountName, axis=1)
 
@@ -151,9 +162,17 @@ if __name__ == '__main__':
 
             final_dataset = mapped_pairs_dataset[["url1", "url2"]]\
                 .merge(preprocessed_source_dataset, on="url1")\
-                .merge(preprocessed_competitor_dataset, on="url2")
+                .merge(preprocessed_competitor_dataset, on="url2", suffixes=("_source", "_competitor"))
 
             final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"]).fillna("")
+
+            # Apple is problematic, so a filter based on the codes is needed
+            print(final_dataset.info())
+            print(final_dataset["productSpecificId_source"])
+            print(final_dataset["productSpecificId_competitor"])
+            final_dataset['keep'] = final_dataset.apply(calculate_additional_filters, axis=1)
+            final_dataset = final_dataset[final_dataset['keep'] == True]
+            final_dataset = final_dataset.drop(columns=["keep", "productSpecificId_source", "productSpecificId_competitor"])
 
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
@@ -175,6 +194,8 @@ if __name__ == '__main__':
             final_dataset['discountAmount'] = final_dataset[['originalPrice', 'netPrice']].apply(calculate_discount_amount, axis=1)
 
             final_dataset = final_dataset.fillna('')
+
+            print(final_dataset.info())
 
             final_dataset.to_csv("final_dataset.csv")
 
