@@ -103,7 +103,7 @@ if __name__ == '__main__':
     competitor_name = parameters["competitor_name"]
 
     competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
-    if True or competitor_record["finished"] != True:
+    if competitor_record["finished"] != True:
         source_dataset_id = scrape_info_kvs_client.get_record("source_dataset_id")["value"]
 
         source_dataset_attributes = [
