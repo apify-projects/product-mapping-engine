@@ -21,6 +21,12 @@ def extract_price(price_object):
 def extract_original_price(price_object):
     return price_object["formattedPriceUnmodified"] if price_object and type(price_object) == dict else ""
 
+def fix_amazon_sku(product):
+    if not product["SKU"]:
+        return product["productUrl"].split("amazon.sa/dp/")[1].split("/")[0]
+
+    return product["SKU"]
+
 def fix_price(price_string):
     price = Price.fromstring(price_string)
     price_amount = price.amount_float
@@ -97,7 +103,7 @@ if __name__ == '__main__':
     competitor_name = parameters["competitor_name"]
 
     competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
-    if competitor_record["finished"] != True:
+    if True or competitor_record["finished"] != True:
         source_dataset_id = scrape_info_kvs_client.get_record("source_dataset_id")["value"]
 
         source_dataset_attributes = [
@@ -154,6 +160,9 @@ if __name__ == '__main__':
                 competitor_dataset["originalPrice"] = competitor_dataset["price"].apply(extract_original_price)
                 competitor_dataset["price"] = competitor_dataset["price"].apply(extract_price)
 
+            if competitor_name == "amazon":
+                competitor_dataset["SKU"] = competitor_dataset.apply(fix_amazon_sku, axis=1)
+
             preprocessed_competitor_dataset = competitor_dataset[competitor_dataset_attributes + ["discountType", "discountName"]].rename(columns={
                 "SKU": "CSKUID",
                 "price": "netPrice",
@@ -168,8 +177,6 @@ if __name__ == '__main__':
 
             # Apple is problematic, so a filter based on the codes is needed
             print(final_dataset.info())
-            print(final_dataset["productSpecificId_source"])
-            print(final_dataset["productSpecificId_competitor"])
             final_dataset['keep'] = final_dataset.apply(calculate_additional_filters, axis=1)
             final_dataset = final_dataset[final_dataset['keep'] == True]
             final_dataset = final_dataset.drop(columns=["keep", "productSpecificId_source", "productSpecificId_competitor"])
