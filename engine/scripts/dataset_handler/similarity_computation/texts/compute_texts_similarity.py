@@ -151,7 +151,7 @@ def find_descriptive_words(tf_idfs, filter_limit, number_of_top_words):
     for col in tf_idfs:
         word = tf_idfs[col]
         non_zeros = np.count_nonzero(word.values)
-        if non_zeros < filter_limit:
+        if non_zeros <= filter_limit:
             tf_idf_filtered.append(word)
     tf_idf_filtered = pd.DataFrame(tf_idf_filtered)
     for column in tf_idf_filtered:
