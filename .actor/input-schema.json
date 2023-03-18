@@ -1,19 +1,59 @@
 {
-  "title": "Add two integers",
+  "title": "Match same products from two different shops",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
-    "first_number": {
-      "title": "First integer",
-      "type": "integer",
-      "description": "The number you want to add to the second number.",
-      "editor": "number"
+    "input_mapping": {
+      "title": "Input attributes mapping",
+      "type": "object",
+      "description": "A mapping object specifying which attributes from the data you provided correspond to attributes used by the Product Mapping model. For details see #TODO add store page link",
+      "prefill": {
+          "unique_id": "url",
+          "name": "name",
+          "price": "price",
+          "short_description": "shortDescription",
+          "long_description": "longDescription",
+          "specification": "specification",
+          "code": [
+              "shopSpecificId",
+              "productSpecificId"
+          ]
+      },
+      "editor": "json"
     },
-    "second_number": {
-      "title": "Second integer",
-      "type": "integer",
-      "description": "The number you want to add to the first number.",
-      "editor": "number"
+    "output_mapping": {
+      "title": "Output attributes mapping",
+      "type": "object",
+      "description": "A mapping object specifying which attributes from the data you provided should be in the output dataset and under what attribute names. For details see #TODO add store page link",
+      "editor": "json"
+    },
+    "pair_dataset_ids": {
+      "title": "Ids of pair datasets (will take precedence if filled)",
+      "type": "array",
+      "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
+      "editor": "json"
+    },
+    "dataset_1_ids": {
+      "title": "Ids of datasets from shop 1 (if applicable)",
+      "type": "array",
+      "description": "Ids of datasets containing information about products from the first shop.",
+      "editor": "json"
+    },
+    "dataset_2_ids": {
+      "title": "Ids of datasets from source 2 (if applicable)",
+      "type": "array",
+      "description": "Ids of datasets containing information about products from the second shop.",
+      "editor": "json"
+    },
+    "precision_recall": {
+      "title": "What is more important to you, precision or recall?",
+      "type": "string",
+      "description": "Specify whether you care more about precision or recall. For explanation, see #TODO add store page link",
+      "editor": "select",
+      "default": "precision",
+      "enum": ["precision", "recall"],
+      "enumTitles": ["Precision", "Recall"]
     }
-  }
+  },
+  "required": ["input_mapping"]
 }
