@@ -17,3 +17,23 @@ language for rich formatting.
 ## Writing a README
 
 See our tutorial on [writing READMEs for your actors](https://help.apify.com/en/articles/2912548-how-to-write-great-readme-for-your-actors) if you need more inspiration.
+
+# Product Mapper
+## Input
+```json
+{
+    "unique_id": "url",
+    "name": "name",
+    "price": "price",
+    "short_description": "shortDescription",
+    "long_description": "longDescription",
+    "specification": "specification",
+    "code": [
+        "shopSpecificId",
+        "productSpecificId"
+    ]
+}
+```
+## Output
+## Precision/recall tradeoff
+## Expected performance
