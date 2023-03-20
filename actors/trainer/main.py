@@ -7,7 +7,7 @@ import pandas as pd
 from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_data_and_train_model
-from product_mapping_engine.scripts.configuration import DATA_FOLDER, TASK_ID
+from product_mapping_engine.scripts.configuration import DATA_FOLDER, TASK_ID, CLASSIFIER_TYPE
 
 if __name__ == '__main__':
     # Read input
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # classifier_type: LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
         task_id = TASK_ID
-        classifier_type = 'NeuralNetwork'
+        classifier_type = CLASSIFIER_TYPE
         print('Task id: ' + task_id)
         print('Classifier type: ' + classifier_type)
         try:

@@ -1,7 +1,8 @@
 from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
-TASK_ID = 'promapen_enriched-test_data'
+TASK_ID = 'promapen'
+CLASSIFIER_TYPE = 'Bagging' #Bagging Boosting AdaBoost GradientBoosting
 IS_ON_PLATFORM = False
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = False
@@ -61,7 +62,7 @@ COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
-SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = True
+SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
 VALIDATION_DATA_PROPORTION = 0.2
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
@@ -70,11 +71,11 @@ PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
-LOAD_PRECOMPUTED_MODEL = True
-SAVE_COMPUTED_MODEL = False
+LOAD_PRECOMPUTED_MODEL = False
+SAVE_COMPUTED_MODEL = True
 MODEL_NAME = 'promapen_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
-JUST_EVALUATE_LOADED_TEST_DATA = True
-EXCLUDE_CATEGORIES = True
+JUST_EVALUATE_LOADED_TEST_DATA = False
+EXCLUDE_CATEGORIES = False
 CATEGORIES_CZ = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_household', '7_laptops', '8_tvs',
                  '9_headphones', '10_fridges']
 CATEGORIES_EN = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_household', '7_laptops', '8_toys',
