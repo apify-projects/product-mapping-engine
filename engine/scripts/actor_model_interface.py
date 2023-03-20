@@ -20,9 +20,9 @@ from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, \
-    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE, DATA_FOLDER
+    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE, DATA_FOLDER, EXCLUDE_CATEGORIES
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier
+    parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier, train_excluding_categories
 
 
 def split_dataframes(dataset):
@@ -487,6 +487,12 @@ def load_data_and_train_model(
 
     # Training part
     classifiers = []
+    if EXCLUDE_CATEGORIES:
+        classifier, _ = setup_classifier(classifier_type)
+        print(classifier)
+        train_excluding_categories(classifier, similarities, task_id)
+        return None
+
     if PERFORMED_PARAMETERS_SEARCH is not 'none':
         classifier, train_stats, test_stats = parameters_search_and_best_model_training(
             similarities,

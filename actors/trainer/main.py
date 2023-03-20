@@ -1,12 +1,13 @@
 import json
 import os
 import sys
+import warnings
 
 import pandas as pd
 from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_data_and_train_model
-from product_mapping_engine.scripts.configuration import DATA_FOLDER
+from product_mapping_engine.scripts.configuration import DATA_FOLDER, TASK_ID
 
 if __name__ == '__main__':
     # Read input
@@ -59,15 +60,17 @@ if __name__ == '__main__':
 
     # classifier_type: LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
-        task_id = 'promapcz'
+        task_id = TASK_ID
         classifier_type = 'NeuralNetwork'
         print('Task id: ' + task_id)
         print('Classifier type: ' + classifier_type)
-        if task_id in ['promapcz', 'promapen', 'amazon_google', 'amazon_walmart']:
+        try:
             labeled_dataset = pd.read_csv(f'{DATA_FOLDER}/{task_id}.csv')
-        else:
-            sys.exit('No task to run selected')
+        except:
+            warnings.warn('No source dataset found')
+            labeled_dataset = pd.DataFrame()
         labeled_dataset = labeled_dataset.fillna('')
+
     if 'image1' in labeled_dataset.columns:
         images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
         labeled_dataset['image1'] = images_lengths
@@ -83,5 +86,5 @@ if __name__ == '__main__':
         task_id=task_id,
         is_on_platform=is_on_platform
     )
-
-    output_key_value_store_client.set_record('stats', stats)
+    if stats is not None:
+        output_key_value_store_client.set_record('stats', stats)

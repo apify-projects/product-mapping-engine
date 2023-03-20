@@ -17,7 +17,8 @@ from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_
     NUMBER_OF_TRAINING_REPETITIONS_TO_AVERAGE_RESULTS, MINIMAL_PRECISION, MINIMAL_RECALL, \
     BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
     SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION, LOAD_PRECOMPUTED_MODEL, \
-    SAVE_COMPUTED_MODEL, MODEL_NAME, DATA_FOLDER, MODEL_FOLDER
+    SAVE_COMPUTED_MODEL, MODEL_NAME, DATA_FOLDER, MODEL_FOLDER, JUST_EVALUATE_LOADED_TEST_DATA, CATEGORIES_EN, \
+    CATEGORIES_CZ
 
 
 def setup_classifier(classifier_type):
@@ -90,6 +91,42 @@ def is_valid_combination_of_parameters(classifier_type, parameters):
     return True
 
 
+def train_excluding_categories(classifier, data, task_id):
+    """
+    Train classifier on given dataset
+    @param classifier: classifier to train
+    @param data: dataset used for training
+    @param task_id: id of the task
+    @return: train and test datasets with predictions and statistics
+    """
+    if 'promapen' in task_id:
+        categories = CATEGORIES_EN
+    else:
+        categories = CATEGORIES_CZ
+    for category in categories:
+        classifier_copy = classifier
+        print(f'DATA EVALUATION EXCLUDING {category} CATEGORY')
+        if JUST_EVALUATE_LOADED_TEST_DATA:
+            data_part = data[data['category'] != category]
+            #data_part = data_part[data_part['match_type'] != 'close_nonmatch']
+            print(f'Length of data: {len(data_part)}')
+            warnings.warn('Copying test data to train data, otherwise the code will not work')
+            test_data = data_part.drop(columns=['id1', 'id2', 'category', 'match_type'])
+            train_data = data_part.drop(columns=['id1', 'id2', 'category', 'match_type'])
+        else:
+            train_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities.csv').drop(
+                columns=['id1', 'id2'])
+            test_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-test_data_similarities.csv').drop(columns=['id1', 'id2'])
+            train_data = train_data[train_data['category'] != category]
+            test_data = test_data[test_data['category'] != category]
+            train_data = train_data.drop(columns=['category', 'match_type'])
+            test_data = test_data.drop(columns=['category', 'match_type'])
+            print(f'Length of train_data: {len(train_data)}')
+            print(f'Length of test_data: {len(test_data)}')
+            data_part = data
+        train_classifier(classifier_copy, data_part, task_id, train_data, test_data)
+
+
 def train_classifier(classifier, data, task_id, train_data=None, test_data=None):
     """
     Train classifier on given dataset
@@ -101,7 +138,12 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
     @return: train and test datasets with predictions and statistics
     """
     if train_data is None and test_data is None:
-        train_data, test_data = create_train_test_data(data, task_id)
+        if JUST_EVALUATE_LOADED_TEST_DATA:
+            warnings.warn('Copying test data to train data, otherwise the code will not work')
+            test_data = data.drop(columns=['id1', 'id2'])
+            train_data = data.drop(columns=['id1', 'id2'])
+        else:
+            train_data, test_data = create_train_test_data(data, task_id)
     if LOAD_PRECOMPUTED_MODEL:
         if MODEL_NAME == 'none':
             filename = f'{MODEL_FOLDER}/{task_id}_{classifier.name}'
@@ -226,10 +268,12 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     rows_to_dataframe = []
     if SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA:
         train_data, test_data = create_train_test_data(similarities, task_id)
+
         validation_data = train_data.sample(frac=VALIDATION_DATA_PROPORTION)
         validation_data.to_csv(f'{DATA_FOLDER}/{task_id}-validation_data_similarities_params_search.csv', index=False)
         train_data_params_search = train_data.drop(validation_data.index)
-        train_data_params_search.to_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities_params_search.csv', index=False)
+        train_data_params_search.to_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities_params_search.csv',
+                                        index=False)
     sub_train_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities_params_search.csv')
     validation_data = pd.read_csv(f'{DATA_FOLDER}/{task_id}-validation_data_similarities_params_search.csv')
     for classifier in classifiers:
@@ -268,6 +312,8 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     print(f'{PERFORMED_PARAMETERS_SEARCH.upper()} SEARCH PERFORMED')
     print_best_classifier_results(best_train_stats, best_test_stats)
     print(f'Best classifier parameters')
+    print(len(train_data))
+    print(len(test_data))
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
@@ -429,11 +475,11 @@ def compute_prediction_accuracies(data, data_type, print_classifier_results=True
     if print_classifier_results:
         print(f'Classifier results for {data_type} data')
         print('----------------------------')
-        print(f'F1 score: {f1_score}')
-        print(f'Accuracy: {accuracy}')
-        print(f'Recall: {recall}')
-        print(f'Specificity: {specificity}')
-        print(f'Precision: {precision}')
+        print('F1 score, Precision, Recall')
+        print(round(f1_score, 2))
+        print(round(precision, 2))
+        print(round(recall, 2))
+        # print(f'Specificity: {specificity}')
         print('Confusion matrix:')
         print(conf_matrix)
         print('----------------------------')

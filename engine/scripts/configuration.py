@@ -1,6 +1,7 @@
 from sklearn.linear_model import LogisticRegression
 
 # RUNNING CONFIGURATION
+TASK_ID = 'promapen_enriched-test_data'
 IS_ON_PLATFORM = False
 LOAD_PRECOMPUTED_SIMILARITIES = True
 SAVE_PRECOMPUTED_SIMILARITIES = False
@@ -56,7 +57,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = False
+COMPUTE_IMAGE_SIMILARITIES = True
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
@@ -71,7 +72,13 @@ EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 10
 LOAD_PRECOMPUTED_MODEL = True
 SAVE_COMPUTED_MODEL = False
-MODEL_NAME = 'promapcz_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
+MODEL_NAME = 'promapen_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
+JUST_EVALUATE_LOADED_TEST_DATA = True
+EXCLUDE_CATEGORIES = True
+CATEGORIES_CZ = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_household', '7_laptops', '8_tvs',
+                 '9_headphones', '10_fridges']
+CATEGORIES_EN = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_household', '7_laptops', '8_toys',
+                 '9_clothes', '10_health']
 
 # EVALUATION CONFIGURATION
 NUMBER_OF_THRESHES = 100
@@ -103,13 +110,21 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 50),
-                                       'activation': 'relu',
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 50, 50),
+                                       'activation': 'logistic',
                                        'solver': 'lbfgs',
+                                       'batch_size': 'auto',
+                                       'learning_rate': 'constant',
+                                       'learning_rate_init': 0.0001,
+                                       'max_iter': 50
+                                       }
+NeuralNetwork_CLASSIFIER_PARAMETERS_cz = {'hidden_layer_sizes': (50, 10, 50),
+                                       'activation': 'relu',
+                                       'solver': 'adam',
                                        'batch_size': 'auto',
                                        'learning_rate': 'adaptive',
                                        'learning_rate_init': 0.001,
-                                       'max_iter': 50
+                                       'max_iter': 100
                                        }
 Bagging_CLASSIFIER_PARAMETERS = {
     'NeuralNetwork': [
