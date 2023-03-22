@@ -4,6 +4,7 @@ import random
 import warnings
 from math import ceil
 
+import fontTools.t1Lib
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -18,7 +19,7 @@ from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_
     BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
     SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION, LOAD_PRECOMPUTED_MODEL, \
     SAVE_COMPUTED_MODEL, MODEL_NAME, DATA_FOLDER, MODEL_FOLDER, JUST_EVALUATE_LOADED_TEST_DATA, CATEGORIES_EN, \
-    CATEGORIES_CZ
+    CATEGORIES_CZ, TASK_ID
 
 
 def setup_classifier(classifier_type):
@@ -240,7 +241,6 @@ def ensemble_models_training(similarities, classifier_type, task_id):
         True,
         'trainer data'
     )
-    classifiers.save()
     return classifiers, train_stats, test_stats
 
 
@@ -312,8 +312,6 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     print(f'{PERFORMED_PARAMETERS_SEARCH.upper()} SEARCH PERFORMED')
     print_best_classifier_results(best_train_stats, best_test_stats)
     print(f'Best classifier parameters')
-    print(len(train_data))
-    print(len(test_data))
     for parameter in classifier_parameters:
         print(f'{parameter}: {getattr(best_classifier.model, parameter)}')
     print('----------------------------')
@@ -435,8 +433,9 @@ def plot_correlation_matrix(test_data, train_data):
     data = pd.concat([train_data, test_data])
     correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
     sns.heatmap(correlation_matrix, annot=True, cmap=plt.cm.Reds)
-    plt.show()
     print(correlation_matrix)
+    #correlation_matrix.to_csv(f'{MODEL_FOLDER}/{TASK_ID}_correlation_matrix.csv')
+
     print(f'Correlations bigger than {CORRELATION_LIMIT} ar smaller than {-CORRELATION_LIMIT}')
     counter = 0
     for column in correlation_matrix:

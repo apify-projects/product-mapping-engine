@@ -77,6 +77,10 @@ if __name__ == '__main__':
         images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
         labeled_dataset['image2'] = images_lengths2
 
+    spec = pd.read_csv('data/new.csv')
+    labeled_dataset['specification1']=spec['specification1']
+    labeled_dataset['specification2']=spec['specification2']
+    labeled_dataset.to_csv('data/neww.csv')
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,

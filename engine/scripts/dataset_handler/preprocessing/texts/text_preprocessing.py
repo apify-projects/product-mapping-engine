@@ -6,11 +6,43 @@ import re
 import majka
 import numpy as np
 import pandas as pd
+import requests
 from nltk.stem import SnowballStemmer
 
 from .keywords_detection import detect_ids_brands_colors_and_units, update_keywords_detection_from_config, \
     convert_keyword_dicts_to_dataframe, reindex_and_merge_dataframes
-from ....configuration import LOWER_CASE_TEXT, LANGUAGE, COLUMNS_TO_BE_PREPROCESSED
+from ....configuration import LOWER_CASE_TEXT, LANGUAGE, COLUMNS_TO_BE_PREPROCESSED, LEMMATIZE_TEXTS
+
+
+def lemmatize_text(text):
+    """
+    Lemmatize text using MorphoDitta
+    @param text: text to lemmatize
+    @return: lemmatized text
+    """
+    if LANGUAGE == 'czech':
+        model = 'czech-morfflex2.0-pdtc1.0-220710'
+    else:
+        model = 'english-morphium-wsj-140407'
+
+    lemmatized_text = []
+    for word in text:
+        url = f'http://lindat.mff.cuni.cz/services/morphodita/api/tag?data={word}&model={model}&guesse=no&input=vertical&output=json'
+        lemmatized_word = json.loads(requests.get(url).text)['result']
+        if len(lemmatized_word) == 0:
+            continue
+        lemmatized_word = lemmatized_word[0][0]
+        if lemmatized_word['tag'][:2] == 'Z:':
+            continue
+        if lemmatized_word['tag'][:5] == 'NNIS1' or lemmatized_word['tag'][:5] == 'AUNS1' or \
+                lemmatized_word['tag'][2] == 'X@':
+            word = lemmatized_word['token']
+        else:
+            word = lemmatized_word['lemma'].replace('_', '-').split('-')[0]
+        if LANGUAGE == 'czech' and lemmatized_word['tag'][10] == 'N':
+            word = 'ne' + word
+        lemmatized_text.append(word.lower())
+    return lemmatized_text
 
 
 def set_czech_lemmatizer():
@@ -30,7 +62,7 @@ def set_czech_lemmatizer():
     return lemmatizer
 
 
-def lemmatize_czech_text(text, lemmatizer):
+def lemmatize_czech_text_old(text, lemmatizer):
     """
     Lemmatize Czech text
     @param text: text to lemmatize
@@ -50,7 +82,7 @@ def lemmatize_czech_text(text, lemmatizer):
     return lemmatized_text
 
 
-def lemmatize_english_text(text):
+def lemmatize_english_text_old(text):
     """
     Lemmatize English text
     @param text: text to lemmatize
@@ -150,10 +182,12 @@ def preprocess_text(data):
         word_list = split_units_and_values(word_list)
         if LOWER_CASE_TEXT:
             word_list = lower_case(word_list)
-        if LANGUAGE == 'czech':
-            word_list = lemmatize_czech_text(word_list, lemmatizer)
-        if LANGUAGE == 'english':
-            word_list = lemmatize_english_text(word_list)
+        if LEMMATIZE_TEXTS and LANGUAGE=='czech':
+            word_list = lemmatize_czech_text_old(word_list, lemmatizer)
+        else:
+            word_list = lemmatize_english_text_old(word_list)
+        #if LEMMATIZE_TEXTS:
+        #    word_list = lemmatize_text(word_list)
         new_data.append(word_list)
     return new_data
 
@@ -310,6 +344,7 @@ def parse_specifications(dataset):
     i = 0
     for product_specification in dataset:
         product_specification = json.loads(product_specification)
+
         specification_dict = {}
         for item in product_specification:
             item['value'] = str(item['value'])
