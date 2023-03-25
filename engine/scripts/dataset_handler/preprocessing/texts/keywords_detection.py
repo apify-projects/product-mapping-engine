@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 
 from ....configuration import MINIMAL_DETECTABLE_ID_LENGTH, \
-    KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED
+    KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING
 
 CURRENT_SCRIPT_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../data/vocabularies/')
 COLORS_FILE = os.path.join(CURRENT_SCRIPT_FOLDER, 'colors.txt')
@@ -488,18 +488,18 @@ def update_keywords_detection_from_config(column, id_detection, brand_detection,
     @param numbers_detection: True if unspecified numbers should be detected
     @return: updated booleans whether to detects keywords or not
     """
-    if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys():
-        if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+    if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys():
+        if 'id' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             id_detection = False
-        if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+        if 'brand' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             brand_detection = False
-        if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+        if 'color' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             color_detection = False
-        if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+        if 'words' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             id_detection = False
-        if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+        if 'units' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             units_detection = False
-        if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]:
+        if 'numbers' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]:
             numbers_detection = False
     return brand_detection, color_detection, id_detection, numbers_detection, units_detection
 

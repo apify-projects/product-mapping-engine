@@ -10,7 +10,7 @@ from .compute_specifications_similarity import compute_similarity_of_specificati
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
-    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED, \
+    COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING, \
     ALL_KEYWORDS_SIMILARITIES
 
 
@@ -237,13 +237,13 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
     descriptive_words = {}
     for column in COLUMNS_TO_BE_PREPROCESSED:
         print(column)
-        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and 'cos' in
-                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
+        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and 'cos' in
+                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]):
             tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
             tf_idfs[column] = tf_idfs_col
 
-            if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED.keys() and
-                    'descriptives' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[column]):
+            if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and
+                    'descriptives' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]):
                 descriptive_words_col = find_descriptive_words(
                     tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
                     number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
@@ -487,8 +487,8 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, t
     similarities_to_compute = SIMILARITIES_TO_BE_COMPUTED
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2[0]:
-            similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED[
-                column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED else []
+            similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[
+                column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING else []
             similarities_to_compute = [similarity for similarity in similarities_to_compute if
                                        similarity not in similarities_to_ignore]
             tf_idfs_column = tf_idfs[column] if column in tf_idfs else None

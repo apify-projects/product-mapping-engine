@@ -323,7 +323,7 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
     for column in columns_to_drop:
         if column in merged_data:
             merged_data = merged_data.drop(column, axis=1)
-    stats = evaluate_classifier(classifier, merged_data, merged_data, False, data_type)
+    stats = evaluate_classifier(classifier, merged_data, merged_data, data_type)
     print(data_type)
     print(stats)
 

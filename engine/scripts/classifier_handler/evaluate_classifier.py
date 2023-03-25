@@ -4,7 +4,6 @@ import random
 import warnings
 from math import ceil
 
-import fontTools.t1Lib
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -19,7 +18,7 @@ from ..configuration import TEST_DATA_PROPORTION, NUMBER_OF_THRESHES, NUMBER_OF_
     BEST_MODEL_SELECTION_CRITERION, PRINT_CORRELATION_MATRIX, CORRELATION_LIMIT, PERFORM_TRAIN_TEST_SPLIT, \
     SAVE_TRAIN_TEST_SPLIT, SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA, VALIDATION_DATA_PROPORTION, LOAD_PRECOMPUTED_MODEL, \
     SAVE_COMPUTED_MODEL, MODEL_NAME, DATA_FOLDER, MODEL_FOLDER, JUST_EVALUATE_LOADED_TEST_DATA, CATEGORIES_EN, \
-    CATEGORIES_CZ, TASK_ID
+    CATEGORIES_CZ, SET_THRESHOLD, EXCLUDED_SIMILARITIES
 
 
 def setup_classifier(classifier_type):
@@ -145,6 +144,9 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
             train_data = data.drop(columns=['id1', 'id2'])
         else:
             train_data, test_data = create_train_test_data(data, task_id)
+    if EXCLUDED_SIMILARITIES:
+        train_data = train_data.drop(columns=EXCLUDED_SIMILARITIES)
+        test_data = test_data.drop(columns=EXCLUDED_SIMILARITIES)
     if LOAD_PRECOMPUTED_MODEL:
         if MODEL_NAME == 'none':
             filename = f'{MODEL_FOLDER}/{task_id}_{classifier.name}'
@@ -153,8 +155,7 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
         classifier = pickle.load(open(filename, 'rb'))
     else:
         classifier.fit(train_data)
-        if SAVE_COMPUTED_MODEL:
-            pickle.dump(classifier, open(f'{MODEL_FOLDER}/{task_id}_{classifier.name}', 'wb'))
+
     train_data['predicted_scores'] = classifier.predict(train_data, predict_outputs=False)
     test_data['predicted_scores'] = classifier.predict(test_data, predict_outputs=False)
 
@@ -162,9 +163,10 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
         classifier,
         train_data,
         test_data,
-        True,
         'trainer data'
     )
+    if SAVE_COMPUTED_MODEL:
+        pickle.dump(classifier, open(f'{MODEL_FOLDER}/{task_id}_{classifier.name}', 'wb'))
     return train_stats, test_stats
 
 
@@ -238,7 +240,6 @@ def ensemble_models_training(similarities, classifier_type, task_id):
         classifiers,
         train_data,
         test_data,
-        True,
         'trainer data'
     )
     return classifiers, train_stats, test_stats
@@ -340,32 +341,31 @@ def average_statistics_from_several_runs(statistics_from_runs):
     return statistics_average
 
 
-def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_type):
+def evaluate_classifier(classifier, train_data, test_data, data_type):
     """
     Find the best thresh and compute f1 score, accuracy, recall, specificity and precision + plot ROC curve
     @param classifier: classifier to train and evaluate
     @param train_data: training data to evaluate classifier
     @param test_data: testing data to evaluate classifier
-    @param set_threshold: bool whether to calculate and set optimal threshold to the classifier (relevant in Trainer)
     @param data_type: string value specifying the evaluated data type
     @return: train and test  f1 score, accuracy, recall, specificity, precision
     """
-    # create threshes
-    threshes = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHES)
-    out_train = []
-    out_test = []
-    for t in threshes:
-        out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
-        out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
-
-    true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
-                                                                                    out_train, threshes, 'train')
-    if 'predicted_scores' in train_data.columns:
-        train_data.drop(columns=['predicted_scores'], inplace=True)
-    if 'predicted_scores' in test_data.columns:
-        test_data.drop(columns=['predicted_scores'], inplace=True)
     # find the best thresh
-    if set_threshold:
+    if SET_THRESHOLD:
+        # create threshes
+        threshes = create_thresh(train_data['predicted_scores'], NUMBER_OF_THRESHES)
+        out_train = []
+        out_test = []
+        for t in threshes:
+            out_train.append([0 if score < t else 1 for score in train_data['predicted_scores']])
+            out_test.append([0 if score < t else 1 for score in test_data['predicted_scores']])
+
+        true_positive_rates_train, false_positive_rates_train = create_roc_curve_points(train_data['match'].tolist(),
+                                                                                        out_train, threshes, 'train')
+        if 'predicted_scores' in train_data.columns:
+            train_data.drop(columns=['predicted_scores'], inplace=True)
+        if 'predicted_scores' in test_data.columns:
+            test_data.drop(columns=['predicted_scores'], inplace=True)
         optimal_threshold = threshes[0]
         optimal_value = -1 if BEST_MODEL_SELECTION_CRITERION != 'balanced_precision_recall' else 1000
         optimal_minimal_value = -1
@@ -404,11 +404,16 @@ def evaluate_classifier(classifier, train_data, test_data, set_threshold, data_t
             # clean the data
             test_data.drop(columns=['predicted_match'], inplace=True)
             test_data.drop(columns=['predicted_scores'], inplace=True)
-
-        # evaluate data
         classifier.set_threshold(optimal_threshold)
-        train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
-        test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
+
+
+    # evaluate data
+    if 'predicted_scores' in train_data.columns:
+        train_data.drop(columns=['predicted_scores'], inplace=True)
+    if 'predicted_scores' in test_data.columns:
+        test_data.drop(columns=['predicted_scores'], inplace=True)
+    train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(train_data)
+    test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(test_data)
 
     # compute prediction accuracies
     train_stats = compute_prediction_accuracies(train_data, 'train')
@@ -434,7 +439,7 @@ def plot_correlation_matrix(test_data, train_data):
     correlation_matrix = data.drop(['match', 'predicted_match', 'predicted_scores'], axis=1).corr()
     sns.heatmap(correlation_matrix, annot=True, cmap=plt.cm.Reds)
     print(correlation_matrix)
-    #correlation_matrix.to_csv(f'{MODEL_FOLDER}/{TASK_ID}_correlation_matrix.csv')
+    # correlation_matrix.to_csv(f'{MODEL_FOLDER}/{TASK_ID}_correlation_matrix.csv')
 
     print(f'Correlations bigger than {CORRELATION_LIMIT} ar smaller than {-CORRELATION_LIMIT}')
     counter = 0

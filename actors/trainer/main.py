@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import warnings
 
 import pandas as pd
@@ -8,6 +7,15 @@ from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_data_and_train_model
 from product_mapping_engine.scripts.configuration import DATA_FOLDER, TASK_ID, CLASSIFIER_TYPE
+
+
+def validateJSON(jsonData):
+    try:
+        json.loads(jsonData)
+    except ValueError as err:
+        return False
+    return True
+
 
 if __name__ == '__main__':
     # Read input
@@ -71,16 +79,7 @@ if __name__ == '__main__':
             labeled_dataset = pd.DataFrame()
         labeled_dataset = labeled_dataset.fillna('')
 
-    if 'image1' in labeled_dataset.columns:
-        images_lengths = [len(json.loads(c)) for c in labeled_dataset['image1'].values]
-        labeled_dataset['image1'] = images_lengths
-        images_lengths2 = [len(json.loads(c)) for c in labeled_dataset['image2'].values]
-        labeled_dataset['image2'] = images_lengths2
 
-    spec = pd.read_csv('data/new.csv')
-    labeled_dataset['specification1']=spec['specification1']
-    labeled_dataset['specification2']=spec['specification2']
-    labeled_dataset.to_csv('data/neww.csv')
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,
