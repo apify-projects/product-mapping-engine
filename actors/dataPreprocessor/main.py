@@ -28,7 +28,7 @@ def fix_specification(specification):
 def squishAttributesIntoAListAttribute(row):
     result = []
     for value in row:
-        if value != "":
+        if value != "" and value is not None:
             result.append(value)
 
     return result
@@ -140,11 +140,11 @@ if __name__ == '__main__':
                 # Download images
                 '''
                 product_mapping_dataset['image'] = download_images(product_mapping_dataset)
-            
+
                 target_kvs_name = 'PM-Prepro-Images-' + parameters['task_id'] + '-' + scraped_dataset_id
                 target_kvs_id = client.key_value_stores().get_or_create(name=target_kvs_name)['id']
                 target_kvs_client = client.key_value_store(target_kvs_id)
-            
+
                 upload_images_to_kvs(product_mapping_dataset, target_kvs_client)
                 '''
 
