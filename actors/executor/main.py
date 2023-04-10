@@ -203,8 +203,7 @@ def perform_mapping (
         task_id += "_codes"
 
     first_chunk = 0
-    # TODO delete the "False and"
-    if False and is_on_platform:
+    if is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
         if start_from_chunk:
             first_chunk = start_from_chunk['value'] + 1
@@ -297,7 +296,8 @@ def perform_mapping (
         # TODO investigate
         predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['id1'].notna()]
 
-        original_id_attributes = identify_id_attributes_from_input_mapping(input_mapping)
+        if input_mapping:
+            original_id_attributes = identify_id_attributes_from_input_mapping(input_mapping)
 
         output_results(
             output_dataset_client,
@@ -307,8 +307,8 @@ def perform_mapping (
             is_on_platform,
             current_chunk,
             output_mapping,
-            original_id_attributes[0],
-            original_id_attributes[1],
+            original_id_attributes[0] if input_mapping else None,
+            original_id_attributes[1] if input_mapping else None,
             original_pair_dataset,
             original_dataset1,
             original_dataset2,
