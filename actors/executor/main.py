@@ -17,24 +17,83 @@ else:
 CHUNK_SIZE = 500
 LAST_PROCESSED_CHUNK_KEY = 'last_processed_chunk'
 
-def calculate_dataset_changes(dataset_output_attributes):
+def squishAttributesIntoAListAttribute(row):
+    result = []
+    for value in row:
+        if value != "" and value is not None:
+            result.append(value)
+
+    return result
+
+def identify_id_attributes_from_input_mapping(input_mapping):
+    return input_mapping["eshop1"]["id"], input_mapping["eshop2"]["id"]
+
+def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None):
     columns = []
     renames = {}
-    for old_column, new_column in dataset_output_attributes.items():
-        columns.append(new_column)
-        renames[old_column] = new_column
+    for new_column, old_column in attributes_mapping.items():
+        new_column_with_postfix = f"{new_column}{dataset_postfix}" if dataset_postfix is not None else new_column
+        columns.append(new_column_with_postfix)
+        if type(old_column) == list:
+            dataset[new_column_with_postfix] = dataset[old_column].apply(squishAttributesIntoAListAttribute, axis=1)
+        else:
+            renames[old_column] = new_column_with_postfix
 
-    return columns, renames
+    return dataset, columns, renames
 
+def perform_input_mapping(input_mapping, pair_dataset=None, singular_dataset=None, singular_dataset_index=None):
+    if pair_dataset is not None:
+        all_columns = []
+        for e in range(2):
+            eshop_mapping = input_mapping[f"eshop{e+1}"]
+            pair_dataset, columns, renames = calculate_dataset_changes(pair_dataset, eshop_mapping, e+1)
+            pair_dataset = pair_dataset.rename(columns=renames)
+            all_columns.extend(columns)
+
+        return pair_dataset[all_columns]
+    else:
+        eshop_mapping = input_mapping[f"eshop{singular_dataset_index}"]
+        singular_dataset, columns, renames = calculate_dataset_changes(singular_dataset, eshop_mapping)
+        singular_dataset = singular_dataset.rename(columns=renames)
+        return singular_dataset[columns]
 
 def output_results (
     output_dataset_client,
     default_kvs_client,
     predicted_matching_pairs,
+    rejected_pairs,
     is_on_platform,
     current_chunk,
+    output_mapping,
+    id_attribute1,
+    id_attribute2,
+    original_pair_dataset=None,
+    original_dataset1=None,
+    original_dataset2=None
 ):
-    output_data = predicted_matching_pairs[["id1", "url1", "id2", "url2", "predicted_scores"]]
+    output_data = predicted_matching_pairs[["id1", "id2", "predicted_scores"]]
+    output_data["predicted_match"] = 1
+    output_data = pd.concat([
+        output_data,
+        rejected_pairs[["id1", "id2", "predicted_scores", "predicted_match"]]
+    ])
+
+    if output_mapping:
+        if original_pair_dataset is not None:
+            raw_output_data_df = output_data[["id1", "id2"]].merge(original_pair_dataset, left_on=["id1", "id2"], right_on=[id_attribute1, id_attribute2], suffixes=("_pm_attr", None))
+        else:
+            raw_output_data_dfs = []
+            raw_output_data_dfs.append(output_data[["id1"]].merge(original_dataset1, how="left", left_on="id1", right_on=id_attribute1, suffixes=("_pm_attr", None)))
+            raw_output_data_dfs.append(output_data[["id2"]].merge(original_dataset2, how="left", left_on="id2", right_on=id_attribute2, suffixes=("_pm_attr", None)))
+
+        output_data = output_data[["predicted_scores", "predicted_match"]]
+
+        for e in range(2):
+            eshop_mapping = output_mapping[f"eshop{e+1}"]
+            raw_output_data = raw_output_data_dfs[e] if original_pair_dataset is None else raw_output_data_df
+            for output_attribute, original_attribute in eshop_mapping.items():
+                output_data[output_attribute] = raw_output_data[original_attribute]
+
     output_dataset_client.push_items(
         output_data.to_dict(orient='records')
     )
@@ -48,19 +107,27 @@ def output_results (
             current_chunk
         )
 
+def assemble_dataset_from_partial_dataset_ids(data_client, partial_dataset_ids):
+    partial_datasets = []
+    for partial_dataset_id in partial_dataset_ids:
+        partial_dataset_client = data_client.dataset(partial_dataset_id)
+        dataset_items = partial_dataset_client.list_items().items
+        if dataset_items[0] == {}:
+            dataset_items = dataset_items[1:]
+
+        partial_datasets.append(pd.DataFrame(dataset_items))
+
+    return pd.concat(partial_datasets)
 
 def perform_mapping (
-    preprocessed_dataset_id,
+    parameters,
     output_dataset_client,
     default_kvs_client,
     data_client,
     is_on_platform,
     task_id,
-    parameters = {}
+    return_all_considered_pairs=False
 ):
-    # Pair dataset input
-    parameters['pair_dataset'] = preprocessed_dataset_id
-
     # Load precomputed matches
     dataset_precomputed_matches = None
     if LOAD_PRECOMPUTED_MATCHES:
@@ -78,82 +145,133 @@ def perform_mapping (
     dataset2 = None
     images_kvs_1_client = None
     images_kvs_2_client = None
+    input_mapping = parameters.get("input_mapping")
+    output_mapping = parameters.get("output_mapping")
+    original_pair_dataset = None
+    original_dataset1 = None
+    original_dataset2 = None
+
+    global CHUNK_SIZE
 
     # Prepare storages and read data
-    if 'pair_dataset' in parameters:
-        pair_dataset_client = data_client.dataset(parameters['pair_dataset'])
-        dataset_items = pair_dataset_client.list_items().items
-        if dataset_items[0] == {}:
-            dataset_items = dataset_items[1:]
+    if parameters.get('pair_dataset_ids'):
+        pair_dataset_ids = parameters['pair_dataset_ids']
+        pair_dataset = assemble_dataset_from_partial_dataset_ids(data_client, pair_dataset_ids)
 
-        pair_dataset = pd.DataFrame(dataset_items)
         dataset_shape = pair_dataset.shape
         print(f"Working on dataset of shape: {dataset_shape[0]}x{dataset_shape[1]}")
+
+        original_pair_dataset = pair_dataset
+
+        CHUNK_SIZE = 500
     else:
-        dataset_1_client = data_client.dataset(parameters['dataset_1'])
-        dataset_2_client = data_client.dataset(parameters['dataset_2'])
-        images_kvs_1_client = data_client.key_value_store(parameters['images_kvs_1'])
-        images_kvs_2_client = data_client.key_value_store(parameters['images_kvs_2'])
+        # TODO deal with this (there are multiple dataset ids, but only one images kvs)
+        images_kvs_1_client = None
+        images_kvs_2_client = None
+        if parameters.get('images_kvs_1') and parameters.get('images_kvs_2'):
+            images_kvs_1_client = data_client.key_value_store(parameters['images_kvs_1'])
+            images_kvs_2_client = data_client.key_value_store(parameters['images_kvs_2'])
 
-        dataset1 = pd.DataFrame(dataset_1_client.list_items().items)
-        dataset2 = pd.DataFrame(dataset_2_client.list_items().items)
+        dataset1 = assemble_dataset_from_partial_dataset_ids(data_client, parameters["dataset1_ids"])
+        dataset2 = assemble_dataset_from_partial_dataset_ids(data_client, parameters["dataset2_ids"])
 
-        dataset1 = dataset1.drop_duplicates(subset=['url'], ignore_index=True)
-        dataset2 = dataset2.drop_duplicates(subset=['url'], ignore_index=True)
-        print(dataset1.shape)
-        print(dataset2.shape)
+        original_dataset1 = dataset1
+        original_dataset2 = dataset2
 
-    if task_id != "__local__":
+        if input_mapping:
+            dataset1 = perform_input_mapping(input_mapping, singular_dataset=dataset1, singular_dataset_index=1)
+            dataset2 = perform_input_mapping(input_mapping, singular_dataset=dataset2, singular_dataset_index=2)
+
+        if not return_all_considered_pairs:
+            dataset1 = dataset1.drop_duplicates(subset=['id'], ignore_index=True)
+            dataset2 = dataset2.drop_duplicates(subset=['id'], ignore_index=True)
+
+        print()
+        print(f"Working on two datasets:")
+        print(f"Dataset 1 of shape: {dataset1.shape[0]}x{dataset1.shape[1]}")
+        print(f"Dataset 2 of shape: {dataset2.shape[0]}x{dataset2.shape[1]}")
+        print()
+
+        CHUNK_SIZE = 50
+    if not task_id.startswith("__local__"):
         model_key_value_store_info = data_client.key_value_stores().get_or_create(
             name=task_id + '-product-mapping-model-output'
         )
         model_key_value_store = data_client.key_value_store(model_key_value_store_info['id'])
     else:
         model_key_value_store = None
+        task_id += "_codes"
 
     first_chunk = 0
-    if is_on_platform:
+    # TODO delete the "False and"
+    if False and is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
         if start_from_chunk:
             first_chunk = start_from_chunk['value'] + 1
 
     if pair_dataset is not None:
         data_count = pair_dataset.shape[0]
+        chunk_count = ceil(data_count / CHUNK_SIZE)
+        chunks = [(chunk_number * CHUNK_SIZE, (chunk_number + 1) * CHUNK_SIZE) for chunk_number in range(chunk_count)]
     else:
-        data_count = dataset1.shape[0]
+        dataset1_chunk_count = ceil(dataset1.shape[0] / CHUNK_SIZE)
+        dataset2_chunk_count = ceil(dataset2.shape[0] / CHUNK_SIZE)
+        chunk_count = dataset1_chunk_count * dataset2_chunk_count
+        chunks = []
+        for dataset1_chunk_number in range(dataset1_chunk_count):
+            for dataset2_chunk_number in range(dataset2_chunk_count):
+                chunks.append((
+                    (dataset1_chunk_number * CHUNK_SIZE, (dataset1_chunk_number + 1) * CHUNK_SIZE),
+                    (dataset2_chunk_number * CHUNK_SIZE, (dataset2_chunk_number + 1) * CHUNK_SIZE)
+                ))
 
-    global CHUNK_SIZE
     if not is_on_platform:
         CHUNK_SIZE = data_count
 
-    for current_chunk in range(first_chunk, ceil(data_count / CHUNK_SIZE)):
-        if is_on_platform:
-            print('Searching matches for products {}:{}'.format(current_chunk * CHUNK_SIZE,
-                                                                (current_chunk + 1) * CHUNK_SIZE - 1))
-            print('---------------------------------------------\n\n')
-
+    for current_chunk in range(first_chunk, chunk_count):
         pair_dataset_chunk = None
         dataset1_chunk = None
+        dataset2_chunk = None
+
+        print('\n\n------------------------------------------------------------------------------------------')
 
         if pair_dataset is not None:
+            if is_on_platform:
+                print('Searching matches for products {}:{}'.format(chunks[current_chunk][0],
+                                                                    chunks[current_chunk][1] - 1))
+
             pair_dataset_chunk = pair_dataset.iloc[
-                                 current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
+                chunks[current_chunk][0]: chunks[current_chunk][1]
+            ].reset_index()
+
+            if input_mapping:
+                pair_dataset_chunk = perform_input_mapping(input_mapping, pair_dataset=pair_dataset_chunk)
         else:
-            dataset1_chunk = dataset1.iloc[current_chunk * CHUNK_SIZE: (current_chunk + 1) * CHUNK_SIZE].reset_index()
+            if is_on_platform:
+                print('Searching matches for products {}:{} from dataset1 and {}:{} from dataset2'.format(
+                    chunks[current_chunk][0][0],
+                    chunks[current_chunk][0][1] - 1,
+                    chunks[current_chunk][1][0],
+                    chunks[current_chunk][1][1] - 1
+                ))
 
-        pair_dataset_chunk[["url1", "url2"]].to_csv("executor_input_dataset.csv", index=False)
+            dataset1_chunk = dataset1.iloc[chunks[current_chunk][0][0]: chunks[current_chunk][0][1]].reset_index()
+            dataset2_chunk = dataset2.iloc[chunks[current_chunk][1][0]: chunks[current_chunk][1][1]].reset_index()
 
-        predicted_matching_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
+        print('------------------------------------------------------------------------------------------\n\n')
+
+        predicted_matching_pairs, rejected_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
                 pair_dataset=pair_dataset_chunk,
                 dataset1=dataset1_chunk,
-                dataset2=dataset2,
+                dataset2=dataset2_chunk,
                 images_kvs1_client=images_kvs_1_client,
                 images_kvs2_client=images_kvs_2_client,
                 precomputed_pairs_matching_scores=dataset_precomputed_matches,
                 model_key_value_store_client=model_key_value_store,
                 task_id=task_id,
-                is_on_platform=is_on_platform
+                is_on_platform=is_on_platform,
+                return_all_considered_pairs=return_all_considered_pairs
             )
 
         all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
@@ -163,10 +281,11 @@ def perform_mapping (
         else:
             predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
                                                                       on='id1', how='left') \
-                .merge(dataset2.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
+                .merge(dataset2_chunk.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
 
-        # TODO remove upon resolution
-        predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['url1', 'url2'])
+        if not return_all_considered_pairs:
+            # TODO remove upon resolution
+            predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['id1', 'id2'])
 
         if SAVE_PRECOMPUTED_MATCHES:
             if not is_on_platform:
@@ -176,15 +295,23 @@ def perform_mapping (
                 precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
 
         # TODO investigate
-        predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['url1'].notna()]
-        predicted_matching_pairs.to_csv("predicted_matches.csv", index=False)
+        predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['id1'].notna()]
+
+        original_id_attributes = identify_id_attributes_from_input_mapping(input_mapping)
 
         output_results(
             output_dataset_client,
             default_kvs_client,
             predicted_matching_pairs,
+            rejected_pairs,
             is_on_platform,
-            current_chunk
+            current_chunk,
+            output_mapping,
+            original_id_attributes[0],
+            original_id_attributes[1],
+            original_pair_dataset,
+            original_dataset1,
+            original_dataset2,
         )
 
 
@@ -250,16 +377,15 @@ if __name__ == '__main__':
     competitor_name = parameters["competitor_name"]
     competitor_record = scrape_info_kvs_client.get_record(competitor_name)["value"]
 
-    preprocessed_dataset_id = competitor_record["preprocessed_dataset_id"]
+    parameters["pair_dataset_ids"] = [competitor_record["preprocessed_dataset_id"]]
 
     perform_mapping(
-        preprocessed_dataset_id,
+        parameters,
         output_dataset_client,
         default_kvs_client,
         client,
         is_on_platform,
-        task_id,
-        parameters
+        task_id
     )
 
     competitor_record["mapped_dataset_id"] = output_dataset_id
