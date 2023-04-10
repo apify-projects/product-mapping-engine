@@ -16,9 +16,6 @@ async def main():
             api_url=os.environ['APIFY_API_BASE_URL']
         )
 
-        # Structure of input is defined in INPUT_SCHEMA.json
-        pair_dataset_id = actor_input.get('pair_dataset_id')
-
         client = ApifyClient(
             os.environ['APIFY_TOKEN'],
             api_url=os.environ['APIFY_API_BASE_URL']
@@ -28,13 +25,34 @@ async def main():
 
         default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
 
-        is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
+        # TODO change if needed
+        #is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
+        is_on_platform = True
+
+        parameters = {}
+
+        pair_dataset_ids = actor_input.get("pair_dataset_ids")
+        if pair_dataset_ids:
+            parameters["pair_dataset_ids"] = pair_dataset_ids
+        else:
+            dataset1_ids = actor_input.get("dataset1_ids")
+            dataset2_ids = actor_input.get("dataset2_ids")
+            if dataset1_ids and dataset2_ids:
+                parameters["dataset1_ids"] = dataset1_ids
+                parameters["dataset2_ids"] = dataset2_ids
+            else:
+                raise Exception("You need to provide either pair_dataset_ids or dataset1_ids and dataset2_ids")
+
+        parameters["input_mapping"] = actor_input["input_mapping"]
+        if actor_input.get("output_mapping"):
+            parameters["output_mapping"] = actor_input["output_mapping"]
 
         perform_mapping(
-            pair_dataset_id,
+            parameters,
             output_dataset_client,
             default_kvs_client,
             data_client,
             is_on_platform,
-            task_id="__local__"
+            task_id="__local__##sep##" + actor_input.get("precision_recall"),
+            return_all_considered_pairs=True
         )

@@ -9,16 +9,30 @@
       "type": "object",
       "description": "A mapping object specifying which attributes from the data you provided correspond to attributes used by the Product Mapping model. For details see #TODO add store page link",
       "prefill": {
-          "unique_id": "url",
-          "name": "name",
-          "price": "price",
-          "short_description": "shortDescription",
-          "long_description": "longDescription",
-          "specification": "specification",
-          "code": [
-              "shopSpecificId",
-              "productSpecificId"
-          ]
+          "eshop1": {
+              "id": "url",
+              "name": "name",
+              "price": "price",
+              "short_description": "shortDescription",
+              "long_description": "longDescription",
+              "specification": "specification",
+              "code": [
+                  "shopSpecificId",
+                  "productSpecificId"
+              ]
+          },
+          "eshop2": {
+              "id": "url",
+              "name": "name",
+              "price": "price",
+              "short_description": "shortDescription",
+              "long_description": "longDescription",
+              "specification": "specification",
+              "code": [
+                  "shopSpecificId",
+                  "productSpecificId"
+              ]
+          }
       },
       "editor": "json"
     },
@@ -35,14 +49,14 @@
       "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
       "editor": "json"
     },
-    "dataset_1_ids": {
+    "dataset1_ids": {
       "sectionCaption": "Separate datasets (fill of you have a separate dataset or datasets for each eshop)",
       "title": "Ids of datasets from eshop 1 (if applicable)",
       "type": "array",
       "description": "Ids of datasets containing information about products from the first eshop.",
       "editor": "json"
     },
-    "dataset_2_ids": {
+    "dataset2_ids": {
       "title": "Ids of datasets from source 2 (if applicable)",
       "type": "array",
       "description": "Ids of datasets containing information about products from the second eshop.",

@@ -18,7 +18,7 @@ language for rich formatting.
 
 See our tutorial on [writing READMEs for your actors](https://help.apify.com/en/articles/2912548-how-to-write-great-readme-for-your-actors) if you need more inspiration.
 
-# Product Mapper
+# Product Matcher
 ## Input
 ```json
 {
