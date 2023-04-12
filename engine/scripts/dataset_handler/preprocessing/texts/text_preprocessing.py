@@ -318,7 +318,7 @@ def parse_specifications(dataset):
 
     for product_specification in dataset:
         if not isinstance(product_specification, list):
-            if product_specification is None:
+            if not product_specification:
                 product_specification = []
             else:
                 if type(product_specification) == dict:
