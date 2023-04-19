@@ -11,6 +11,13 @@ async def main():
         # TODO remove this option
         different_user_token = actor_input.get('different_user_token')
 
+        if 'APIFY_ACTOR_MAX_ITEMS' in os.environ:
+            max_items_to_process = os.environ['APIFY_ACTOR_MAX_ITEMS']
+            if max_items_to_process < 1:
+                raise Exception("When specifying the maximum number of results you want to get, it needs to be 1 or more")
+        else:
+            max_items_to_process = None
+
         data_client = ApifyClient(
             os.environ['APIFY_TOKEN'] if not different_user_token else different_user_token,
             api_url=os.environ['APIFY_API_BASE_URL']
@@ -54,5 +61,6 @@ async def main():
             data_client,
             is_on_platform,
             task_id="__local__##sep##" + actor_input.get("precision_recall"),
-            return_all_considered_pairs=True
+            return_all_considered_pairs=True,
+            max_items_to_process=max_items_to_process
         )
