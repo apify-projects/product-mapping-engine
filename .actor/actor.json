@@ -1,9 +1,9 @@
 {
 	"actorSpecification": 1,
-	"name": "product-mapper",
-	"title": "Getting Started Actor",
-	"description": "Adds two integers.",
-	"version": "0.0",
+	"name": "product-matcher",
+	"title": "AI Product Matcher",
+	"description": "Use this AI product matching actor whenever you need to find matching pairs of products from different e-shops for dynamic pricing, competitor analysis or market research. You can read more about the various use-cases [here](https://apify.com/product-matching-ai). If you would prefer us to prepare and manage the whole pipeline (including scrapers if they are needed), you can read more about it and contact our enterprise team [here](https://apify.com/enterprise).",
+    "version": "0.0",
 	"input": "./input-schema.json",
 	"readme": "./README.md",
 	"dockerfile": "./Dockerfile",

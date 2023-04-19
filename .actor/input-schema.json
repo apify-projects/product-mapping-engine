@@ -64,7 +64,7 @@
     },
     "precision_recall": {
       "sectionCaption": "Model configuration",
-      "title": "What is more important to you, precision or recall?",
+      "title": "Precision/recall tradeoff",
       "type": "string",
       "description": "Specify whether you care more about precision or recall. For explanation, see #TODO add store page link",
       "editor": "select",
