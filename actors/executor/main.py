@@ -1,6 +1,6 @@
 import json
 import os
-from math import ceil
+from math import ceil, sqrt
 
 import pandas as pd
 from apify_client import ApifyClient
@@ -126,7 +126,8 @@ def perform_mapping (
     data_client,
     is_on_platform,
     task_id,
-    return_all_considered_pairs=False
+    return_all_considered_pairs=False,
+    max_items_to_process=None
 ):
     # Load precomputed matches
     dataset_precomputed_matches = None
@@ -161,6 +162,11 @@ def perform_mapping (
         dataset_shape = pair_dataset.shape
         print(f"Working on dataset of shape: {dataset_shape[0]}x{dataset_shape[1]}")
 
+        if max_items_to_process is not None:
+            pair_dataset = pair_dataset.head(max_items_to_process)
+            dataset_shape = pair_dataset.shape
+            print(f"Restricted to shape (due to the maximum amount of items to process): {dataset_shape[0]}x{dataset_shape[1]}")
+
         original_pair_dataset = pair_dataset
 
         CHUNK_SIZE = 500
@@ -191,6 +197,25 @@ def perform_mapping (
         print(f"Dataset 1 of shape: {dataset1.shape[0]}x{dataset1.shape[1]}")
         print(f"Dataset 2 of shape: {dataset2.shape[0]}x{dataset2.shape[1]}")
         print()
+
+        if max_items_to_process is not None:
+            dataset1_rows = dataset1.shape[0]
+            dataset2_rows = dataset2.shape[0]
+
+            dataset1_rows_needed = dataset2_rows_needed = ceil(sqrt(max_items_to_process))
+            if dataset1_rows < dataset1_rows_needed:
+                dataset2_rows_needed = ceil(max_items_to_process / dataset1_rows)
+            elif dataset2_rows < dataset2_rows_needed:
+                dataset1_rows_needed = ceil(max_items_to_process / dataset2_rows)
+
+            dataset1 = dataset1.head(dataset1_rows_needed)
+            dataset2 = dataset1.head(dataset2_rows_needed)
+
+            print()
+            print(f"Restricted the datasets to shape (due to the maximum amount of items to process):")
+            print(f"Dataset 1 of shape: {dataset1.shape[0]}x{dataset1.shape[1]}")
+            print(f"Dataset 2 of shape: {dataset2.shape[0]}x{dataset2.shape[1]}")
+            print()
 
         CHUNK_SIZE = 50
     if not task_id.startswith("__local__"):
