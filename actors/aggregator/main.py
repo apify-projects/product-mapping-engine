@@ -8,10 +8,38 @@ import pysftp
 from datetime import datetime, timezone
 from price_parser import Price
 
+def calculate_additional_filters(product):
+    if product["brand"].lower() == "apple":
+        if product["productSpecificId_source"] and product["productSpecificId_competitor"] and product["productSpecificId_source"] != product["productSpecificId_competitor"]:
+            return False
+
+    return True
+
+def extract_price(price_object):
+    return price_object["formattedPrice"] if price_object and type(price_object) == dict else ""
+
+def extract_original_price(price_object):
+    return price_object["formattedPriceUnmodified"] if price_object and type(price_object) == dict else ""
+
+def fix_amazon_sku(product):
+    if not product["SKU"]:
+        return product["productUrl"].split("amazon.sa/dp/")[1].split("/")[0]
+
+    return product["SKU"]
+
 def fix_price(price_string):
     price = Price.fromstring(price_string)
     price_amount = price.amount_float
     return price_amount
+
+def calculate_discount_amount(product):
+    if product["netPrice"]:
+        if not product["originalPrice"]:
+            return 0
+        else:
+            return round(product["originalPrice"] - product["netPrice"], 2)
+
+    return None
 
 discountAttributes = [
     "bundle",
@@ -80,6 +108,7 @@ if __name__ == '__main__':
 
         source_dataset_attributes = [
             "shopSpecificId",
+            "productSpecificId",
             "url"
         ]
 
@@ -89,10 +118,11 @@ if __name__ == '__main__':
             "brand",
             "price",
             "originalPrice",
-            "productUrl"
+            "productUrl",
+            "productSpecificId"
         ]
 
-        competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes
+        competitor_dataset_attributes_to_fetch = competitor_dataset_attributes + discountAttributes + ["sku"]
 
         source_dataset = pd.DataFrame(client.dataset(source_dataset_id).list_items(fields=",".join(source_dataset_attributes)).items)
 
@@ -119,8 +149,19 @@ if __name__ == '__main__':
             })
 
             print(competitor_dataset.info())
+            discountAttributes = competitor_dataset.columns.intersection(set(discountAttributes))
+
             competitor_dataset["discountType"] = competitor_dataset[discountAttributes].apply(getDiscountType, axis=1)
             competitor_dataset["discountName"] = competitor_dataset[discountAttributes].apply(getDiscountName, axis=1)
+
+            # xcite has a slightly different scraper output
+            if competitor_name == "xcite":
+                competitor_dataset["SKU"] = competitor_dataset["sku"]
+                competitor_dataset["originalPrice"] = competitor_dataset["price"].apply(extract_original_price)
+                competitor_dataset["price"] = competitor_dataset["price"].apply(extract_price)
+
+            if competitor_name == "amazon":
+                competitor_dataset["SKU"] = competitor_dataset.apply(fix_amazon_sku, axis=1)
 
             preprocessed_competitor_dataset = competitor_dataset[competitor_dataset_attributes + ["discountType", "discountName"]].rename(columns={
                 "SKU": "CSKUID",
@@ -130,9 +171,15 @@ if __name__ == '__main__':
 
             final_dataset = mapped_pairs_dataset[["url1", "url2"]]\
                 .merge(preprocessed_source_dataset, on="url1")\
-                .merge(preprocessed_competitor_dataset, on="url2")
+                .merge(preprocessed_competitor_dataset, on="url2", suffixes=("_source", "_competitor"))
 
             final_dataset = final_dataset.drop_duplicates(subset=["url1", "url2"]).fillna("")
+
+            # Apple is problematic, so a filter based on the codes is needed
+            print(final_dataset.info())
+            final_dataset['keep'] = final_dataset.apply(calculate_additional_filters, axis=1)
+            final_dataset = final_dataset[final_dataset['keep'] == True]
+            final_dataset = final_dataset.drop(columns=["keep", "productSpecificId_source", "productSpecificId_competitor"])
 
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
@@ -151,9 +198,11 @@ if __name__ == '__main__':
                 fixed_original_price.append(original_price)
 
             final_dataset['originalPrice'] = fixed_original_price
-            final_dataset['discountAmount'] = (final_dataset['originalPrice'] - final_dataset['netPrice']).round(2)
+            final_dataset['discountAmount'] = final_dataset[['originalPrice', 'netPrice']].apply(calculate_discount_amount, axis=1)
 
             final_dataset = final_dataset.fillna('')
+
+            print(final_dataset.info())
 
             final_dataset.to_csv("final_dataset.csv")
 
@@ -181,7 +230,8 @@ if __name__ == '__main__':
             if not upload_triggered_record or upload_triggered_record["value"] is False:
                 scrape_info_kvs_client.set_record("upload_triggered", True)
 
-                uploader_task_client = client.task(parameters["uploader_task_id"])
-                uploader_task_client.start(task_input={
-                    "datasets_to_upload": [aggregation_dataset_info["id"]],
-                })
+                for uploader_task_id in parameters["uploader_task_ids"]:
+                    uploader_task_client = client.task(uploader_task_id)
+                    uploader_task_client.start(task_input={
+                        "datasets_to_upload": [aggregation_dataset_info["id"]],
+                    })
