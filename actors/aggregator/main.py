@@ -230,7 +230,8 @@ if __name__ == '__main__':
             if not upload_triggered_record or upload_triggered_record["value"] is False:
                 scrape_info_kvs_client.set_record("upload_triggered", True)
 
-                uploader_task_client = client.task(parameters["uploader_task_id"])
-                uploader_task_client.start(task_input={
-                    "datasets_to_upload": [aggregation_dataset_info["id"]],
-                })
+                for uploader_task_id in parameters["uploader_task_ids"]:
+                    uploader_task_client = client.task(uploader_task_id)
+                    uploader_task_client.start(task_input={
+                        "datasets_to_upload": [aggregation_dataset_info["id"]],
+                    })
