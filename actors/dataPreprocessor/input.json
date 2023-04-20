@@ -3,7 +3,7 @@
   "run_executor": true,
   "source": {
     "eshop_name": "extra",
-    "dataset_id": "J0MpblfbcF5jEQ0OI",
+    "dataset_id": "xBvmDclCbDZpbwZYe",
     "attribute_names": {
       "id": "url",
       "name": "name",
@@ -22,9 +22,9 @@
     "fix_prices": false,
     "connecting_attribute": "url"
   },
-  "competitor_scrape_run_id": "SqVXGqFjAFYXeigZo",
+  "competitor_scrape_run_id": "iDImeAaSR1vnEoTsf",
   "target": {
-    "eshop_name": "xcite",
+    "eshop_name": "noon",
     "attribute_names": {
       "id": "productUrl",
       "name": "name",

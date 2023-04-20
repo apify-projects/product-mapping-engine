@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 import json
 import os
 from math import ceil
@@ -9,10 +10,27 @@ from price_parser import Price
 
 from product_mapping_engine.scripts.dataset_handler.dataset_upload.dataset_preprocessor import download_images, upload_images_to_kvs
 
+def fix_html_attribute(value):
+    soup = BeautifulSoup(value)
+    return soup.get_text().replace("\n", " ")
+
+def extract_price_from_complex_price_format(price_object):
+    return price_object["formattedPrice"] if price_object else ""
+
 def fix_price(price_string):
     price = Price.fromstring(price_string)
     price_amount = price.amount_float
     return price_amount
+
+def fix_label_value_specification(specification):
+    fixed_specification = []
+    for attribute in specification:
+        fixed_specification.append({
+            'key': attribute["label"],
+            'value': attribute["value"]
+        })
+
+    return fixed_specification
 
 def fix_specification(specification):
     fixed_specification = []
@@ -24,6 +42,13 @@ def fix_specification(specification):
             })
 
     return fixed_specification
+
+def fix_images(images):
+    fixed_images = []
+    for image in images:
+        fixed_images.append(image["src"])
+
+    return fixed_images
 
 def squishAttributesIntoAListAttribute(row):
     result = []
@@ -124,6 +149,8 @@ if __name__ == '__main__':
                             if attribute in scraped_dataset:
                                 attributes_to_fetch.append(attribute)
 
+
+                        print(attributes_to_fetch)
                         partial_product_mapping_dataset[product_mapping_attribute] = scraped_dataset[attributes_to_fetch].apply(squishAttributesIntoAListAttribute, axis=1)
                     else:
                         if scraped_attribute in scraped_dataset:
@@ -131,11 +158,23 @@ if __name__ == '__main__':
 
                 if dataset_parameters['specification_format'] == 'parameter-value':
                     partial_product_mapping_dataset['specification'] = partial_product_mapping_dataset['specification'].apply(fix_specification)
+                elif dataset_parameters['specification_format'] == 'label-value':
+                    partial_product_mapping_dataset['specification'] = partial_product_mapping_dataset['specification'].apply(fix_label_value_specification)
+
+                if "complex_price_format" in dataset_parameters and dataset_parameters['complex_price_format']:
+                    partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].apply(extract_price_from_complex_price_format)
 
                 if dataset_parameters['fix_prices']:
                     partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].apply(fix_price)
 
                 partial_product_mapping_dataset['price'] = partial_product_mapping_dataset['price'].fillna("")
+
+                if "fix_descriptions" in dataset_parameters and dataset_parameters['fix_descriptions']:
+                    partial_product_mapping_dataset['short_description'] = partial_product_mapping_dataset['short_description'].apply(fix_html_attribute)
+                    partial_product_mapping_dataset['long_description'] = partial_product_mapping_dataset['long_description'].apply(fix_html_attribute)
+
+                if "fix_images" in dataset_parameters and dataset_parameters['fix_images']:
+                    partial_product_mapping_dataset['image'] = partial_product_mapping_dataset['image'].apply(fix_images)
 
                 # Download images
                 '''

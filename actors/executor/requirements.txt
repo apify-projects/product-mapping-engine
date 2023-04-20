@@ -10,3 +10,4 @@ pydot
 majka
 nltk
 seaborn
+requests
