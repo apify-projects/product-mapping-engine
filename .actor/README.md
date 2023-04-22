@@ -5,7 +5,7 @@ You can use it both to completely replace manual mapping of products or to make 
 
 In order to use the matcher, you will need to already have the datasets of products that you want to match.
 To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many
-available to you [on our store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)).
+available to you [on our store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)). Keep in mind that the matcher currently only works with English data.
 
 In case you want our help with building the scrapers or even want a complete data pipeline fully managed by us and tailored to your specific use-case
 you can contact our enterprise team [here](https://apify.com/enterprise) and we will be happy to help you.
