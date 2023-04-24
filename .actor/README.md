@@ -1,7 +1,7 @@
 # What is the AI Product Matcher and how does it work?
 The AI Product Matcher actor uses a custom machine learning model we developed to solve the issue of mapping products across various e-shops,
 meaning you can use it to find the same products across different e-shops for the purposes of dynamic pricing, competitor analysis and market research.
-You can use it both to completely replace manual mapping of products or to make it more efficient, using different settings explained in the [Input](#markdown-header-how-should-the-input-look) section of this readme.
+You can use it both to completely replace manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
 
 In order to use the matcher, you will need to already have the datasets of products that you want to match.
 To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many
@@ -43,7 +43,7 @@ These necessary attributes are as follows:
 6. **specification** - this should be a JSON array containing withing it the product's parameters (such as weight, dimensions, components in case of electronics, color etc.) often provided in a big table on the product's page.
 7. **code** - this attribute is special in that it allows you to specify more than one input dataset attribute, as you can see in the example above. The attributes specified should contain codes of the product if these are available, such as ASIN, SKU, EAN etc. The more of them you can get, the better.
 
-**You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#markdown-header-how-accurate-is-the-matcher).**
+**You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
 ### How to specify output dataset format?
 After specifying the format of the input dataset, you should specify which attributes should be included in the output dataset of the matcher. This can be done using the _output_mapping_ actor input, which is very similar to _input_mapping_, as you can see from this example:
 ```json
@@ -68,7 +68,7 @@ the "Precision/recall tradeoff" input in the form, or the "precision_recall" att
 1. **precision** - the model will try to make sure that if it marks two products as the same, they will be the same with the highest possible degree of accuracy. While this produces more reliable product pairs, it also means that more true product pairs will be marked as different products, since the model has to be more discerning to achieve higher precision.
 2. **recall** - the model will try to make sure that as many pairs of products where both products are the same are found as possible, even if it means that there will also be more pairs where the model made a mistake and the two products aren't actually the same.
 
-For specific numbers on the performance, check the [expected performance section](#markdown-header-how-accurate-is-the-matcher) of this readme.
+For specific numbers on the performance, check the [expected performance section](#how-accurate-is-the-matcher) of this readme.
 ### Sample input for a dataset of candidate pairs
 ```json
 {
