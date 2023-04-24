@@ -2,21 +2,21 @@
     {
         "classifier_focus": "precision_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "NNBeta"
+        "classifier_name": "precision"
     },
     {
         "classifier_focus": "recall_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "NNBeta"
+        "classifier_name": "recall"
     },
     {
         "classifier_focus": "precision_no_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "NNBeta"
+        "classifier_name": "precision"
     },
     {
         "classifier_focus": "recall_no_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "NNBeta"
+        "classifier_name": "recall"
     }
 ]

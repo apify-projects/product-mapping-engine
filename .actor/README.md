@@ -66,7 +66,7 @@ As mentioned in the previous section, you can either use the matcher to replace 
 using different settings. For this, you need to specify a setting which is generally called a **precision/recall tradeoff**, represented by
 the "Precision/recall tradeoff" input in the form, or the "precision_recall" attribute in the json form of input. Since no machine learning model is flawless (even humans aren't, after all), its results can contain mistakes. This setting allows you to specify which type of mistake is more of an issue to you and thus which of them the model should try to minimize.  You can set it to one of two settings:
 1. **precision** - the model will try to make sure that if it marks two products as the same, they will be the same with the highest possible degree of accuracy. While this produces more reliable product pairs, it also means that more true product pairs will be marked as different products, since the model has to be more discerning to achieve higher precision.
-2. **recall** - the model will try to make sure that as many true pairs of products are found, even if it means that more
+2. **recall** - the model will try to make sure that as many pairs of products where both products are the same are found as possible, even if it means that there will also be more pairs where the model made a mistake and the two products aren't actually the same.
 
 For specific numbers on the performance, check the [expected performance section](#markdown-header-how-accurate-is-the-matcher) of this readme.
 ### Sample input for a dataset of candidate pairs
@@ -169,9 +169,9 @@ For a detailed description of the format of the results, see the **Specifying ou
 ## How accurate is the matcher?
 We have striven to make the matcher as accurate as we can, gathering thousands of manually annotated pairs of products from various categories and using them to train the model.
 As is the common practice, we also prepared a separate dataset of product pairs that the model never saw during the training process and then estimated the models performance using these pairs.
-The precise results of course depend on the precision/recall tradeoff:
-1. With the model trained for **precision**, we measured
-2. With the model trained for **recall**, we measured
+The precise results of course depend on the precision/recall tradeoff model setting:
+1. With the AI model trained for **precision**, we measured precision of 95% (meaning that when the matcher said that two products from different e-shops were the same product, it was true in 95% of cases) with recall being 60% (meaning that the matcher found 60% of the pairs containing the same product that could be found).
+2. With the AI model trained for **recall**, we measured recall of 95% with precision being 55%.
 
 **Of course, since you will be providing your own data which will probably be coming from different e-shops than we tested, the performance you see might differ, even though we tried to make the matcher as general as possible.
 For that reason, we recommend you do your own investigation of the accuracy of the matcher's results before you use the results for your use-case.** Future versions of this actor will give you the option to use your data to train the matcher in order to alleviate this issue.
@@ -179,7 +179,7 @@ For that reason, we recommend you do your own investigation of the accuracy of t
 Please also note that:
 1. The matcher's performance is heavily dependent on what data you provide to it. Missing any of the expected data attributes might result in degraded performance, especially in case of the name, price and code attributes.
 2. The matcher is trained to consider different color variants of the same product to be the same product (e.g. different color variants of the same smartphone will be considered the same product).
-3. Also note that the matcher's decisions might differ with different build versions of this actor, due to changes to the underlying machine learning model we might make in the future in order to improve its general performance. If you want to make sure the matcher's decisions don't change, pick a specific build version and set the actor to it in your account instead of the "latest" version.
+3. THe matcher's decisions might differ with different build versions of this actor, due to changes to the underlying machine learning model we might make in the future in order to improve its general performance. If you want to make sure the matcher's decisions don't change, pick a specific build version and set the actor to it in your account instead of the "latest" version.
 ## How much will it cost?
 This actor is paid using the pay-per-result model, meaning you will pay a small amount for each row in the output dataset (you can find the amount per 1000 results at the top right of this actor's Apify store page). In this case, a result is the decision about whether a specific pair of products is the same or not. This means that the amount you pay also depends on the type of input you provided:
 1. **a dataset of candidate pairs** - this case is very simple - the number of results is the same as the number of rows in the input datasets.
