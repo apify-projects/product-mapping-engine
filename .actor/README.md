@@ -165,7 +165,7 @@ For specific numbers on the performance, check the [expected performance section
 ## What will the results look like and where can you find them?
 The results will be stored in the default dataset of the actor run, accessible through the run page in the Apify Console. You can download them both manually and through an API in a variety of formats including JSON, CSV and Excel.
 
-For a detailed description of the format of the results, see the **Specifying output dataset format** subsection of the previous section.
+For a detailed description of the format of the results, see the **How to specify output dataset format?** subsection of the previous section.
 ## How accurate is the matcher?
 We have striven to make the matcher as accurate as we can, gathering thousands of manually annotated pairs of products from various categories and using them to train the model.
 As is the common practice, we also prepared a separate dataset of product pairs that the model never saw during the training process and then estimated the models performance using these pairs.
