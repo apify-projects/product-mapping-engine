@@ -5,18 +5,18 @@ In order to use the matcher, you will need to already have the datasets of produ
 
 In case you want our help with building the scrapers or even want a complete data pipeline fully managed by us and tailored to your specific use case, you can [contact our enterprise team](https://apify.com/enterprise) and we will be happy to help you.
 
-## **How should the input look?**
+## How should the input look?
 
 This section describes how to prepare the input for the matcher Actor. At the end of it, you can find examples of what the filled input could look like in practice.
 
-### **How to specify input datasets?**
+### How to specify input datasets?
 
 There are two ways to use the Actor depending on the format your dataset is in:
 
 1. **a dataset containing candidate pairs** - You might already have a dataset in which each row contains information about the two products that you want the matcher to compare. In this case, you put the ids of these pair datasets in the *pair_dataset_ids* input (you can put multiple ids there in case you have multiple datasets that you want to be processed at once). The matcher will check each row and output a decision on whether the products in each row are the same.
 2. **two separate datasets of products** - In other use cases, you might have two separate datasets of products, each containing products from one e-shop. In this case, you put the ids of these datasets into the inputs *dataset1_ids* (for datasets of products from the first e-shop) and *dataset2_ids* (for datasets of products from the second e-shop). The matcher will then look at all the possible pairings of products between the dataset and output a decision about each of them.
 
-### **How to specify the input dataset format?**
+### How to specify the input dataset format?
 
 The next part of the Actor's input is telling the matcher what format the dataset you are giving to it is in, represented by the *input_mapping* Actor input. It should be a JSON object containing two attributes: *eshop1* and *eshop2*. Each one describes under what attributes can the Actor find the necessary data for the specific e-shop. Each of these two attributes should contain another object that looks like this, for example:
 
@@ -48,7 +48,7 @@ Each attribute of this object (such as *name*) specifies where each necessary a
 
 **You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
 
-### **How to specify the output dataset format?**
+### How to specify the output dataset format?
 
 After specifying the format of the input dataset, you should specify which attributes should be included in the output dataset of the matcher. This can be done using the *output_mapping* Actor input, which is very similar to *input_mapping*, as you can see from this example:
 
@@ -71,7 +71,7 @@ Same as before, you specify the attributes separately for each e-shop. Each line
 1. *predicted_match* - will be 1 in case the matcher thinks the two products in the considered pair are the same, 0 if not.
 2. *predicted_scores* - specifies how much the matcher thinks the two products are the same. Will be close to 1 for those that it considers to definitely be the same, and close to 0 for those it considers to definitely not be the same. This output attribute will be useful if you decide to apply your own threshold. For example, if you need to be as sure as possible, you could only take pairs with very high *predicted_scores*.
 
-### **Precision/recall tradeoff**
+### Precision/recall tradeoff
 
 As mentioned in the previous section, you can either use the matcher to replace the manual mapping of products, or make it more efficient by using different settings. For this, you need to specify a setting which is generally called a **precision/recall tradeoff**, represented by the "Precision/recall tradeoff" input in the form, or the "precision_recall" attribute in the JSON form of input. Since no machine learning model is flawless (even humans aren't, after all), its results can contain mistakes. This setting allows you to specify which type of mistake is more of an issue to you and thus which of them the model should try to minimize. You can set it to one of two settings:
 
@@ -80,7 +80,7 @@ As mentioned in the previous section, you can either use the matcher to replace 
 
 For specific numbers on the performance, check the [expected performance section](#how-accurate-is-the-matcher) of this readme.
 
-### **Sample input for a dataset of candidate pairs**
+### Sample input for a dataset of candidate pairs
 
 ```json
 {
@@ -128,7 +128,7 @@ For specific numbers on the performance, check the [expected performance sectio
 
 ```
 
-### **Sample input for two separate datasets of products**
+### Sample input for two separate datasets of products
 
 ```json
 {
@@ -179,13 +179,13 @@ For specific numbers on the performance, check the [expected performance sectio
 
 ```
 
-## **What will the results look like and where can you find them?**
+## What will the results look like and where can you find them?
 
 The results will be stored in the default dataset of the Actor run, accessible through the run page in Apify Console. You can download them both manually and through an API in a variety of formats including JSON, CSV, and Excel.
 
 For a detailed description of the format of the results, see the [output format subsection](#how-to-specify-the-output-dataset-format) of the previous section.
 
-## **How accurate is the matcher?**
+## How accurate is the matcher?
 
 We have striven to make the matcher as accurate as we can, gathering thousands of manually annotated pairs of products from various categories and using them to train the model. As is the common practice, we’ve also prepared a separate dataset of product pairs that the model never saw during the training process and then estimated the model's performance using these pairs. The precise results of course depend on the precision/recall tradeoff model setting:
 
@@ -200,7 +200,7 @@ Please also note that:
 2. The matcher is trained to consider different color variants of the same product to be the same product (e.g. different color variants of the same smartphone will be considered the same product).
 3. The matcher's decisions might differ with different build versions of this Actor, due to changes to the underlying machine learning model we might make in the future in order to improve its general performance. If you want to make sure the matcher's decisions don't change, pick a specific build version and set the Actor to it in your account instead of the "latest" version.
 
-## **How much will it cost?**
+## How much will it cost?
 
 This Actor is paid using the pay-per-result model, meaning you will pay a small amount for each row in the output dataset (you can find the amount per 1000 results at the top right of this Actor's detail page in Store). In this case, a result is a decision about whether a specific pair of products is the same or not. This means that the amount you pay also depends on the type of input you provided:
 
