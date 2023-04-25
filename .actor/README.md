@@ -1,5 +1,5 @@
 ## What is the AI Product Matcher and how does it work?
-The AI Product Matcher Actor uses a custom machine learning model we’ve developed to solve the issue of mapping products across various e-shops. You can use this tool to find the same products across different e-shops for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](https://console.apify.com/admin/users/NHwJHv8Pj2EueaLSR/actors/etAERt9wVaepkfa3f/information/latest/readme#how-should-the-input-look) section of this readme.
+The AI Product Matcher Actor uses a custom machine learning model we’ve developed to solve the issue of mapping products across various e-shops. You can use this tool to find the same products across different e-shops for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
 
 In order to use the matcher, you will need to already have the datasets of products that you want to match. To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many available to you [in our Store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)). Keep in mind that the matcher currently only works with English data.
 
@@ -20,7 +20,7 @@ There are two ways to use the Actor depending on the format your dataset is in:
 
 The next part of the Actor's input is telling the matcher what format the dataset you are giving to it is in, represented by the *input_mapping* Actor input. It should be a JSON object containing two attributes: *eshop1* and *eshop2*. Each one describes under what attributes can the Actor find the necessary data for the specific e-shop. Each of these two attributes should contain another object that looks like this, for example:
 
-```jsx
+```json
 {
   "id": "productUrl",
   "name": "productName",
@@ -46,13 +46,13 @@ Each attribute of this object (such as *name*) specifies where each necessary a
 6. **specification** - this should be a JSON array containing within it the product's parameters (such as weight, dimensions, components in case of electronics, color, etc.) often provided in a big table on the product's page.
 7. **code** - this attribute is special in that it allows you to specify more than one input dataset attribute, as you can see in the example above. The attributes specified should contain codes of the product if these are available, such as ASIN, SKU, EAN, etc. The more of them you can get, the better.
 
-**You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](https://console.apify.com/admin/users/NHwJHv8Pj2EueaLSR/actors/etAERt9wVaepkfa3f/information/latest/readme#how-accurate-is-the-matcher).**
+**You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
 
-### **How to specify output dataset format?**
+### **How to specify the output dataset format?**
 
 After specifying the format of the input dataset, you should specify which attributes should be included in the output dataset of the matcher. This can be done using the *output_mapping* Actor input, which is very similar to *input_mapping*, as you can see from this example:
 
-```jsx
+```json
 {
   "eshop1": {
     "id_source": "productUrl",
@@ -78,11 +78,11 @@ As mentioned in the previous section, you can either use the matcher to replace 
 1. **precision** - the model will try to make sure that if it marks two products as the same, they will be the same with the highest possible degree of accuracy. While this produces more reliable product pairs, it also means that more true product pairs will be marked as different products, since the model has to be more discerning to achieve higher precision.
 2. **recall** - the model will try to make sure that as many pairs of products where both products are the same are found as possible, even if it means that there will also be more pairs where the model made a mistake and the two products aren't actually the same.
 
-For specific numbers on the performance, check the [expected performance section](https://console.apify.com/admin/users/NHwJHv8Pj2EueaLSR/actors/etAERt9wVaepkfa3f/information/latest/readme#how-accurate-is-the-matcher) of this readme.
+For specific numbers on the performance, check the [expected performance section](#how-accurate-is-the-matcher) of this readme.
 
 ### **Sample input for a dataset of candidate pairs**
 
-```jsx
+```json
 {
     "pair_dataset_ids": [
         "Insert your dataset IDs here"
@@ -130,7 +130,7 @@ For specific numbers on the performance, check the [expected performance sectio
 
 ### **Sample input for two separate datasets of products**
 
-```jsx
+```json
 {
     "dataset1_ids": [
         "Insert your dataset IDs here"
@@ -183,7 +183,7 @@ For specific numbers on the performance, check the [expected performance sectio
 
 The results will be stored in the default dataset of the Actor run, accessible through the run page in Apify Console. You can download them both manually and through an API in a variety of formats including JSON, CSV, and Excel.
 
-For a detailed description of the format of the results, see the [output format subsection](https://console.apify.com/admin/users/NHwJHv8Pj2EueaLSR/actors/etAERt9wVaepkfa3f/information/latest/readme#how-to-specify-output-dataset-format) of the previous section.
+For a detailed description of the format of the results, see the [output format subsection](#how-to-specify-the-output-dataset-format) of the previous section.
 
 ## **How accurate is the matcher?**
 

@@ -7,7 +7,7 @@
       "sectionCaption": "Attribute mappings",
       "title": "Input attributes mapping",
       "type": "object",
-      "description": "A mapping object specifying which attributes from the data you provided correspond to attributes used by the Product Mapping model. For details see #TODO add store page link",
+      "description": "A mapping object specifying which attributes from the data you provided correspond to attributes used by the Product Mapping model. For details see https://apify.com/Equidem/ai-product-matcher#how-to-specify-the-input-datasets",
       "prefill": {
           "eshop1": {
               "id": "url",
@@ -39,7 +39,7 @@
     "output_mapping": {
       "title": "Output attributes mapping",
       "type": "object",
-      "description": "A mapping object specifying which attributes from the data you provided should be in the output dataset and under what attribute names. For details see #TODO add store page link",
+      "description": "A mapping object specifying which attributes from the data you provided should be in the output dataset and under what attribute names. For details see https://apify.com/Equidem/ai-product-matcher#how-to-specify-the-output-dataset-format",
       "editor": "json"
     },
     "pair_dataset_ids": {
@@ -66,7 +66,7 @@
       "sectionCaption": "Model configuration",
       "title": "Precision/recall tradeoff",
       "type": "string",
-      "description": "Specify whether you care more about precision or recall. For explanation, see #TODO add store page link",
+      "description": "Specify whether you care more about precision or recall. For explanation, see https://apify.com/Equidem/ai-product-matcher#precisionrecall-tradeoff",
       "editor": "select",
       "default": "precision",
       "enum": ["precision", "recall"],
