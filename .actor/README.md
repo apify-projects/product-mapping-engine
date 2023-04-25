@@ -205,6 +205,6 @@ Please also note that:
 This Actor is paid using the pay-per-result model, meaning you will pay a small amount for each row in the output dataset (you can find the amount per 1000 results at the top right of this Actor's detail page in Store). In this case, a result is a decision about whether a specific pair of products is the same or not. This means that the amount you pay also depends on the type of input you provided:
 
 1. **a dataset of candidate pairs** - this case is very simple - the number of results is the same as the number of rows in the input datasets.
-2. **two separate datasets of products** - this one is more complicated because the Actor has to try all the possible pairings of products.
+2. **two separate datasets of products** - this one is more complicated because the Actor has to try all the possible pairings of products. Meaning that if you have _x_ products from the first e-shop and _y_ products from the second, the number of results will be _x*y_ (e.g. for 50 products from the first eshop and 30 from the second, the final number of results will be 1500).
 
 In case you want to limit the number of potential results (and thus limit how much you pay at maximum), you can set the maximum number of results in the Actor's options.
