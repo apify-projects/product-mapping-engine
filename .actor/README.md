@@ -43,7 +43,23 @@ Each attribute of this object (such as *name*) specifies where each necessary a
 3. **price** - the current selling price of the product. Can be empty if not available. Can also contain the currency symbol (such as "$50" instead of just the number 50). However, the matcher currently disregards the currency so if you want to compare products in different currencies, you need to perform the currency conversion yourself.
 4. **short_description** - most e-shops provide short (several lines at most) descriptions of the product close to the product name, price, and image. It usually describes the most important features or specifies some of the product's parameters (e.g. "32GB RAM, 500GB Hard Drive, Intel Core i3" for a laptop).
 5. **long_description** - most e-shops also provide a longer description of the product, often including text provided by the manufacturer.
-6. **specification** - this should be a JSON array containing within it the product's parameters (such as weight, dimensions, components in case of electronics, color, etc.) often provided in a big table on the product's page.
+6. **specification** - this should be a JSON array containing within it the product's parameters (such as weight, dimensions, components in case of electronics, color, etc.) often provided in a big table on the product's page. Each parameter should be represented by a JSON object containing properties _key_ and _value_. The whole specification for one product could for example look like this:
+```json
+[
+    {
+      "key": "RAM memory",
+      "value": "16 GB"
+    },
+    {
+      "key": "CPU",
+      "value": "Intel Core i3"
+    },
+    {
+      "key": "Display resolution",
+      "value": "1920:1080"
+    }
+]
+```
 7. **code** - this attribute is special in that it allows you to specify more than one input dataset attribute, as you can see in the example above. The attributes specified should contain codes of the product if these are available, such as ASIN, SKU, EAN, etc. The more of them you can get, the better.
 
 **You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
