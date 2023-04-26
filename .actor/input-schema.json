@@ -43,14 +43,14 @@
       "editor": "json"
     },
     "pair_dataset_ids": {
-      "sectionCaption": "Pair datasets (fill of you have a dataset or datasets of product pairs)",
+      "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
       "title": "Ids of pair datasets (will take precedence if filled)",
       "type": "array",
       "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
       "editor": "json"
     },
     "dataset1_ids": {
-      "sectionCaption": "Separate datasets (fill of you have a separate dataset or datasets for each eshop)",
+      "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each eshop)",
       "title": "Ids of datasets from eshop 1 (if applicable)",
       "type": "array",
       "description": "Ids of datasets containing information about products from the first eshop.",
