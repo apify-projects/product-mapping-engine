@@ -3,7 +3,27 @@
   "type": "object",
   "schemaVersion": 1,
   "properties": {
-    "input_mapping": {
+        "pair_dataset_ids": {
+          "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
+          "title": "Ids of pair datasets (will take precedence if filled)",
+          "type": "array",
+          "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
+          "editor": "json"
+        },
+        "dataset1_ids": {
+          "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each eshop)",
+          "title": "Ids of datasets from eshop 1 (if applicable)",
+          "type": "array",
+          "description": "Ids of datasets containing information about products from the first eshop.",
+          "editor": "json"
+        },
+        "dataset2_ids": {
+          "title": "Ids of datasets from source 2 (if applicable)",
+          "type": "array",
+          "description": "Ids of datasets containing information about products from the second eshop.",
+          "editor": "json"
+        },
+      "input_mapping": {
       "sectionCaption": "Attribute mappings",
       "title": "Input attributes mapping",
       "type": "object",
@@ -40,26 +60,6 @@
       "title": "Output attributes mapping",
       "type": "object",
       "description": "A mapping object specifying which attributes from the data you provided should be in the output dataset and under what attribute names. For details see https://apify.com/Equidem/ai-product-matcher#how-to-specify-the-output-dataset-format",
-      "editor": "json"
-    },
-    "pair_dataset_ids": {
-      "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
-      "title": "Ids of pair datasets (will take precedence if filled)",
-      "type": "array",
-      "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
-      "editor": "json"
-    },
-    "dataset1_ids": {
-      "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each eshop)",
-      "title": "Ids of datasets from eshop 1 (if applicable)",
-      "type": "array",
-      "description": "Ids of datasets containing information about products from the first eshop.",
-      "editor": "json"
-    },
-    "dataset2_ids": {
-      "title": "Ids of datasets from source 2 (if applicable)",
-      "type": "array",
-      "description": "Ids of datasets containing information about products from the second eshop.",
       "editor": "json"
     },
     "precision_recall": {
