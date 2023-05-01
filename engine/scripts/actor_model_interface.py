@@ -20,9 +20,11 @@ from .configuration import IS_ON_PLATFORM, PERFORM_ID_DETECTION, \
     PERFORM_COLOR_DETECTION, PERFORM_BRAND_DETECTION, PERFORM_UNITS_DETECTION, \
     SAVE_PRECOMPUTED_SIMILARITIES, PERFORM_NUMBERS_DETECTION, COMPUTE_IMAGE_SIMILARITIES, \
     COMPUTE_TEXT_SIMILARITIES, TEXT_HASH_SIZE, LOAD_PRECOMPUTED_SIMILARITIES, PERFORMED_PARAMETERS_SEARCH, \
-    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE, DATA_FOLDER, EXCLUDE_CATEGORIES
+    NUMBER_OF_TRAINING_RUNS, PRINT_FEATURE_IMPORTANCE, DATA_FOLDER, EXCLUDE_CATEGORIES, TASK_ID, SAVE_PREPROCESSED_DATA, \
+    LOAD_PREPROCESSED_DATA
 from .classifier_handler.evaluate_classifier import train_classifier, evaluate_classifier, setup_classifier, \
-    parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier, train_excluding_categories
+    parameters_search_and_best_model_training, ensemble_models_training, select_best_classifier, \
+    train_excluding_categories
 
 
 def split_dataframes(dataset):
@@ -127,19 +129,6 @@ def hash_text_using_sha256(text):
     return int(hashlib.sha256(text.encode('utf-8')).hexdigest(), TEXT_HASH_SIZE)
 
 
-def create_hashes_from_all_texts(dataset):
-    """
-    Create hashes from all texts column and price to identify changes in products
-    @param dataset: dataframe with products
-    @return: array with hashes computed from all texts describing products
-    """
-    columns_to_join = ['name', 'short_description', 'long_description', 'specification_text']
-    all_texts = dataset.apply(lambda x: flatten(list(x[c] for c in columns_to_join if c in x)), axis=1)
-    all_text_column = [''.join(text) for text in all_texts.values] + dataset['price'].astype(str).values
-    hashes = [hash_text_using_sha256(text) for text in all_text_column]
-    return hashes
-
-
 def flatten(list_of_lists):
     """
     Flattens list of lists into one list
@@ -147,39 +136,6 @@ def flatten(list_of_lists):
     @return: flattened list
     """
     return [item for sublist in list_of_lists for item in sublist]
-
-
-def remove_precomputed_matches_and_extract_them(
-        dataset_precomputed_matches,
-        pairs_dataset_idx,
-        dataset_hashes1,
-        dataset_hashes2
-):
-    """
-    Remove already precomputed matches not to compute them again and return them separately
-    @param dataset_precomputed_matches: dataframe with products with precomputed matches
-    @param pairs_dataset_idx: dictionary of pairs to be compared
-    @param dataset_hashes1: array with hashes of all texts of products from first dataset
-    @param dataset_hashes2: array with hashes of all texts of products from second dataset
-    @return: filtered dictionary of pairs to be compared, dictionary of pairs already compared
-    """
-    unseen_pairs_dataset_idx = {}
-    dataset_precomputed_matches['combined_hashes'] = dataset_precomputed_matches["all_texts_hash1"].astype(str) + \
-                                                     dataset_precomputed_matches["all_texts_hash2"].astype(str)
-    dataset_precomputed_matches_filtered = pd.DataFrame(columns=dataset_precomputed_matches.columns)
-    for first_idx, second_idxs in pairs_dataset_idx.items():
-        unseen_pairs_dataset_idx[first_idx] = []
-        for second_idx in second_idxs:
-            combined_hashes = str(dataset_hashes1[first_idx]) + str(dataset_hashes2[second_idx])
-            if combined_hashes in dataset_precomputed_matches['combined_hashes'].values:
-                dataset_precomputed_matches_filtered = dataset_precomputed_matches_filtered.append(
-                    dataset_precomputed_matches.loc[dataset_precomputed_matches['combined_hashes'] == combined_hashes],
-                    ignore_index=True
-                )
-            else:
-                unseen_pairs_dataset_idx[first_idx].append(second_idx)
-    dataset_precomputed_matches_filtered.drop('combined_hashes', inplace=True, axis=1)
-    return unseen_pairs_dataset_idx, dataset_precomputed_matches_filtered
 
 
 def prepare_data_for_classifier(
@@ -205,58 +161,70 @@ def prepare_data_for_classifier(
     num_cpu = os.cpu_count() - 1
 
     # preprocess data
-    print("Text preprocessing started")
-    dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1,
-                                           PERFORM_ID_DETECTION,
-                                           PERFORM_COLOR_DETECTION,
-                                           PERFORM_BRAND_DETECTION,
-                                           PERFORM_UNITS_DETECTION,
-                                           PERFORM_NUMBERS_DETECTION)
-    dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2,
-                                           PERFORM_ID_DETECTION,
-                                           PERFORM_COLOR_DETECTION,
-                                           PERFORM_BRAND_DETECTION,
-                                           PERFORM_UNITS_DETECTION,
-                                           PERFORM_NUMBERS_DETECTION)
-    dataset1, dataset1_without_marks = split_dataframes(dataset1)
-    dataset2, dataset2_without_marks = split_dataframes(dataset2)
-    dataset2_starting_index = len(dataset1_without_marks)
-    # create tf_idfs
-    tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks, dataset2_without_marks)
-    print("Text preprocessing finished")
-
-    # create hashes from all texts
-    dataset1_all_texts_hashes = create_hashes_from_all_texts(dataset1)
-    dataset2_all_texts_hashes = create_hashes_from_all_texts(dataset2)
-    dataset1.drop(columns=['price'])
-    dataset2.drop(columns=['price'])
-
-    if filter_data:
-        # filter product pairs
-        print("Filtering started")
-        pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks,
-                                                          descriptive_words, pool, num_cpu)
-        pairs_count = 0
-        for key, target_ids in pairs_dataset_idx.items():
-            pairs_count += len(target_ids)
-
-        print(f"Filtered to {pairs_count} pairs")
-        print("Filtering ended")
+    if LOAD_PREPROCESSED_DATA:
+        dataset1 = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}_preprocessed_dataset1.csv')
+        dataset2 = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}_preprocessed_dataset2.csv')
+        dataset1['specification'] = [eval(x) for x in dataset1['specification'].values]
+        dataset2['specification'] = [eval(x) for x in dataset2['specification'].values]
+        dataset1_without_marks = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}_dataset1_without_marks.csv')
+        dataset2_without_marks = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}_dataset2_without_marks.csv')
+        pairs_dataset_idx = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}_pairs_dataset_idx.csv').values
+        pairs_dataset_idx = {x[0]: eval(x[1]) for x in pairs_dataset_idx}
+        tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks,
+                                                                          dataset2_without_marks)
+        dataset2_starting_index = len(dataset1)
     else:
-        pairs_dataset_idx = {}
-        for i in range(0, len(dataset1)):
-            pairs_dataset_idx[i] = [i]
+        print("Text preprocessing started")
+        dataset1 = parallel_text_preprocessing(pool, num_cpu, dataset1,
+                                               PERFORM_ID_DETECTION,
+                                               PERFORM_COLOR_DETECTION,
+                                               PERFORM_BRAND_DETECTION,
+                                               PERFORM_UNITS_DETECTION,
+                                               PERFORM_NUMBERS_DETECTION)
+        dataset2 = parallel_text_preprocessing(pool, num_cpu, dataset2,
+                                               PERFORM_ID_DETECTION,
+                                               PERFORM_COLOR_DETECTION,
+                                               PERFORM_BRAND_DETECTION,
+                                               PERFORM_UNITS_DETECTION,
+                                               PERFORM_NUMBERS_DETECTION)
+        dataset1, dataset1_without_marks = split_dataframes(dataset1)
+        dataset2, dataset2_without_marks = split_dataframes(dataset2)
+        dataset2_starting_index = len(dataset1_without_marks)
+        # create tf_idfs
+        tf_idfs, descriptive_words = create_tf_idfs_and_descriptive_words(dataset1_without_marks,
+                                                                          dataset2_without_marks)
+        print("Text preprocessing finished")
 
-    # remove pairs whose matches were already precomputed
-    if dataset_precomputed_matches is not None and len(dataset_precomputed_matches) != 0:
-        pairs_dataset_idx, dataset_precomputed_matches = remove_precomputed_matches_and_extract_them(
-            dataset_precomputed_matches, pairs_dataset_idx, dataset1_all_texts_hashes, dataset2_all_texts_hashes
-        )
+        # create hashes from all texts
+        dataset1.drop(columns=['price'])
+        dataset2.drop(columns=['price'])
+
+        if filter_data:
+            # filter product pairs
+            print("Filtering started")
+            pairs_dataset_idx = filter_possible_product_pairs(dataset1_without_marks, dataset2_without_marks,
+                                                              descriptive_words, pool, num_cpu)
+            pairs_count = 0
+            for key, target_ids in pairs_dataset_idx.items():
+                pairs_count += len(target_ids)
+
+            print(f"Filtered to {pairs_count} pairs")
+            print("Filtering ended")
+        else:
+            pairs_dataset_idx = {}
+            for i in range(0, len(dataset1)):
+                pairs_dataset_idx[i] = [i]
+
+    if SAVE_PREPROCESSED_DATA:
+        dataset1.to_csv(f'{DATA_FOLDER}/{TASK_ID}_preprocessed_dataset1.csv', index=False)
+        dataset2.to_csv(f'{DATA_FOLDER}/{TASK_ID}_preprocessed_dataset2.csv', index=False)
+        dataset1_without_marks.to_csv(f'{DATA_FOLDER}/{TASK_ID}_dataset1_without_marks.csv', index=False)
+        dataset2_without_marks.to_csv(f'{DATA_FOLDER}/{TASK_ID}_dataset2_without_marks.csv', index=False)
+        pairs_dataset_idx_df = pd.Series(pairs_dataset_idx, index=pairs_dataset_idx.keys())
+        pairs_dataset_idx_df.to_csv(f'{DATA_FOLDER}/{TASK_ID}_pairs_dataset_idx.csv')
 
     # create image and text similarities
     print("Similarities creation started")
-    dataset1['all_texts_hash'] = dataset1_all_texts_hashes
-    dataset2['all_texts_hash'] = dataset2_all_texts_hashes
     image_and_text_similarities = create_image_and_text_similarities(dataset1, dataset2, tf_idfs, descriptive_words,
                                                                      dataset2_starting_index, pool, num_cpu,
                                                                      pairs_dataset_idx,
@@ -380,7 +348,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
     preprocessed_pairs_to_predict = preprocessed_pairs.drop(
-        ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'birthdate'], axis=1
+        ['id1', 'id2', 'birthdate'], axis=1
     )
 
     if len(preprocessed_pairs_to_predict) != 0:
@@ -394,19 +362,19 @@ def load_model_create_dataset_and_predict_matches(
                                       precomputed_pairs_matching_scores)
 
         predicted_matching_pairs = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
-            ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
+            ['id1', 'id2', 'predicted_scores', 'predicted_match', 'birthdate']
         ]
 
         new_product_pairs_matching_scores = preprocessed_pairs[
-            ['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match', 'birthdate']
+            ['id1', 'id2', 'predicted_scores', 'predicted_match', 'birthdate']
         ]
     else:
         predicted_matching_pairs = pd.DataFrame(
-            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match',
+            columns=['id1', 'id2', 'predicted_scores', 'predicted_match',
                      'birthdate']
         )
         new_product_pairs_matching_scores = pd.DataFrame(
-            columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2', 'predicted_scores', 'predicted_match',
+            columns=['id1', 'id2', 'predicted_scores', 'predicted_match',
                      'birthdate']
         )
     # Append dataset_precomputed_matches to predicted_matching_pairs
@@ -459,12 +427,23 @@ def load_data_and_train_model(
     similarities_file_path = f'{DATA_FOLDER}/{task_id}_similarities.csv'
     similarities_file_exists = os.path.exists(similarities_file_path)
 
-    if LOAD_PRECOMPUTED_SIMILARITIES and similarities_file_exists:
-        similarities = pd.read_csv(similarities_file_path)
+    if LOAD_PRECOMPUTED_SIMILARITIES:
+        if similarities_file_exists:
+            similarities = pd.read_csv(similarities_file_path)
+        else:
+            similarities = None
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
-            f'{DATA_FOLDER}/product_pairs.csv')
-
+            f'{DATA_FOLDER}/{TASK_ID}.csv')
+        x = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}.csv')
+        if 'category' in product_pairs:
+            product_pairs = product_pairs.drop(columns={'category'})
+        if 'match_type' in product_pairs:
+            product_pairs = product_pairs.drop(columns={'match_type'})
+        if 'image_url1' in product_pairs:
+            product_pairs = product_pairs.drop(columns={'image_url1'})
+        if 'image_url2' in product_pairs:
+            product_pairs = product_pairs.drop(columns={'image_url2'})
         product_pairs1 = product_pairs.filter(regex='1')
         product_pairs1.columns = product_pairs1.columns.str.replace("1", "")
         product_pairs2 = product_pairs.filter(regex='2')
@@ -476,8 +455,6 @@ def load_data_and_train_model(
             preprocessed_pairs = preprocessed_pairs.drop(columns=['birthdate'])
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
-        if 'all_texts_hash1' in preprocessed_pairs.columns and 'all_texts_hash2' in preprocessed_pairs.columns:
-            preprocessed_pairs = preprocessed_pairs.drop(columns=['all_texts_hash1', 'all_texts_hash2'])
         similarities_to_concat = [preprocessed_pairs]
         if 'match' in product_pairs.columns:
             similarities_to_concat.append(product_pairs['match'])
@@ -508,10 +485,11 @@ def load_data_and_train_model(
                 classifier, _ = setup_classifier(classifier_type)
                 print(classifier)
                 train_stats, test_stats = train_classifier(classifier, similarities, task_id)
-        classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
+            classifiers.append({'classifier': classifier, 'train_stats': train_stats, 'test_stats': test_stats})
     best_classifier, best_train_stats, best_test_stats = select_best_classifier(classifiers)
-    feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
+
     if PRINT_FEATURE_IMPORTANCE:
+        feature_names = [col for col in similarities.columns if col not in ['id1', 'id2', 'match']]
         best_classifier.print_feature_importance(feature_names)
 
     return best_train_stats, best_test_stats

@@ -108,7 +108,7 @@ def train_excluding_categories(classifier, data, task_id):
         print(f'DATA EVALUATION EXCLUDING {category} CATEGORY')
         if JUST_EVALUATE_LOADED_TEST_DATA:
             data_part = data[data['category'] != category]
-            #data_part = data_part[data_part['match_type'] != 'close_nonmatch']
+            # data_part = data_part[data_part['match_type'] != 'close_nonmatch']
             print(f'Length of data: {len(data_part)}')
             warnings.warn('Copying test data to train data, otherwise the code will not work')
             test_data = data_part.drop(columns=['id1', 'id2', 'category', 'match_type'])
@@ -256,7 +256,11 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     classifiers, classifier_parameters = setup_classifier(classifier_type)
     best_classifier = None
     best_classifier_f1_score = -1
-    similarities_without_ids = similarities.drop(columns=['id1', 'id2'])
+    if similarities is not None:
+        similarities_without_ids = similarities.drop(columns=['id1', 'id2'])
+    else:
+        similarities_without_ids = pd.read_csv(f'{DATA_FOLDER}/{task_id}-train_data_similarities.csv').drop(
+            columns=['id1', 'id2'])
     if not isinstance(classifiers, list) or len(classifiers) == 1:
         if isinstance(classifiers, list) and len(classifiers) == 1:
             classifiers = classifiers[0]
@@ -269,7 +273,6 @@ def parameters_search_and_best_model_training(similarities, classifier_type, tas
     rows_to_dataframe = []
     if SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA:
         train_data, test_data = create_train_test_data(similarities, task_id)
-
         validation_data = train_data.sample(frac=VALIDATION_DATA_PROPORTION)
         validation_data.to_csv(f'{DATA_FOLDER}/{task_id}-validation_data_similarities_params_search.csv', index=False)
         train_data_params_search = train_data.drop(validation_data.index)
@@ -373,39 +376,38 @@ def evaluate_classifier(classifier, train_data, test_data, data_type):
 
             # prepare and test classifier
             classifier.set_threshold(thresh)
-            test_data['predicted_match'], test_data['predicted_scores'] = classifier.predict(
-                test_data)
-            test_data_results = compute_prediction_accuracies(test_data, 'test', print_classifier_results=False)
+            train_data['predicted_match'], train_data['predicted_scores'] = classifier.predict(
+                train_data)
+            train_data_results = compute_prediction_accuracies(train_data, 'train', print_classifier_results=False)
 
             # compare results and select the best thresh
             if BEST_MODEL_SELECTION_CRITERION == 'max_f1':
-                if test_data_results['f1_score'] > optimal_value:
+                if train_data_results['f1_score'] > optimal_value:
                     optimal_threshold = thresh
-                    optimal_value = test_data_results['f1_score']
+                    optimal_value = train_data_results['f1_score']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_precision':
-                if is_model_better_than_previous(test_data_results, 'precision', optimal_value, 'recall',
+                if is_model_better_than_previous(train_data_results, 'precision', optimal_value, 'recall',
                                                  MINIMAL_RECALL, optimal_minimal_value):
                     optimal_threshold = thresh
-                    optimal_value = test_data_results['precision']
-                    optimal_minimal_value = test_data_results['recall']
+                    optimal_value = train_data_results['precision']
+                    optimal_minimal_value = train_data_results['recall']
             elif BEST_MODEL_SELECTION_CRITERION == 'max_recall':
-                if is_model_better_than_previous(test_data_results, 'recall', optimal_value, 'precision',
+                if is_model_better_than_previous(train_data_results, 'recall', optimal_value, 'precision',
                                                  MINIMAL_PRECISION, optimal_minimal_value):
                     optimal_threshold = thresh
-                    optimal_value = test_data_results['recall']
-                    optimal_minimal_value = test_data_results['precision']
+                    optimal_value = train_data_results['recall']
+                    optimal_minimal_value = train_data_results['precision']
             elif BEST_MODEL_SELECTION_CRITERION == 'balanced_precision_recall':
-                if abs(test_data_results['precision'] - test_data_results['recall']) < optimal_value:
+                if abs(train_data_results['precision'] - train_data_results['recall']) < optimal_value:
                     optimal_threshold = thresh
-                    optimal_value = abs(test_data_results['precision'] - test_data_results['recall'])
+                    optimal_value = abs(train_data_results['precision'] - train_data_results['recall'])
             else:
                 raise SystemExit('Invalid value of BEST_MODEL_SELECTION_CRITERION parameter.')
 
             # clean the data
-            test_data.drop(columns=['predicted_match'], inplace=True)
-            test_data.drop(columns=['predicted_scores'], inplace=True)
+            train_data.drop(columns=['predicted_match'], inplace=True)
+            train_data.drop(columns=['predicted_scores'], inplace=True)
         classifier.set_threshold(optimal_threshold)
-
 
     # evaluate data
     if 'predicted_scores' in train_data.columns:

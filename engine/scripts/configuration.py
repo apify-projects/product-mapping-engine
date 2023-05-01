@@ -1,17 +1,19 @@
 # RUNNING CONFIGURATION
-TASK_ID = 'promapen'  # promapen promapcz
+TASK_ID = 'promapen_morphoditta'  # promapen promapcz
 CLASSIFIER_TYPE = 'NeuralNetwork'  # LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = True
-SAVE_PRECOMPUTED_SIMILARITIES = False
+LOAD_PRECOMPUTED_SIMILARITIES = False
+SAVE_PRECOMPUTED_SIMILARITIES = True
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
-DATA_FOLDER = 'data'
-MODEL_FOLDER = 'model'
+LOAD_PREPROCESSED_DATA = False
+SAVE_PREPROCESSED_DATA = True
+DATA_FOLDER = 'data/promapmorpho/en_morpho'
+MODEL_FOLDER = 'model/'
 
 # TRAINING CONFIGURATION
 PERFORM_TRAIN_TEST_SPLIT = False
-SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = False
+SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = True
 VALIDATION_DATA_PROPORTION = 0.2
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
@@ -20,9 +22,9 @@ PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 2
-LOAD_PRECOMPUTED_MODEL = True
+LOAD_PRECOMPUTED_MODEL = False
 SAVE_COMPUTED_MODEL = False
-MODEL_NAME = 'promapcz_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
+MODEL_NAME = 'promapen_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
 JUST_EVALUATE_LOADED_TEST_DATA = False
 EXCLUDE_CATEGORIES = False
 CATEGORIES_CZ = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_household', '7_laptops', '8_tvs',
@@ -32,7 +34,7 @@ CATEGORIES_EN = ['1_pets', '2_bags', '3_garden', '4_appliances', '5_phones', '6_
 EXCLUDED_SIMILARITIES = {}  # 'hash_similarity'
 
 # EVALUATION CONFIGURATION
-SET_THRESHOLD = False
+SET_THRESHOLD = True
 NUMBER_OF_THRESHES = 100
 NUMBER_OF_THRESHES_FOR_AUC = 30
 PRINT_ROC_AND_STATISTICS = False
@@ -57,9 +59,10 @@ KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESS
                   'words', 'units']}
 ALL_KEYWORDS_SIMILARITIES = ['all_units_list', 'all_brands_list', 'all_ids_list', 'all_numbers_list']
 LOWER_CASE_TEXT = True
-LANGUAGE = 'czech'  # czech, english
+LANGUAGE = 'english'  # czech, english
 TEXT_HASH_SIZE = 16
-LEMMATIZE_TEXTS = True
+LEMMATIZER = 'morphoditta'  # majka morphoditta none
+DISTANCE = 'cos'  # cos manhattan euclid
 
 # KEYWORDS DETECTION CONFIGURATION
 PERFORM_ID_DETECTION = True
@@ -92,7 +95,7 @@ NUMBER_SIMILARITY_DEVIATION = 0.1
 STRING_SIMILARITY_DEVIATION = 0.1
 UNITS_AND_VALUES_DEVIATION = 0.05
 COMPUTE_TEXT_SIMILARITIES = True
-COMPUTE_IMAGE_SIMILARITIES = True
+COMPUTE_IMAGE_SIMILARITIES = False
 # CLASSIFIER PARAMETERS CONFIGURATION
 LogisticRegression_CLASSIFIER_PARAMETERS = {'penalty': 'none',
                                             'solver': 'newton-cg',
@@ -112,14 +115,14 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 50, 50),
-                                       'activation': 'logistic',
-                                       'solver': 'lbfgs',
-                                       'batch_size': 'auto',
-                                       'learning_rate': 'constant',
-                                       'learning_rate_init': 0.0001,
-                                       'max_iter': 50
-                                       }
+NeuralNetwork_CLASSIFIER_PARAMETERS_en = {'hidden_layer_sizes': (50, 50, 50),
+                                          'activation': 'logistic',
+                                          'solver': 'lbfgs',
+                                          'batch_size': 'auto',
+                                          'learning_rate': 'constant',
+                                          'learning_rate_init': 0.0001,
+                                          'max_iter': 50
+                                          }
 NeuralNetwork_CLASSIFIER_PARAMETERScz = {'hidden_layer_sizes': (50, 10, 50),
                                          'activation': 'relu',
                                          'solver': 'adam',
@@ -128,6 +131,14 @@ NeuralNetwork_CLASSIFIER_PARAMETERScz = {'hidden_layer_sizes': (50, 10, 50),
                                          'learning_rate_init': 0.001,
                                          'max_iter': 100
                                          }
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 10, 50),
+                                       'activation': 'relu',
+                                       'solver': 'adam',
+                                       'batch_size': 'auto',
+                                       'learning_rate': 'adaptive',
+                                       'learning_rate_init': 0.001,
+                                       'max_iter': 100
+                                       }
 
 Bagging_CLASSIFIER_PARAMETERS = {  # best for en
     'NeuralNetwork': [
@@ -190,6 +201,7 @@ NeuralNetwork_CLASSIFIER_PARAMETERS_SEARCH = {'hidden_layer_sizes': [(10, 10), (
                                               'learning_rate': ['constant', 'invscaling', 'adaptive'],
                                               'learning_rate_init': [0.01, 0.001, 0.0001],
                                               'max_iter': [50, 100, 500]}
+
 AdaBoost_CLASSIFIER_PARAMETERS_SEARCH = {}
 GradientBoosting_CLASSIFIER_PARAMETERS_SEARCH = {}
 

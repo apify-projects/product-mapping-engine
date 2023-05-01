@@ -4,14 +4,14 @@ from itertools import islice
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
 
 from .compute_specifications_similarity import compute_similarity_of_specifications
 from ...preprocessing.texts.keywords_detection import ID_MARK, BRAND_MARK, UNIT_MARK, MARKS, NUMBER_MARK, is_number
 from ....configuration import NUMBER_OF_TOP_DESCRIPTIVE_WORDS, \
     MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS, UNITS_AND_VALUES_DEVIATION, SIMILARITIES_TO_BE_COMPUTED, \
     COLUMNS_TO_BE_PREPROCESSED, KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING, \
-    ALL_KEYWORDS_SIMILARITIES
+    ALL_KEYWORDS_SIMILARITIES, DISTANCE
 
 
 def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, similarities_to_compute,
@@ -59,14 +59,24 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 match_ratios['words'] = compute_match_ratio(product1_no_markers, product2_no_markers)
 
             if 'cos' in similarities_to_compute and tf_idfs is not None:
-                # cosine similarity of vectors from tf-idf
-                cos_similarity = cosine_similarity(
-                    [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
-                )[0][1]
+                # similarity of vectors from tf-idf
+                if DISTANCE == 'euclid':
+                    cos_similarity = euclidean_distances([tf_idfs.iloc[product1_idx].values,
+                                                          tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
+                                                         )[0][1]
+                elif DISTANCE == 'manhattan':
+                    cos_similarity = manhattan_distances([tf_idfs.iloc[product1_idx].values,
+                                                          tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
+                                                         )[0][1]
+                else:
+                    cos_similarity = cosine_similarity(
+                        [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
+                    )[0][1]
                 if product1 == "" or product2 == "":
                     match_ratios['cos'] = 0
                 else:
-                    match_ratios['cos'] = 2 * cos_similarity - 1
+                    if DISTANCE != 'manhattan':
+                        match_ratios['cos'] = 2 * cos_similarity - 1
 
             if 'descriptives' in similarities_to_compute and descriptive_words is not None:
                 # compute number of similar words in both texts
@@ -236,14 +246,16 @@ def create_tf_idfs_and_descriptive_words(dataset1, dataset2):
     tf_idfs = {}
     descriptive_words = {}
     for column in COLUMNS_TO_BE_PREPROCESSED:
-        print(column)
-        if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and 'cos' in
+        if not (
+                column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and 'cos' in
                 KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]):
             tf_idfs_col = create_tf_idf(dataset1[column], dataset2[column])
             tf_idfs[column] = tf_idfs_col
 
-            if not (column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and
-                    'descriptives' in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]):
+            if not (
+                    column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING.keys() and
+                    'descriptives' in
+                    KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[column]):
                 descriptive_words_col = find_descriptive_words(
                     tf_idfs_col, filter_limit=MAX_DESCRIPTIVE_WORD_OCCURRENCES_IN_TEXTS,
                     number_of_top_words=NUMBER_OF_TOP_DESCRIPTIVE_WORDS
@@ -422,13 +434,13 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     df_all_similarities['specification_key_value_matches'] = 0
 
     if 'specification' in dataset1.columns and 'specification' in dataset2.columns:
+        x = dataset1['specification']
         specification_similarity = compute_similarity_of_specifications(dataset1['specification'],
                                                                         dataset2['specification'], product_pairs_idx)
         specification_similarity = pd.DataFrame(specification_similarity)
         df_all_similarities['specification_key_matches'] = specification_similarity['matching_keys']
         df_all_similarities['specification_key_value_matches'] = specification_similarity['matching_keys_values']
 
-    # TODO this should be parallel
     if 'code' in dataset1.columns and 'code' in dataset2.columns:
         df_all_similarities['code'] = pd.Series(
             compute_similarity_of_codes(
@@ -458,18 +470,12 @@ def create_empty_dataframe_with_ids(dataset1, dataset2):
     """
     dataset1_ids = []
     dataset2_ids = []
-    dataset1_hashes = []
-    dataset2_hashes = []
-    for i, (id1, hash1) in enumerate(zip(dataset1['id'].values, dataset1['all_texts_hash'].values)):
+    for i, id1 in enumerate(dataset1['id'].values):
         dataset1_ids += [id1] * len(dataset2[i])
         dataset2_ids += list(dataset2[i]['id'].values)
-        dataset1_hashes += [hash1] * len(dataset2[i])
-        dataset2_hashes += list(dataset2[i]['all_texts_hash'].values)
-    df_all_similarities = pd.DataFrame(columns=['id1', 'id2', 'all_texts_hash1', 'all_texts_hash2'])
+    df_all_similarities = pd.DataFrame(columns=['id1', 'id2'])
     df_all_similarities['id1'] = dataset1_ids
     df_all_similarities['id2'] = dataset2_ids
-    df_all_similarities['all_texts_hash1'] = dataset1_hashes
-    df_all_similarities['all_texts_hash2'] = dataset2_hashes
     return df_all_similarities
 
 
@@ -487,8 +493,9 @@ def compute_text_similarities_parallely(dataset1, dataset2, descriptive_words, t
     similarities_to_compute = SIMILARITIES_TO_BE_COMPUTED
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset1 and column in dataset2[0]:
-            similarities_to_ignore = KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[
-                column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING else []
+            similarities_to_ignore = \
+                KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING[
+                    column] if column in KEYWORDS_NOT_TO_BE_DETECTED_OR_SIMILARITIES_NOT_TO_BE_COMPUTED_DURING_PREPROCESSING else []
             similarities_to_compute = [similarity for similarity in similarities_to_compute if
                                        similarity not in similarities_to_ignore]
             tf_idfs_column = tf_idfs[column] if column in tf_idfs else None

@@ -1,4 +1,3 @@
-import json
 import os
 import warnings
 
@@ -7,15 +6,6 @@ from apify_client import ApifyClient
 
 from product_mapping_engine.scripts.actor_model_interface import load_data_and_train_model
 from product_mapping_engine.scripts.configuration import DATA_FOLDER, TASK_ID, CLASSIFIER_TYPE
-
-
-def validateJSON(jsonData):
-    try:
-        json.loads(jsonData)
-    except ValueError as err:
-        return False
-    return True
-
 
 if __name__ == '__main__':
     # Read input
@@ -66,7 +56,6 @@ if __name__ == '__main__':
     output_key_value_store_client.set_record('parameters', parameters)
     labeled_dataset = pd.DataFrame(labeled_dataset_client.list_items().items)
 
-    # classifier_type: LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
     if load_dataset_locally:
         task_id = TASK_ID
         classifier_type = CLASSIFIER_TYPE
@@ -79,6 +68,7 @@ if __name__ == '__main__':
             labeled_dataset = pd.DataFrame()
         labeled_dataset = labeled_dataset.fillna('')
 
+    # labeled_dataset = labeled_dataset.drop(columns={'match_type','image_url1','image_url2', 'category'})
 
     stats = load_data_and_train_model(
         classifier_type,
