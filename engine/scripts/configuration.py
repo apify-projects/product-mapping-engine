@@ -1,14 +1,14 @@
 # RUNNING CONFIGURATION
-TASK_ID = 'promapen_morphoditta'  # promapen promapcz
+TASK_ID = 'promapcz'  # promapen promapcz
 CLASSIFIER_TYPE = 'NeuralNetwork'  # LogisticRegression, SupportVectorMachine, DecisionTree, RandomForests, NeuralNetwork, EnsembleModelling
 IS_ON_PLATFORM = False
-LOAD_PRECOMPUTED_SIMILARITIES = False
-SAVE_PRECOMPUTED_SIMILARITIES = True
+LOAD_PRECOMPUTED_SIMILARITIES = True
+SAVE_PRECOMPUTED_SIMILARITIES = False
 LOAD_PRECOMPUTED_MATCHES = False
 SAVE_PRECOMPUTED_MATCHES = False
 LOAD_PREPROCESSED_DATA = False
-SAVE_PREPROCESSED_DATA = True
-DATA_FOLDER = 'data/promapmorpho/en_morpho'
+SAVE_PREPROCESSED_DATA = False
+DATA_FOLDER = 'data/promapczen_original'
 MODEL_FOLDER = 'model/'
 
 # TRAINING CONFIGURATION
@@ -17,13 +17,13 @@ SAMPLE_VALIDATION_DATA_FROM_TRAIN_DATA = True
 VALIDATION_DATA_PROPORTION = 0.2
 SAVE_TRAIN_TEST_SPLIT = False
 TEST_DATA_PROPORTION = 0.2
-NUMBER_OF_TRAINING_RUNS = 1
+NUMBER_OF_TRAINING_RUNS = 10
 PRINCIPAL_COMPONENT_COUNT = 10
 PERFORM_PCA_ANALYSIS = False
 EQUALIZE_CLASS_IMPORTANCE = False
 POSITIVE_CLASS_UPSAMPLING_RATIO = 2
 LOAD_PRECOMPUTED_MODEL = False
-SAVE_COMPUTED_MODEL = False
+SAVE_COMPUTED_MODEL = True
 MODEL_NAME = 'promapen_MLPClassifier'  # none promapen_MLPClassifier  promapcz_MLPClassifier amazon_walmart_MLPClassifier amazon_google_MLPClassifier
 JUST_EVALUATE_LOADED_TEST_DATA = False
 EXCLUDE_CATEGORIES = False
@@ -115,30 +115,22 @@ RandomForests_CLASSIFIER_PARAMETERS = {'n_estimators': 100,
                                        'max_depth': 10,
                                        'min_samples_split': 15,
                                        'class_weight': 'balanced'}
-NeuralNetwork_CLASSIFIER_PARAMETERS_en = {'hidden_layer_sizes': (50, 50, 50),
-                                          'activation': 'logistic',
-                                          'solver': 'lbfgs',
-                                          'batch_size': 'auto',
-                                          'learning_rate': 'constant',
-                                          'learning_rate_init': 0.0001,
-                                          'max_iter': 50
-                                          }
+NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 50, 50),
+                                       'activation': 'logistic',
+                                       'solver': 'lbfgs',
+                                       'batch_size': 'auto',
+                                       'learning_rate': 'constant',
+                                       'learning_rate_init': 0.0001,
+                                       'max_iter': 50
+                                       }
 NeuralNetwork_CLASSIFIER_PARAMETERScz = {'hidden_layer_sizes': (50, 10, 50),
                                          'activation': 'relu',
                                          'solver': 'adam',
                                          'batch_size': 'auto',
                                          'learning_rate': 'adaptive',
-                                         'learning_rate_init': 0.001,
+                                         'learning_rate_init': 0.0001,
                                          'max_iter': 100
                                          }
-NeuralNetwork_CLASSIFIER_PARAMETERS = {'hidden_layer_sizes': (50, 10, 50),
-                                       'activation': 'relu',
-                                       'solver': 'adam',
-                                       'batch_size': 'auto',
-                                       'learning_rate': 'adaptive',
-                                       'learning_rate_init': 0.001,
-                                       'max_iter': 100
-                                       }
 
 Bagging_CLASSIFIER_PARAMETERS = {  # best for en
     'NeuralNetwork': [

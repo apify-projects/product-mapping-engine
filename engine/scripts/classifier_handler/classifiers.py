@@ -30,19 +30,22 @@ class Classifier:
         self.predict_probability = True
 
     def fit(self, data):
+        if EQUALIZE_CLASS_IMPORTANCE:
+            matching_data = data[data['match'] == 1]
+            matching_data_ratio = len(data[data['match'] == 0]) / len(matching_data)
+            print(f'Recommended upsampling of matches is {matching_data_ratio}')
+            print(f'Used upsampling of matches is {POSITIVE_CLASS_UPSAMPLING_RATIO}')
+            data = data.append([matching_data] * (POSITIVE_CLASS_UPSAMPLING_RATIO - 1),
+                                           ignore_index=True)
+            data = data.sample(frac=1)
+
         target = data['match']
         inputs = data.drop(columns=['match'])
 
         if self.use_pca:
             inputs = self.perform_pca(inputs, True)
 
-        if EQUALIZE_CLASS_IMPORTANCE:
-            value_counts = target.value_counts()
-            positive_sample_count = POSITIVE_CLASS_UPSAMPLING_RATIO * value_counts.loc[0] / value_counts.loc[1]
-            sample_weights = target.apply(lambda match: positive_sample_count if match == 1 else 1)
-            self.model.fit(inputs, target, sample_weight=sample_weights)
-        else:
-            self.model.fit(inputs, target)
+        self.model.fit(inputs, target)
 
     def predict(self, data, predict_outputs=True):
         inputs = data

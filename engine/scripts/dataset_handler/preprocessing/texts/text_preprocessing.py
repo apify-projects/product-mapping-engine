@@ -40,6 +40,9 @@ def lemmatize_english_text_morphoditta(text):
         return []
     lemmatized_word_list = lemmatized_word_list[0]
     for lemmatized_word in lemmatized_word_list:
+        if not isinstance(lemmatized_word, dict) or 'tag' not in lemmatized_word:
+            print(lemmatized_word)
+            continue
         if lemmatized_word['tag'] == 'UNK':
             word = lemmatized_word['token']
         else:

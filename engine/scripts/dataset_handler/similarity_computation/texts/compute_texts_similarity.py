@@ -72,11 +72,9 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                     cos_similarity = cosine_similarity(
                         [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
                     )[0][1]
+                    match_ratios['cos'] = 2 * cos_similarity - 1
                 if product1 == "" or product2 == "":
                     match_ratios['cos'] = 0
-                else:
-                    if DISTANCE != 'manhattan':
-                        match_ratios['cos'] = 2 * cos_similarity - 1
 
             if 'descriptives' in similarities_to_compute and descriptive_words is not None:
                 # compute number of similar words in both texts

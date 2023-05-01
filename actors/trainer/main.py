@@ -69,7 +69,6 @@ if __name__ == '__main__':
         labeled_dataset = labeled_dataset.fillna('')
 
     # labeled_dataset = labeled_dataset.drop(columns={'match_type','image_url1','image_url2', 'category'})
-
     stats = load_data_and_train_model(
         classifier_type,
         dataset_dataframe=labeled_dataset,
