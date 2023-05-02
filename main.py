@@ -11,8 +11,8 @@ async def main():
         # TODO remove this option
         different_user_token = actor_input.get('different_user_token')
 
-        if 'APIFY_ACTOR_MAX_ITEMS' in os.environ and os.environ['APIFY_ACTOR_MAX_ITEMS'] != "" and os.environ['APIFY_ACTOR_MAX_ITEMS'] != 0:
-            max_items_to_process = os.environ['APIFY_ACTOR_MAX_ITEMS']
+        if 'ACTOR_MAX_PAID_DATASET_ITEMS' in os.environ and os.environ['ACTOR_MAX_PAID_DATASET_ITEMS'] != "" and os.environ['ACTOR_MAX_PAID_DATASET_ITEMS'] != 0:
+            max_items_to_process = os.environ['ACTOR_MAX_PAID_DATASET_ITEMS']
             if max_items_to_process < 1:
                 raise Exception("When specifying the maximum number of results you want to get, it needs to be 1 or more")
         else:
