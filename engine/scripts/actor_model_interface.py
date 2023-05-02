@@ -109,11 +109,9 @@ def create_image_and_text_similarities(dataset1,
     else:
         image_similarities = pd.DataFrame()
 
-    name_similarities['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(name_similarities)
     if len(name_similarities) == 0 and len(image_similarities) == 0:
         return name_similarities
     if len(name_similarities) == 0:
-        image_similarities['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(image_similarities)
         return image_similarities
     if len(image_similarities) == 0:
         return name_similarities
@@ -258,9 +256,6 @@ def evaluate_executor_results(classifier, preprocessed_pairs, task_id, data_type
         )
         exit(e.errno)
 
-    if 'birthdate' not in labeled_dataset.columns:
-        labeled_dataset['birthdate'] = [datetime.today().strftime('%Y-%m-%d')] * len(labeled_dataset)
-
     # remove data_to_remove from labeled_dataset
     if data_to_remove is not None and len(data_to_remove) != 0:
         labeled_dataset = labeled_dataset.merge(data_to_remove[['id1', 'id2']], on=['id1', 'id2'], how='left',
@@ -348,7 +343,7 @@ def load_model_create_dataset_and_predict_matches(
         preprocessed_pairs = preprocessed_pairs.drop(['index1', 'index2'], axis=1)
 
     preprocessed_pairs_to_predict = preprocessed_pairs.drop(
-        ['id1', 'id2', 'birthdate'], axis=1
+        ['id1', 'id2'], axis=1
     )
 
     if len(preprocessed_pairs_to_predict) != 0:
@@ -362,20 +357,18 @@ def load_model_create_dataset_and_predict_matches(
                                       precomputed_pairs_matching_scores)
 
         predicted_matching_pairs = preprocessed_pairs[preprocessed_pairs['predicted_match'] == 1][
-            ['id1', 'id2', 'predicted_scores', 'predicted_match', 'birthdate']
+            ['id1', 'id2', 'predicted_scores', 'predicted_match']
         ]
 
         new_product_pairs_matching_scores = preprocessed_pairs[
-            ['id1', 'id2', 'predicted_scores', 'predicted_match', 'birthdate']
+            ['id1', 'id2', 'predicted_scores', 'predicted_match']
         ]
     else:
         predicted_matching_pairs = pd.DataFrame(
-            columns=['id1', 'id2', 'predicted_scores', 'predicted_match',
-                     'birthdate']
+            columns=['id1', 'id2', 'predicted_scores', 'predicted_match']
         )
         new_product_pairs_matching_scores = pd.DataFrame(
-            columns=['id1', 'id2', 'predicted_scores', 'predicted_match',
-                     'birthdate']
+            columns=['id1', 'id2', 'predicted_scores', 'predicted_match']
         )
     # Append dataset_precomputed_matches to predicted_matching_pairs
     if precomputed_pairs_matching_scores is not None and len(precomputed_pairs_matching_scores) != 0:
@@ -435,7 +428,6 @@ def load_data_and_train_model(
     else:
         product_pairs = dataset_dataframe if dataset_dataframe is not None else pd.read_csv(
             f'{DATA_FOLDER}/{TASK_ID}.csv')
-        x = pd.read_csv(f'{DATA_FOLDER}/{TASK_ID}.csv')
         if 'category' in product_pairs:
             product_pairs = product_pairs.drop(columns={'category'})
         if 'match_type' in product_pairs:
@@ -451,8 +443,6 @@ def load_data_and_train_model(
         preprocessed_pairs, _ = prepare_data_for_classifier(product_pairs1, product_pairs2, None,
                                                             images_kvs1_client,
                                                             images_kvs2_client, filter_data=False)
-        if 'birthdate' in preprocessed_pairs.columns:
-            preprocessed_pairs = preprocessed_pairs.drop(columns=['birthdate'])
         if 'index1' in preprocessed_pairs.columns and 'index2' in preprocessed_pairs.columns:
             preprocessed_pairs = preprocessed_pairs.drop(columns=['index1', 'index2'])
         similarities_to_concat = [preprocessed_pairs]
