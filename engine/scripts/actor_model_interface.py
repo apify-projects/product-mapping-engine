@@ -1,7 +1,6 @@
 import hashlib
 import os
 import sys
-from datetime import datetime
 from multiprocessing import Pool
 
 import pandas as pd
