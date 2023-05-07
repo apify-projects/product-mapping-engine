@@ -3,24 +3,26 @@
   "type": "object",
   "schemaVersion": 1,
   "properties": {
-        "pair_dataset_ids": {
-          "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
-          "title": "Ids of pair datasets (will take precedence if filled)",
-          "type": "array",
-          "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
-          "editor": "json"
-        },
         "dataset1_ids": {
           "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each eshop)",
           "title": "Ids of datasets from eshop 1 (if applicable)",
           "type": "array",
           "description": "Ids of datasets containing information about products from the first eshop.",
-          "editor": "json"
+          "editor": "json",
+          "prefill": ["GYVCj4hEeqnX3dJyu"]
         },
         "dataset2_ids": {
           "title": "Ids of datasets from source 2 (if applicable)",
           "type": "array",
           "description": "Ids of datasets containing information about products from the second eshop.",
+          "editor": "json",
+          "prefill": ["OmzHV4VEByO4KohMF"]
+        },
+        "pair_dataset_ids": {
+          "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
+          "title": "Ids of pair datasets (will take precedence if filled)",
+          "type": "array",
+          "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
           "editor": "json"
         },
       "input_mapping": {
@@ -37,8 +39,8 @@
               "long_description": "longDescription",
               "specification": "specification",
               "code": [
-                  "shopSpecificId",
-                  "productSpecificId"
+                  "sku",
+                  "productModel"
               ]
           },
           "eshop2": {
@@ -49,8 +51,8 @@
               "long_description": "longDescription",
               "specification": "specification",
               "code": [
-                  "shopSpecificId",
-                  "productSpecificId"
+                  "sku",
+                  "productModel"
               ]
           }
       },
