@@ -251,6 +251,8 @@ def prepare_data_for_classifier(
 
         print(f"Filtered to {pairs_count} pairs")
         print("Filtering ended")
+
+        num_cpu = min(num_cpu, pairs_count)
     else:
         pairs_dataset_idx = {}
         for i in range(0, len(dataset1)):
