@@ -1,3 +1,4 @@
+import re
 import json
 import math
 import os
@@ -8,9 +9,38 @@ import pysftp
 from datetime import datetime, timezone
 from price_parser import Price
 
+def hamming_distance(str1, str2):
+    return sum(c1 != c2 for c1, c2 in zip(str1, str2))
+
 def calculate_additional_filters(product):
+    # Apple products are exceptionally hard to properly match because there are many very similar but different variants of the same product available
     if product["brand"].lower() == "apple":
+        # This filter should help with that by making sure that if both apple products have a product specific id (i.e. model number)
         if product["productSpecificId_source"] and product["productSpecificId_competitor"] and product["productSpecificId_source"] != product["productSpecificId_competitor"]:
+            return False
+
+        # Some competitors (e.g. Amazon) don't contain ids. For these, some more filters are required.
+        name1 = product["name_source"].lower()
+        name2 = product["name_competitor"].lower()
+
+        # The first filter deals with the Max variant - if one product is Max and the other isn't
+        first_is_max = re.search("\Wmax\W", name1)
+        second_is_max = re.search("\Wmax\W", name2)
+        if (first_is_max and not second_is_max) or (not first_is_max and second_is_max):
+            return False
+
+        first_memory = re.findall("(\d+)\s?gb", name1)
+        second_memory = re.findall("(\d+)\s?gb", name2)
+        if first_memory and second_memory and first_memory[0] != second_memory[0]:
+            return False
+
+    # Sometimes there are very similar products that are slightly different. This often manifests by slight changes
+    # in their product specific id, which is the case this filter is trying to catch. It can't go after complete product equality,
+    # because different colors sometimes produce ids differing by one character
+    id1 = product["productSpecificId_source"]
+    id2 = product["productSpecificId_competitor"]
+    if id1 and id2 and id1[0] == id2[0] and id1[1] == id2[1]:
+        if hamming_distance(id1, id2) > 2:
             return False
 
     return True
@@ -107,6 +137,7 @@ if __name__ == '__main__':
         source_dataset_id = scrape_info_kvs_client.get_record("source_dataset_id")["value"]
 
         source_dataset_attributes = [
+            "name",
             "shopSpecificId",
             "productSpecificId",
             "url"
@@ -179,7 +210,8 @@ if __name__ == '__main__':
             print(final_dataset.info())
             final_dataset['keep'] = final_dataset.apply(calculate_additional_filters, axis=1)
             final_dataset = final_dataset[final_dataset['keep'] == True]
-            final_dataset = final_dataset.drop(columns=["keep", "productSpecificId_source", "productSpecificId_competitor"])
+            final_dataset = final_dataset.drop(columns=["keep", "productSpecificId_source", "productSpecificId_competitor", "name_source"])
+            final_dataset = final_dataset.rename(columns={"name_competitor": "name"})
 
             now = datetime.now(timezone.utc)
             date = now.strftime("%Y_%m_%d")
