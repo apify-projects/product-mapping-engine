@@ -50,6 +50,17 @@ def fix_images(images):
 
     return fixed_images
 
+def fix_codes(codes):
+    fixed_codes = []
+    for code in codes:
+        if type(code) is list:
+            for partial_code in code:
+                fixed_codes.append(partial_code)
+        else:
+            fixed_codes.append(code)
+
+    return fixed_codes
+
 def squishAttributesIntoAListAttribute(row):
     result = []
     for value in row:
@@ -175,6 +186,9 @@ if __name__ == '__main__':
 
                 if "fix_images" in dataset_parameters and dataset_parameters['fix_images']:
                     partial_product_mapping_dataset['image'] = partial_product_mapping_dataset['image'].apply(fix_images)
+
+                if "fix_codes" in dataset_parameters and dataset_parameters['fix_codes']:
+                    partial_product_mapping_dataset['code'] = partial_product_mapping_dataset['code'].apply(fix_codes)
 
                 # Download images
                 '''
