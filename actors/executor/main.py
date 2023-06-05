@@ -111,7 +111,7 @@ def assemble_dataset_from_partial_dataset_ids(data_client, partial_dataset_ids):
     partial_datasets = []
     for partial_dataset_id in partial_dataset_ids:
         partial_dataset_client = data_client.dataset(partial_dataset_id)
-        dataset_items = partial_dataset_client.list_items().items
+        dataset_items = partial_dataset_client.list_items(clean=True).items
         if dataset_items[0] == {}:
             dataset_items = dataset_items[1:]
 
