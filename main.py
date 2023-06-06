@@ -54,6 +54,8 @@ async def main():
         if actor_input.get("output_mapping"):
             parameters["output_mapping"] = actor_input["output_mapping"]
 
+        print("Max items to process: {}".format(max_items_to_process))
+
         perform_mapping(
             parameters,
             output_dataset_client,
