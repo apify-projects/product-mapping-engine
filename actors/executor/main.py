@@ -94,6 +94,8 @@ def output_results (
             for output_attribute, original_attribute in eshop_mapping.items():
                 output_data[output_attribute] = raw_output_data[original_attribute]
 
+    print(output_data)
+    print(output_data.to_dict(orient='records'))
     output_dataset_client.push_items(
         output_data.to_dict(orient='records')
     )
