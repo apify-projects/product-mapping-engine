@@ -2,9 +2,29 @@ from apify import Actor
 from actors.executor.main import perform_mapping
 from apify_client import ApifyClient
 import os
+import json
 
 async def main():
     async with Actor() as actor:
+        is_on_platform = "APIFY_IS_AT_HOME" in os.environ and os.environ["APIFY_IS_AT_HOME"] == "1"
+
+        client = ApifyClient(
+            os.environ['APIFY_TOKEN'],
+            api_url=os.environ['APIFY_API_BASE_URL']
+        )
+
+        # prepare the input
+        default_kvs_client = client.key_value_store(os.environ['APIFY_DEFAULT_KEY_VALUE_STORE_ID'])
+        if not is_on_platform:
+            print("adjusting input")
+            with open("input.json", "r") as input_file:
+                actor_input = json.load(input_file)
+                # Set default input if not on platform
+                default_kvs_client.set_record(
+                    'INPUT',
+                    actor_input
+                )
+
         # Get the value of the actor input
         actor_input = await actor.get_input() or {}
 
@@ -23,10 +43,6 @@ async def main():
             api_url=os.environ['APIFY_API_BASE_URL']
         )
 
-        client = ApifyClient(
-            os.environ['APIFY_TOKEN'],
-            api_url=os.environ['APIFY_API_BASE_URL']
-        )
         output_dataset_id = os.environ['APIFY_DEFAULT_DATASET_ID']
         output_dataset_client = client.dataset(output_dataset_id)
 
@@ -53,8 +69,6 @@ async def main():
         parameters["input_mapping"] = actor_input["input_mapping"]
         if actor_input.get("output_mapping"):
             parameters["output_mapping"] = actor_input["output_mapping"]
-
-        print("Max items to process: {}".format(max_items_to_process))
 
         perform_mapping(
             parameters,

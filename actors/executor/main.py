@@ -94,8 +94,6 @@ def output_results (
             for output_attribute, original_attribute in eshop_mapping.items():
                 output_data[output_attribute] = raw_output_data[original_attribute]
 
-    print(output_data)
-    print(output_data.to_dict(orient='records'))
     output_dataset_client.push_items(
         output_data.to_dict(orient='records')
     )
@@ -211,7 +209,7 @@ def perform_mapping (
                 dataset1_rows_needed = ceil(max_items_to_process / dataset2_rows)
 
             dataset1 = dataset1.head(dataset1_rows_needed)
-            dataset2 = dataset1.head(dataset2_rows_needed)
+            dataset2 = dataset2.head(dataset2_rows_needed)
 
             print()
             print(f"Restricted the datasets to shape (due to the maximum amount of items to process):")
