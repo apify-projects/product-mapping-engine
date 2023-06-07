@@ -1,28 +1,29 @@
 {
-  "title": "Match same products from two different eshops",
+  "title": "Match same products from two different online shops",
+  "description": "Provide two datasets with products from each online store or a single dataset containing products from both stores. <br>To try out the matcher, just click &#9655;<b> Start </b>. If you need any guidance, just <a href='https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/' target='_blank' rel='noopener'>follow this tutorial</a>.",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
         "dataset1_ids": {
-          "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each eshop)",
-          "title": "Ids of datasets from eshop 1 (if applicable)",
+          "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each online shop)",
+          "title": "Dataset IDs from shop 1 (if applicable)",
           "type": "array",
-          "description": "Ids of datasets containing information about products from the first eshop.",
+          "description": "IDs of datasets containing information about products from the first shop.",
           "editor": "json",
           "prefill": ["GYVCj4hEeqnX3dJyu"]
         },
         "dataset2_ids": {
-          "title": "Ids of datasets from source 2 (if applicable)",
+          "title": "Dataset IDs from shop 2 (if applicable)",
           "type": "array",
-          "description": "Ids of datasets containing information about products from the second eshop.",
+          "description": "IDs of datasets containing information about products from the second shop.",
           "editor": "json",
           "prefill": ["OmzHV4VEByO4KohMF"]
         },
         "pair_dataset_ids": {
           "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
-          "title": "Ids of pair datasets (will take precedence if filled)",
+          "title": "Pair dataset IDs (will take precedence if filled)",
           "type": "array",
-          "description": "Ids of datasets where each row contains information about a pair of products you want to match.",
+          "description": "IDs of datasets where each row contains information about a pair of products you want to match.",
           "editor": "json"
         },
       "input_mapping": {
