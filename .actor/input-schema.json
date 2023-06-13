@@ -1,0 +1,80 @@
+{
+  "title": "Match same products from two different online shops",
+  "description": "Provide two datasets with products from each online store or a single dataset containing products from both stores. <br>To try out the matcher, just click &#9655;<b> Start </b>. If you need any guidance, just <a href='https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/' target='_blank' rel='noopener'>follow this tutorial</a>.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+        "dataset1_ids": {
+          "sectionCaption": "Separate datasets (fill if you have a separate dataset or datasets for each online shop)",
+          "title": "Dataset IDs from shop 1 (if applicable)",
+          "type": "array",
+          "description": "IDs of datasets containing information about products from the first shop.",
+          "editor": "json",
+          "prefill": ["GYVCj4hEeqnX3dJyu"]
+        },
+        "dataset2_ids": {
+          "title": "Dataset IDs from shop 2 (if applicable)",
+          "type": "array",
+          "description": "IDs of datasets containing information about products from the second shop.",
+          "editor": "json",
+          "prefill": ["OmzHV4VEByO4KohMF"]
+        },
+        "pair_dataset_ids": {
+          "sectionCaption": "Pair datasets (fill if you have a dataset or datasets of product pairs)",
+          "title": "Pair dataset IDs (will take precedence if filled)",
+          "type": "array",
+          "description": "IDs of datasets where each row contains information about a pair of products you want to match.",
+          "editor": "json"
+        },
+      "input_mapping": {
+      "sectionCaption": "Attribute mappings",
+      "title": "Input attributes mapping",
+      "type": "object",
+      "description": "A mapping object specifying which attributes from the data you provided correspond to attributes used by the Product Mapping model. For details see https://apify.com/Equidem/ai-product-matcher#how-to-specify-the-input-datasets",
+      "prefill": {
+          "eshop1": {
+              "id": "url",
+              "name": "name",
+              "price": "price",
+              "short_description": "shortDescription",
+              "long_description": "longDescription",
+              "specification": "specification",
+              "code": [
+                  "sku",
+                  "productModel"
+              ]
+          },
+          "eshop2": {
+              "id": "url",
+              "name": "name",
+              "price": "price",
+              "short_description": "shortDescription",
+              "long_description": "longDescription",
+              "specification": "specification",
+              "code": [
+                  "sku",
+                  "productModel"
+              ]
+          }
+      },
+      "editor": "json"
+    },
+    "output_mapping": {
+      "title": "Output attributes mapping",
+      "type": "object",
+      "description": "A mapping object specifying which attributes from the data you provided should be in the output dataset and under what attribute names. For details see https://apify.com/Equidem/ai-product-matcher#how-to-specify-the-output-dataset-format",
+      "editor": "json"
+    },
+    "precision_recall": {
+      "sectionCaption": "Model configuration",
+      "title": "Precision/recall tradeoff",
+      "type": "string",
+      "description": "Specify whether you care more about precision or recall. For explanation, see https://apify.com/Equidem/ai-product-matcher#precisionrecall-tradeoff",
+      "editor": "select",
+      "default": "precision",
+      "enum": ["precision", "recall"],
+      "enumTitles": ["Precision", "Recall"]
+    }
+  },
+  "required": ["input_mapping"]
+}

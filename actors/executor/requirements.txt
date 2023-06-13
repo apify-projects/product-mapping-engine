@@ -10,4 +10,5 @@ pydot
 majka
 nltk
 seaborn
+price_parser
 requests

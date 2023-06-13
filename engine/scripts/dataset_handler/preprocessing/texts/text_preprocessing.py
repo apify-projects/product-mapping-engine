@@ -199,6 +199,7 @@ def preprocess_textual_data(dataset,
     dataset = parse_specifications_and_create_copies(dataset, 'specification')
     for column in COLUMNS_TO_BE_PREPROCESSED:
         if column in dataset:
+            dataset[column] = dataset[column].fillna("")
             dataset[column] = preprocess_text(dataset[column].values)
             dataset[column + '_no_detection'] = copy.deepcopy(dataset[column])
             column_brand_detection, column_color_detection, column_id_detection, column_numbers_detection, column_units_detection = \
@@ -310,14 +311,26 @@ def preprocess_specifications(dataset):
 def parse_specifications(dataset):
     """
     Parse specifications from input json to list of dictionaries of separated parameter name and value
-    @param dataset: json of key-value pairs of products specifications
+    @param dataset: json of key-value pairs of products specifications or dictionary
     @return: list of dicts containing parsed products specifications
     """
     parsed_dataset = []
 
     for product_specification in dataset:
         if not isinstance(product_specification, list):
-            product_specification = json.loads(product_specification)
+            if not product_specification:
+                product_specification = []
+            else:
+                if type(product_specification) == dict:
+                    product_specification_dict_format = product_specification
+                    product_specification = []
+                    for key, value in product_specification_dict_format.items():
+                        product_specification.append({
+                            "key": key,
+                            "value": value
+                        })
+                else:
+                    product_specification = json.loads(product_specification)
 
         specification_dict = {}
         for item in product_specification:

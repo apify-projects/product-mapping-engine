@@ -19,6 +19,7 @@ def multi_run_filter_wrapper(args):
 
 def filter_preprepared_product_pairs(dataset1, dataset2, descriptive_words):
     pairs_dataset_idx = {}
+    filtered_out_idx = {}
     for idx, product in dataset1.iterrows():
         data_subset_idx, idx_start, idx_to = filter_products(
             product,
@@ -34,16 +35,19 @@ def filter_preprepared_product_pairs(dataset1, dataset2, descriptive_words):
 
         # TODO this is duplicate code, deal with it
         if len(data_subset_idx) == 0:
-            print(f'No corresponding product for product "{product["name"]}" at index {idx}')
+            #print(f'No corresponding product for product "{product["name"]}" at index {idx}')
             data_subset_idx = []
+            data_subset_filtered_out_idx = [idx]
         else:
             data_subset_idx = data_subset_idx.tolist()
+            data_subset_filtered_out_idx = []
 
         pairs_dataset_idx[idx] = data_subset_idx
+        filtered_out_idx[idx] = data_subset_filtered_out_idx
 
-    return pairs_dataset_idx
+    return pairs_dataset_idx, filtered_out_idx
 
-def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu):
+def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, num_cpu, return_rejected_pairs=False):
     """
     Filter possible pairs of two datasets using price similar words and descriptive words filter
     @param pool: parallelling object
@@ -51,11 +55,17 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     @param dataset1: Source dataset of products
     @param dataset2: Target dataset with products to be searched in for the same products
     @param descriptive_words: dictionary of descriptive words for each text column in products
+    @param return_rejected_pairs: True if filtered-out pairs should be returned too
     @return dict with key as indices of products from the first dataset and
             values as indices of filtered possible matching products from second dataset
     """
+    if return_rejected_pairs:
+        all_possible_idx = dataset2.index.tolist()
+
+    filtered_out_idx = {}
     dataset2_no_price_idx = dataset2.index[(dataset2['price'] == 0) | (dataset2['price'] == '') | (dataset2['price'].isnull())].tolist()
     dataset2_no_price_products = dataset2.iloc[dataset2_no_price_idx]
+    dataset2 = dataset2[~dataset2.index.isin(dataset2_no_price_idx)]
 
     dataset1 = dataset1.sort_values(by=['price'])
     dataset2 = dataset2.sort_values(by=['price'])
@@ -65,10 +75,21 @@ def filter_possible_product_pairs(dataset1, dataset2, descriptive_words, pool, n
     filtered_indices_dicts = pool.map(multi_run_filter_wrapper,
                                       [(dataset_subset, dataset2, dataset2_no_price_products, dataset_start_index,
                                         descriptive_words) for dataset_subset in dataset_list])
+
     pairs_dataset_idx = {}
     for filtered_dict in filtered_indices_dicts:
         pairs_dataset_idx.update(filtered_dict)
-    return pairs_dataset_idx
+
+    if return_rejected_pairs:
+        for key, target_íds in pairs_dataset_idx.items():
+            rejected_idx_set = set(all_possible_idx)
+
+            for target_id in target_íds:
+                rejected_idx_set.discard(target_id)
+
+            filtered_out_idx[key] = list(rejected_idx_set)
+
+    return pairs_dataset_idx, filtered_out_idx
 
 
 def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_price_products, dataset_start_index,
@@ -78,16 +99,15 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
     @param dataset_start_index: starting index to index the products from second dataset in descriptive words
     @param dataset2_no_price_products: products from second dataset without specified prices
     @param dataset1: Source dataset of products
-    @param dataset2: Target dataset with products to be searched in for the same products
+    @param dataset2: Target dataset with products to be searched in for the same products, only containing products with price
     @param descriptive_words: dictionary of descriptive words for each text column in products
     @return dict with key as indices of products from the first dataset and
             values as indices of filtered possible matching products from second dataset
     """
-    dataset1.info()
     product = dataset1.iloc[0, :]
     idx_start, idx_to = 0, 0
 
-    if 'price' in product.index.values and 'price' in dataset2:
+    if not dataset2.empty and 'price' in product.index.values and 'price' in dataset2:
         idx_start = bisect.bisect_left(dataset2['price'].values, MIN_MATCH_PRICE_RATIO * product['price'])
         idx_to = bisect.bisect(dataset2['price'].values, product['price'] * MAX_MATCH_PRICE_RATIO)
         if idx_to == len(dataset2):
@@ -99,7 +119,7 @@ def filter_possible_product_pairs_parallelly(dataset1, dataset2, dataset2_no_pri
                                                              dataset2, idx_start, idx_to, dataset_start_index,
                                                              dataset2_no_price_products, descriptive_words)
         if len(data_subset_idx) == 0:
-            print(f'No corresponding product for product "{product["name"]}" at index {idx}')
+            #print(f'No corresponding product for product "{product["name"]}" at index {idx}')
             data_subset_idx = []
         else:
             data_subset_idx = data_subset_idx.tolist()
@@ -139,23 +159,26 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         if 'price' not in product.index.values or 'price' not in dataset:
             data_filtered = dataset
         else:
-            last_price = dataset.iloc[idx_from]['price']
-
-            min_price = product['price'] * MIN_MATCH_PRICE_RATIO
-            while last_price < min_price and idx_from < len(dataset) - 1:
-                idx_from += 1
+            if not dataset.empty:
                 last_price = dataset.iloc[idx_from]['price']
 
-            last_price = dataset.iloc[idx_to]['price']
-            max_price = product['price'] * MAX_MATCH_PRICE_RATIO
-            while last_price <= max_price and idx_to < len(dataset) - 1:
-                idx_to += 1
-                last_price = dataset.iloc[idx_to]['price']
+                min_price = product['price'] * MIN_MATCH_PRICE_RATIO
+                while last_price < min_price and idx_from < len(dataset) - 1:
+                    idx_from += 1
+                    last_price = dataset.iloc[idx_from]['price']
 
-            if idx_to == len(dataset) - 1:
-                data_filtered = dataset.iloc[idx_from:]
+                last_price = dataset.iloc[idx_to]['price']
+                max_price = product['price'] * MAX_MATCH_PRICE_RATIO
+                while last_price <= max_price and idx_to < len(dataset) - 1:
+                    idx_to += 1
+                    last_price = dataset.iloc[idx_to]['price']
+
+                if idx_to == len(dataset) - 1:
+                    data_filtered = dataset.iloc[idx_from:]
+                else:
+                    data_filtered = dataset.iloc[idx_from:idx_to]
             else:
-                data_filtered = dataset.iloc[idx_from:idx_to]
+                data_filtered = pd.DataFrame()
 
             if not no_price_products.empty:
                 data_filtered = pd.concat([data_filtered, no_price_products])
@@ -165,9 +188,9 @@ def filter_products(product, product_descriptive_words, dataset, idx_from, idx_t
         data_filtered = data_filtered[
             data_filtered['category'] == product['category'] or data_filtered['category'] is None]
     '''
-
     data_filtered = filter_products_with_no_similar_words(product, product_descriptive_words, data_filtered,
                                                           dataset_start_index, descriptive_words['all_texts'])
+
     return data_filtered.index.values, idx_from, idx_to
 
 

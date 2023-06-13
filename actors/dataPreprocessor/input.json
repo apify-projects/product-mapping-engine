@@ -43,6 +43,7 @@
     },
     "specification_format": "parameter-value",
     "fix_prices": true,
+    "fix_codes": true,
     "source_connecting_attribute": "extraUrl"
   }
 }
