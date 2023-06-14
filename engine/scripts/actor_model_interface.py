@@ -254,6 +254,7 @@ def prepare_data_for_classifier(
     dataset2.drop(columns=['price'])
 
     filtered_out_pairs = []
+    pairs_count = 0
     if filter_data:
         # filter product pairs
         print("Filtering started")
@@ -268,7 +269,7 @@ def prepare_data_for_classifier(
                 num_cpu,
                 return_rejected_pairs
             )
-        pairs_count = 0
+
         for key, target_ids in pairs_dataset_idx.items():
             pairs_count += len(target_ids)
 
@@ -284,6 +285,10 @@ def prepare_data_for_classifier(
         pairs_dataset_idx = {}
         for i in range(0, len(dataset1)):
             pairs_dataset_idx[i] = [i]
+            pairs_count += 1
+
+    if pairs_count == 0:
+        return None, None, None
 
     # remove pairs whose matches were already precomputed
     if dataset_precomputed_matches is not None and len(dataset_precomputed_matches) != 0:
@@ -440,6 +445,9 @@ def load_model_create_dataset_and_predict_matches(
             filter_data=True,
             return_rejected_pairs=return_all_considered_pairs
         )
+
+        if preprocessed_pairs is None:
+            return None, None, None, None
 
     if not is_on_platform and SAVE_PRECOMPUTED_SIMILARITIES and len(preprocessed_pairs) != 0:
         preprocessed_pairs.to_csv(preprocessed_pairs_file_path, index=False)
