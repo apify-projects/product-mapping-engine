@@ -334,6 +334,9 @@ def parse_specifications(dataset):
 
         specification_dict = {}
         for item in product_specification:
+            if not 'value' in item:
+                item['value'] = ""
+
             item['value'] = str(item['value'])
             item['key'] = re.sub('\n', '', item['key'])
             item['value'] = re.sub('\n', '', item['value'])
