@@ -1,5 +1,5 @@
 ## What is the AI Product Matcher and how does it work?
-The AI Product Matcher Actor uses a custom machine learning model we’ve developed to solve the issue of mapping products across various e-shops. You can use this tool to find the same products across different e-shops for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
+The AI Product Matcher Actor uses a custom machine learning model we’ve developed to solve the issue of mapping products across various online stores. You can use this tool to find the same products across different online stores for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
 
 In order to use the matcher, you will need to already have the datasets of products that you want to match. To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many available to you [in our Store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)). Keep in mind that the matcher currently only works with English data.
 
@@ -8,17 +8,18 @@ In case you want our help with building the scrapers or even want a complete dat
 ## How should the input look?
 
 This section describes how to prepare the input for the matcher Actor. At the end of it, you can find examples of what the filled input could look like in practice.
+For guidance, follow our [step-by-step Product Matcher tutorial](https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/) 🔗. 
 
 ### How to specify input datasets?
 
 There are two ways to use the Actor depending on the format your dataset is in:
 
 1. **a dataset containing candidate pairs** - You might already have a dataset in which each row contains information about the two products that you want the matcher to compare. In this case, you put the ids of these pair datasets in the *pair_dataset_ids* input (you can put multiple ids there in case you have multiple datasets that you want to be processed at once). The matcher will check each row and output a decision on whether the products in each row are the same.
-2. **two separate datasets of products** - In other use cases, you might have two separate datasets of products, each containing products from one e-shop. In this case, you put the ids of these datasets into the inputs *dataset1_ids* (for datasets of products from the first e-shop) and *dataset2_ids* (for datasets of products from the second e-shop). The matcher will then look at all the possible pairings of products between the dataset and output a decision about each of them.
+2. **two separate datasets of products** - In other use cases, you might have two separate datasets of products, each containing products from one online store. In this case, you put the ids of these datasets into the inputs *dataset1_ids* (for datasets of products from the online shop) and *dataset2_ids* (for datasets of products from the second online shop). The matcher will then look at all the possible pairings of products between the dataset and output a decision about each of them.
 
 ### How to specify the input dataset format?
 
-The next part of the Actor's input is telling the matcher what format the dataset you are giving to it is in, represented by the *input_mapping* Actor input. It should be a JSON object containing two attributes: *eshop1* and *eshop2*. Each one describes under what attributes can the Actor find the necessary data for the specific e-shop. Each of these two attributes should contain another object that looks like this, for example:
+The next part of the Actor's input is telling the matcher what format the dataset you are giving to it is in, represented by the *input_mapping* Actor input. It should be a JSON object containing two attributes: *eshop1* and *eshop2*. Each one describes under what attributes can the Actor find the necessary data for the specific online store. Each of these two attributes should contain another object that looks like this, for example:
 
 ```json
 {
@@ -41,8 +42,8 @@ Each attribute of this object (such as *name*) specifies where each necessary a
 1. **id** - unique identifier of the product. Has to be provided for the matcher to function, but isn't used as input of the machine learning model, so it can be anything convenient, such as the URL.
 2. **name** - the product's name.
 3. **price** - the current selling price of the product. Can be empty if not available. Can also contain the currency symbol (such as "$50" instead of just the number 50). However, the matcher currently disregards the currency so if you want to compare products in different currencies, you need to perform the currency conversion yourself.
-4. **short_description** - most e-shops provide short (several lines at most) descriptions of the product close to the product name, price, and image. It usually describes the most important features or specifies some of the product's parameters (e.g. "32GB RAM, 500GB Hard Drive, Intel Core i3" for a laptop).
-5. **long_description** - most e-shops also provide a longer description of the product, often including text provided by the manufacturer.
+4. **short_description** - most online stores provide short (several lines at most) descriptions of the product close to the product name, price, and image. It usually describes the most important features or specifies some of the product's parameters (e.g. "32GB RAM, 500GB Hard Drive, Intel Core i3" for a laptop).
+5. **long_description** - most online stores also provide a longer description of the product, often including text provided by the manufacturer.
 6. **specification** - this should be a JSON array containing within it the product's parameters (such as weight, dimensions, components in case of electronics, color, etc.) often provided in a big table on the product's page. Each parameter should be represented by a JSON object containing properties _key_ and _value_. The whole specification for one product could for example look like this:
 ```json
 [
@@ -82,7 +83,7 @@ After specifying the format of the input dataset, you should specify which attri
 
 ```
 
-Same as before, you specify the attributes separately for each e-shop. Each line then specifies what will the attribute be called in the output dataset (e.g. *id_source*) and which attribute it was in the corresponding input dataset (e.g. *productUrl*). Apart from these, the output dataset will also contain two more attributes for each considered product pair:
+Same as before, you specify the attributes separately for each online store. Each line then specifies what will the attribute be called in the output dataset (e.g. *id_source*) and which attribute it was in the corresponding input dataset (e.g. *productUrl*). Apart from these, the output dataset will also contain two more attributes for each considered product pair:
 
 1. *predicted_match* - will be 1 in case the matcher thinks the two products in the considered pair are the same, 0 if not.
 2. *predicted_scores* - specifies how much the matcher thinks the two products are the same. Will be close to 1 for those that it considers to definitely be the same, and close to 0 for those it considers to definitely not be the same. This output attribute will be useful if you decide to apply your own threshold. For example, if you need to be as sure as possible, you could only take pairs with very high *predicted_scores*.
@@ -208,7 +209,7 @@ We have striven to make the matcher as accurate as we can, gathering thousands o
 1. With the AI model trained for **precision**, we measured precision of 95% (meaning that when the matcher said that two products from different e-shops were the same product, it was true in 95% of cases) with recall being 60% (meaning that the matcher found 60% of the pairs containing the same product that could be found).
 2. With the AI model trained for **recall**, we measured recall of 95% with precision being 55%.
 
-**Of course, since you will be providing your own data which will probably be coming from different e-shops than we tested, the performance you see might differ, even though we tried to make the matcher as general as possible. For that reason, we recommend you do your own investigation of the accuracy of the matcher's results before you use the results for your use case.** Future versions of this Actor will give you the option to use your data to train the matcher in order to alleviate this issue.
+**Of course, since you will be providing your own data which will probably be coming from different online stores than we tested, the performance you see might differ, even though we tried to make the matcher as general as possible. For that reason, we recommend you do your own investigation of the accuracy of the matcher's results before you use the results for your use case.** Future versions of this Actor will give you the option to use your data to train the matcher in order to alleviate this issue.
 
 Please also note that:
 
@@ -221,6 +222,6 @@ Please also note that:
 This Actor is paid using the pay-per-result model, meaning you will pay a small amount for each row in the output dataset (you can find the amount per 1000 results at the top right of this Actor's detail page in Store). In this case, a result is a decision about whether a specific pair of products is the same or not. This means that the amount you pay also depends on the type of input you provided:
 
 1. **a dataset of candidate pairs** - this case is very simple - the number of results is the same as the number of rows in the input datasets.
-2. **two separate datasets of products** - this one is more complicated because the Actor has to try all the possible pairings of products. Meaning that if you have _x_ products from the first e-shop and _y_ products from the second, the number of results will be _x*y_ (e.g. for 50 products from the first eshop and 30 from the second, the final number of results will be 1500).
+2. **two separate datasets of products** - this one is more complicated because the Actor has to try all the possible pairings of products. Meaning that if you have _x_ products from the first online store and _y_ products from the second, the number of results will be _x*y_ (e.g. for 50 products from the first online store and 30 from the second, the final number of results will be 1500).
 
 In case you want to limit the number of potential results (and thus limit how much you pay at maximum), you can set the maximum number of results in the Actor's options.
