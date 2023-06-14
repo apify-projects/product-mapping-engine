@@ -98,9 +98,6 @@ def output_results (
         output_data.to_dict(orient='records')
     )
 
-    print(f"Chunk {current_chunk} processed")
-    print(f"Found {predicted_matching_pairs.shape[0]} matches")
-
     if is_on_platform:
         default_kvs_client.set_record(
             LAST_PROCESSED_CHUNK_KEY,
@@ -298,46 +295,53 @@ def perform_mapping (
                 return_all_considered_pairs=return_all_considered_pairs
             )
 
-        all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
+        matching_pairs_count = 0
+        if predicted_matching_pairs is not None:
+            all_product_pairs_matching_scores.to_csv("all_product_pairs_matching_scores.csv")
 
-        if pair_dataset_chunk is not None:
-            predicted_matching_pairs = predicted_matching_pairs.merge(pair_dataset_chunk, how='left', on=['id1', 'id2'])
-        else:
-            predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
-                                                                      on='id1', how='left') \
-                .merge(dataset2_chunk.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
-
-        if not return_all_considered_pairs:
-            # TODO remove upon resolution
-            predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['id1', 'id2'])
-
-        if SAVE_PRECOMPUTED_MATCHES:
-            if not is_on_platform:
-                if len(new_product_pairs_matching_scores) != 0:
-                    new_product_pairs_matching_scores.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
+            if pair_dataset_chunk is not None:
+                predicted_matching_pairs = predicted_matching_pairs.merge(pair_dataset_chunk, how='left', on=['id1', 'id2'])
             else:
-                precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
+                predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
+                                                                          on='id1', how='left') \
+                    .merge(dataset2_chunk.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
 
-        # TODO investigate
-        predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['id1'].notna()]
+            if not return_all_considered_pairs:
+                # TODO remove upon resolution
+                predicted_matching_pairs = predicted_matching_pairs.drop_duplicates(subset=['id1', 'id2'])
 
-        if input_mapping:
-            original_id_attributes = identify_id_attributes_from_input_mapping(input_mapping)
+            if SAVE_PRECOMPUTED_MATCHES:
+                if not is_on_platform:
+                    if len(new_product_pairs_matching_scores) != 0:
+                        new_product_pairs_matching_scores.to_csv(task_id + '-precomputed-matches' + '.csv', index=False)
+                else:
+                    precomputed_matches_client.push_items(new_product_pairs_matching_scores.to_dict(orient='records'))
 
-        output_results(
-            output_dataset_client,
-            default_kvs_client,
-            predicted_matching_pairs,
-            rejected_pairs,
-            is_on_platform,
-            current_chunk,
-            output_mapping,
-            original_id_attributes[0] if input_mapping else None,
-            original_id_attributes[1] if input_mapping else None,
-            original_pair_dataset,
-            original_dataset1,
-            original_dataset2,
-        )
+            # TODO investigate
+            predicted_matching_pairs = predicted_matching_pairs[predicted_matching_pairs['id1'].notna()]
+
+            if input_mapping:
+                original_id_attributes = identify_id_attributes_from_input_mapping(input_mapping)
+
+            output_results(
+                output_dataset_client,
+                default_kvs_client,
+                predicted_matching_pairs,
+                rejected_pairs,
+                is_on_platform,
+                current_chunk,
+                output_mapping,
+                original_id_attributes[0] if input_mapping else None,
+                original_id_attributes[1] if input_mapping else None,
+                original_pair_dataset,
+                original_dataset1,
+                original_dataset2,
+            )
+
+            matching_pairs_count = predicted_matching_pairs.shape[0]
+
+        print(f"Chunk {current_chunk} processed")
+        print(f"Found {matching_pairs_count} matches")
 
 
 if __name__ == '__main__':
