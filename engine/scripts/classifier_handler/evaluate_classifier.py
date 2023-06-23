@@ -147,6 +147,7 @@ def train_classifier(classifier, data, task_id, train_data=None, test_data=None)
     if EXCLUDED_SIMILARITIES:
         train_data = train_data.drop(columns=EXCLUDED_SIMILARITIES)
         test_data = test_data.drop(columns=EXCLUDED_SIMILARITIES)
+
     if LOAD_PRECOMPUTED_MODEL:
         if MODEL_NAME == 'none':
             filename = f'{MODEL_FOLDER}/{task_id}_{classifier.name}'

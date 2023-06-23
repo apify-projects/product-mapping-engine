@@ -30,4 +30,4 @@ train_data_all = train_data_all.drop(columns={'ids'})
 test_data_all = test_data_all.drop(columns={'ids'})
 # save output data
 train_data_all.to_csv('promapen-train_data.csv', index=False)
-test_data_all.to_csv('promapen-test_data.csv',index=False)
+test_data_all.to_csv('promapen-test_data.csv', index=False)

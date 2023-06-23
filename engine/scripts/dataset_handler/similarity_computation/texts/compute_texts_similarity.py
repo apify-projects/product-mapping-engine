@@ -432,7 +432,6 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
     df_all_similarities['specification_key_value_matches'] = 0
 
     if 'specification' in dataset1.columns and 'specification' in dataset2.columns:
-        x = dataset1['specification']
         specification_similarity = compute_similarity_of_specifications(dataset1['specification'],
                                                                         dataset2['specification'], product_pairs_idx)
         specification_similarity = pd.DataFrame(specification_similarity)

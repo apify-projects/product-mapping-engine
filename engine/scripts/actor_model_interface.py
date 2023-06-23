@@ -155,7 +155,7 @@ def prepare_data_for_classifier(
     """
     # setup parallelling stuff
     pool = Pool()
-    num_cpu = os.cpu_count() - 1
+    num_cpu =os.cpu_count() - 1
 
     # preprocess data
     if LOAD_PREPROCESSED_DATA:
