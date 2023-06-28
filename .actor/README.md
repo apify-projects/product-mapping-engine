@@ -1,14 +1,34 @@
 ## What is the AI Product Matcher and how does it work?
-The AI Product Matcher Actor uses a custom machine learning model we’ve developed to solve the issue of mapping products across various online stores. You can use this tool to find the same products across different online stores for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
 
-In order to use the matcher, you will need to already have the datasets of products that you want to match. To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many available to you [in our Store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)). Keep in mind that the matcher currently only works with English data.
+The AI Product Matcher Actor uses a custom machine learning model we've developed to solve the issue of mapping products across various online stores. You can use this tool to find the same products across different online stores for the purposes of dynamic pricing, competitor analysis, and market research. You can use it both to completely replace the manual mapping of products or to make it more efficient, using different settings explained in the [Input](#how-should-the-input-look) section of this readme.
 
-In case you want our help with building the scrapers or even want a complete data pipeline fully managed by us and tailored to your specific use case, you can [contact our enterprise team](https://apify.com/enterprise) and we will be happy to help you.
+In order to use the matcher, you will need to already have the datasets of products that you want to match. To get them, you can either scrape them directly on our platform (by making your own custom scraper or using one of the many available to you [in our Store](https://apify.com/store/categories/ecommerce)) or upload them to the platform using [our API](https://docs.apify.com/api/v2/) (with clients available in [Javascript](https://docs.apify.com/api/client/js/) and in [Python](https://docs.apify.com/api/client/python/)). Keep in mind that the matcher currently only works with English data.
+
+In case you want our help with building the scrapers or even want a complete data pipeline fully managed by us and tailored to your specific use case, you can [contact our enterprise team](https://apify.com/enterprise) and we will be happy to help you. Meanwhile, you can start off with any of our available e-commerce scrapers:
+
+
+<table>
+  <tr>
+    <td><a href="https://apify.com/junglee/amazon-crawler">:package: Amazon Product Scraper</a></td>
+    <td><a href="https://apify.com/epctex/aliexpress-scraper">:nail_care: AliExpress Scraper</a></td>
+  </tr>
+  <tr>
+    <td><a href="https://apify.com/epctex/google-shopping-scraper">:mag: Google Shopping Scraper</a></td>
+    <td><a href="https://apify.com/pocesar/shopify-scraper">🛍 Shopify Scraper</a></td>
+  </tr>
+  <tr>
+    <td><a href="https://apify.com/dtrungtin/ebay-items-scraper">:shopping_trolley: eBay Items Scraper</a></td>
+    <td><a href="https://apify.com/epctex/walmart-scraper">:shopping_trolley: Walmart Scraper</a></td>
+  </tr>
+</table>
+
 
 ## How should the input look?
 
 This section describes how to prepare the input for the matcher Actor. At the end of it, you can find examples of what the filled input could look like in practice.
-For guidance, follow our [step-by-step Product Matcher tutorial](https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/) 🔗. 
+For guidance, follow our [step-by-step Product Matcher tutorial](https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/) :link: or this video tutorial:
+
+[product matching AI web scraping](https://www.youtube.com/watch?v=qpvGsR_ijzs)
 
 ### How to specify input datasets?
 
