@@ -29,15 +29,41 @@ def identify_id_attributes_from_input_mapping(input_mapping):
     return input_mapping["eshop1"]["id"], input_mapping["eshop2"]["id"]
 
 def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None):
+    columns_found = set()
     columns = []
     renames = {}
     for new_column, old_column in attributes_mapping.items():
         new_column_with_postfix = f"{new_column}{dataset_postfix}" if dataset_postfix is not None else new_column
         columns.append(new_column_with_postfix)
+        columns_found.add(new_column)
         if type(old_column) == list:
             dataset[new_column_with_postfix] = dataset[old_column].apply(squishAttributesIntoAListAttribute, axis=1)
         else:
             renames[old_column] = new_column_with_postfix
+
+    omittable_columns = [
+        "name",
+        "price",
+        "short_description",
+        "long_description",
+        "specification"
+    ]
+
+    default_values = {
+        "name": "column_did_not_exist_in_scraper",
+        "price": None,
+        "short_description": "column_did_not_exist_in_scraper",
+        "long_description": "column_did_not_exist_in_scraper",
+        "specification": [[] for _ in range(dataset.shape[0])]
+    }
+
+    # Needed to make sure that the system works even if some attributes are omitted
+    for omittable_column in omittable_columns:
+        if omittable_column not in columns_found:
+            print(f"Adding {omittable_column}")
+            new_column_with_postfix = f"{omittable_column}{dataset_postfix}" if dataset_postfix is not None else omittable_column
+            columns.append(new_column_with_postfix)
+            dataset[new_column_with_postfix] = default_values[omittable_column]
 
     return dataset, columns, renames
 
@@ -225,7 +251,8 @@ def perform_mapping (
         task_id += "_codes"
 
     first_chunk = 0
-    if is_on_platform:
+    # TODO fix
+    if False and is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
         if start_from_chunk:
             first_chunk = start_from_chunk['value'] + 1
@@ -281,6 +308,9 @@ def perform_mapping (
 
         print('------------------------------------------------------------------------------------------\n\n')
 
+        # TODO fix
+        print(dataset2_chunk)
+
         predicted_matching_pairs, rejected_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
                 pair_dataset=pair_dataset_chunk,
@@ -302,6 +332,8 @@ def perform_mapping (
             if pair_dataset_chunk is not None:
                 predicted_matching_pairs = predicted_matching_pairs.merge(pair_dataset_chunk, how='left', on=['id1', 'id2'])
             else:
+                print(predicted_matching_pairs)
+                print(dataset1_chunk)
                 predicted_matching_pairs = predicted_matching_pairs.merge(dataset1_chunk.rename(columns={"id": "id1"}),
                                                                           on='id1', how='left') \
                     .merge(dataset2_chunk.rename(columns={"id": "id2"}), on='id2', how='left', suffixes=('1', '2'))
