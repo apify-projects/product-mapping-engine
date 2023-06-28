@@ -8,18 +8,31 @@ In case you want our help with building the scrapers or even want a complete dat
 
 
 <table>
-  <tr>
-    <td><a href="https://apify.com/junglee/amazon-crawler">:package: Amazon Product Scraper</a></td>
-    <td><a href="https://apify.com/epctex/aliexpress-scraper">:nail_care: AliExpress Scraper</a></td>
-  </tr>
-  <tr>
-    <td><a href="https://apify.com/epctex/google-shopping-scraper">:mag: Google Shopping Scraper</a></td>
-    <td><a href="https://apify.com/pocesar/shopify-scraper">🛍 Shopify Scraper</a></td>
-  </tr>
-  <tr>
-    <td><a href="https://apify.com/dtrungtin/ebay-items-scraper">:shopping_trolley: eBay Items Scraper</a></td>
-    <td><a href="https://apify.com/epctex/walmart-scraper">:shopping_trolley: Walmart Scraper</a></td>
-  </tr>
+
+<tr>
+
+<td>📦 <a href="https://apify.com/junglee/amazon-crawler">Amazon Product Scraper</a></td>
+
+<td>💅 <a href="https://apify.com/epctex/aliexpress-scraper">AliExpress Scraper</a></td>
+
+</tr>
+
+<tr>
+
+<td>🔍 <a href="https://apify.com/epctex/google-shopping-scraper">Google Shopping Scraper</a></td>
+
+<td>🛍️ <a href="https://apify.com/pocesar/shopify-scraper">Shopify Scraper</a></td>
+
+</tr>
+
+<tr>
+
+<td>💸 <a href="https://apify.com/dtrungtin/ebay-items-scraper">eBay Items Scraper</a></td>
+
+<td>🛒 <a href="https://apify.com/epctex/walmart-scraper">Walmart Scraper</a></td>
+
+</tr>
+
 </table>
 
 
