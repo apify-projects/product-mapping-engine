@@ -39,7 +39,7 @@ In case you want our help with building the scrapers or even want a complete dat
 ## How should the input look?
 
 This section describes how to prepare the input for the matcher Actor. At the end of it, you can find examples of what the filled input could look like in practice.
-For guidance, follow our [step-by-step Product Matcher tutorial](https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/) :link: or this video tutorial:
+For guidance, follow our [step-by-step Product Matcher tutorial](https://blog.apify.com/product-matching-ai-pricing-intelligence-web-scraping/) 🔗 or this video tutorial:
 
 [product matching AI web scraping](https://www.youtube.com/watch?v=qpvGsR_ijzs)
 
