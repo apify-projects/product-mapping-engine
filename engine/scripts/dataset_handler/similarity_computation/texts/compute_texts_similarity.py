@@ -63,20 +63,21 @@ def compute_similarity_of_texts(dataset1, dataset2, tf_idfs, descriptive_words, 
                 cos_similarity = cosine_similarity(
                     [tf_idfs.iloc[product1_idx].values, tf_idfs.iloc[product2_idx + dataset2_starting_index].values]
                 )[0][1]
-                if product1 == "" or product2 == "":
+                if product1 == [""] or product2 == [""]:
                     match_ratios['cos'] = 0
                 else:
                     match_ratios['cos'] = 2 * cos_similarity - 1
 
             if 'descriptives' in similarities_to_compute and descriptive_words is not None:
                 # compute number of similar words in both texts
-                descriptive_words_sim = compute_descriptive_words_similarity(
-                    descriptive_words.iloc[product1_idx].values,
-                    descriptive_words.iloc[product2_idx + dataset2_starting_index].values
-                ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
-                if product1 == "" or product2 == "":
+                if product1 == [""] or product2 == [""] or product1 == ["column_did_not_exist_in_scraper"] or product2 == ["column_did_not_exist_in_scraper"]:
                     match_ratios['descriptives'] = 0
                 else:
+                    descriptive_words_sim = compute_descriptive_words_similarity(
+                        descriptive_words.iloc[product1_idx].values,
+                        descriptive_words.iloc[product2_idx + dataset2_starting_index].values
+                    ) / NUMBER_OF_TOP_DESCRIPTIVE_WORDS
+
                     match_ratios['descriptives'] = 2 * descriptive_words_sim - 1
 
             if 'units' in similarities_to_compute:
@@ -308,7 +309,7 @@ def compare_units_and_values(text1, text2):
                             matching_values += compute_matching_units(val1, val2)
                     matches += matching_values
                     if len(list1) + len(list2) - 2 < 0:
-                        print('Wtf this should not happen! Unpredictable bug!')
+                        print('This should not happen! Unpredictable bug!')
                     total_len += len(list1) + len(list2) - 2
                 elif is_number(u1[1]) and is_number(u2[1]):
                     matches += compute_matching_units(u1[1], u2[1])
@@ -377,6 +378,15 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
 
     return similarity_scores
 
+
+def remove_id_marks(product_ids):
+    ids_list = list(set(product_ids['all_ids_list']))
+
+    for e in range(len(ids_list)):
+        ids_list[e] = ids_list[e].replace(ID_MARK, '')
+
+    return ids_list
+
 def merge_ids_and_codes(product_ids_and_codes):
     union = list(set(product_ids_and_codes['all_ids_list']) | set(product_ids_and_codes['code']))
 
@@ -434,13 +444,16 @@ def create_text_similarities_data(dataset1, dataset2, product_pairs_idx, tf_idfs
                 product_pairs_idx
             )
         )
-        df_all_similarities['codes_and_ids'] = pd.Series(
-            compute_similarity_of_codes(
-                dataset1[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
-                dataset2[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1),
-                product_pairs_idx
-            )
+    else:
+        df_all_similarities['code'] = 0
+
+    df_all_similarities['codes_and_ids'] = pd.Series(
+        compute_similarity_of_codes(
+            dataset1[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1) if 'code' in dataset1 else dataset1[['all_ids_list']].apply(remove_id_marks, axis=1),
+            dataset2[['code', 'all_ids_list']].apply(merge_ids_and_codes, axis=1) if 'code' in dataset2 else dataset2[['all_ids_list']].apply(remove_id_marks, axis=1),
+            product_pairs_idx
         )
+    )
 
     df_all_similarities = df_all_similarities.dropna(axis=1, how='all')
     return df_all_similarities
@@ -495,8 +508,12 @@ def compute_text_similarities_parallelly(dataset1, dataset2, descriptive_words, 
                                                              similarities_to_compute, dataset2_starting_index
                                                              )
             columns_similarity = pd.DataFrame(columns_similarity)
+
             for similarity_name, similarity_value in columns_similarity.items():
-                df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
+                if dataset2[0].iloc[0][column] == ["column_did_not_exist_in_scraper"] or dataset1.iloc[0][column] == ["column_did_not_exist_in_scraper"]:
+                    df_all_similarities[f'{column}_{similarity_name}'] = 0
+                else:
+                    df_all_similarities[f'{column}_{similarity_name}'] = similarity_value
         else:
             for similarity_name in SIMILARITIES_TO_BE_COMPUTED:
                 df_all_similarities[f'{column}_{similarity_name}'] = 0
