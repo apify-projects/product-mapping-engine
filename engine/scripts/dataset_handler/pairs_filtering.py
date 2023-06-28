@@ -214,7 +214,7 @@ def filter_products_with_no_similar_words(product, product_descriptive_words, da
         )
 
         codes_matching = True
-        if "code" in product:
+        if "code" in product and "code" in second_product:
             if len(product["code"]) > 0 and len(second_product["code"]) > 0 \
                     and len(second_product["code"]) + len(product["code"]) > 2:
                 matches = 0
