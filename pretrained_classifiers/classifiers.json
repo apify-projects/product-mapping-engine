@@ -12,11 +12,11 @@
     {
         "classifier_focus": "precision_no_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "precision"
+        "classifier_name": "precision_no_codes"
     },
     {
         "classifier_focus": "recall_no_codes",
         "classifier_type": "NeuralNetwork",
-        "classifier_name": "recall"
+        "classifier_name": "recall_no_codes"
     }
 ]
