@@ -248,7 +248,16 @@ def perform_mapping (
         model_key_value_store = data_client.key_value_store(model_key_value_store_info['id'])
     else:
         model_key_value_store = None
-        task_id += "_codes"
+        if pair_dataset is not None:
+            if "code1" in pair_dataset and "code2" in pair_dataset:
+                task_id += "_codes"
+            else:
+                task_id += "_no_codes"
+        else:
+            if "code" in dataset1 and "code" in dataset2:
+                task_id += "_codes"
+            else:
+                task_id += "_no_codes"
 
     first_chunk = 0
     # TODO fix
@@ -307,9 +316,6 @@ def perform_mapping (
             dataset2_chunk = dataset2.iloc[chunks[current_chunk][1][0]: chunks[current_chunk][1][1]].reset_index()
 
         print('------------------------------------------------------------------------------------------\n\n')
-
-        # TODO fix
-        print(dataset2_chunk)
 
         predicted_matching_pairs, rejected_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
