@@ -102,7 +102,7 @@ def output_results (
     output_data = pd.concat([
         output_data,
         rejected_pairs[["id1", "id2", "predicted_scores", "predicted_match"]]
-    ])
+    ], ignore_index=True)
 
     if output_mapping:
         if original_pair_dataset is not None:
