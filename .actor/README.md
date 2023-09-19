@@ -96,7 +96,27 @@ Each attribute of this object (such as *name*) specifies where each necessary a
 ```
 7. **code** - this attribute is special in that it allows you to specify more than one input dataset attribute, as you can see in the example above. The attributes specified should contain codes of the product if these are available, such as ASIN, SKU, EAN, etc. The more of them you can get, the better.
 
-**You don't always have to provide all of these, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
+Since many scrapers use nested values, we also added support for them. For instance, your data might include a price attribute looking like this:
+```json
+{
+  ...
+  "price": {
+      "value": "123.45",
+      "currency": "$"
+  },
+  ...
+}
+```
+In that case, you can specify which nested attribute you want using the "/" path notation, same as you would for example for files. For the price example, it would look like this:
+```json
+{
+  ...
+  "price": "price/value",
+  ...
+}
+```
+
+**You don't always have to provide all of these attributes, some of them might not even be present on the specific e-shops you wish to use the matcher for. However, not providing them might result in degraded accuracy of the matcher. For more details, see the [section about performance](#how-accurate-is-the-matcher).**
 
 ### How to specify the output dataset format?
 
