@@ -31,13 +31,22 @@ def identify_id_attributes_from_input_mapping(input_mapping):
 def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None):
     columns = []
     renames = {}
+    encountered_old_columns = {}
     for new_column, old_column in attributes_mapping.items():
         new_column_with_postfix = f"{new_column}{dataset_postfix}" if dataset_postfix is not None else new_column
         columns.append(new_column_with_postfix)
         if type(old_column) == list:
             dataset[new_column_with_postfix] = dataset[old_column].apply(squishAttributesIntoAListAttribute, axis=1)
         else:
-            renames[old_column] = new_column_with_postfix
+            old_column_name = old_column
+            if old_column not in encountered_old_columns:
+                encountered_old_columns[old_column] = 1
+            else:
+                encountered_old_columns[old_column] += 1
+                old_column_name = f"{old_column}_{encountered_old_columns[old_column]}"
+                dataset[old_column_name] = dataset[old_column].copy()
+
+            renames[old_column_name] = new_column_with_postfix
 
     return dataset, columns, renames
 
