@@ -42,19 +42,25 @@ def identify_id_attributes_from_input_mapping(input_mapping):
 
 def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None):
     columns_found = set()
+    used_old_columns = []
     columns = []
     renames = {}
     encountered_old_columns = {}
-    for new_column, old_column in attributes_mapping.items():
+    attributes_mapping = list(attributes_mapping.items())
+    for e in range(len(attributes_mapping)):
+        new_column, old_column = attributes_mapping[e]
         if "/" in old_column:
-            dataset[old_column] = dataset[old_column.split["/"][0]].apply(extract_nested_values, path=old_column)
+            adjusted_old_column = old_column.replace("/", "_")
+            dataset[adjusted_old_column] = dataset[old_column.split("/")[0]].apply(extract_nested_values, path=old_column)
+            attributes_mapping[e] = (new_column, adjusted_old_column)
 
-    for new_column, old_column in attributes_mapping.items():
+    for new_column, old_column in attributes_mapping:
         new_column_with_postfix = f"{new_column}{dataset_postfix}" if dataset_postfix is not None else new_column
         columns.append(new_column_with_postfix)
         columns_found.add(new_column)
         if type(old_column) == list:
             dataset[new_column_with_postfix] = dataset[old_column].apply(squishAttributesIntoAListAttribute, axis=1)
+            used_old_columns.append(new_column_with_postfix)
         else:
             old_column_name = old_column
             if old_column not in encountered_old_columns:
@@ -64,6 +70,7 @@ def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None)
                 old_column_name = f"{old_column}_{encountered_old_columns[old_column]}"
                 dataset[old_column_name] = dataset[old_column].copy()
 
+            used_old_columns.append(old_column_name)
             renames[old_column_name] = new_column_with_postfix
 
     omittable_columns = [
@@ -89,8 +96,9 @@ def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None)
             new_column_with_postfix = f"{omittable_column}{dataset_postfix}" if dataset_postfix is not None else omittable_column
             columns.append(new_column_with_postfix)
             dataset[new_column_with_postfix] = default_values[omittable_column]
+            used_old_columns.append(new_column_with_postfix)
 
-    return dataset, columns, renames
+    return dataset[used_old_columns], columns, renames
 
 def perform_input_mapping(input_mapping, pair_dataset=None, singular_dataset=None, singular_dataset_index=None):
     if pair_dataset is not None:
@@ -285,8 +293,7 @@ def perform_mapping (
                 task_id += "_no_codes"
 
     first_chunk = 0
-    # TODO fix
-    if False and is_on_platform:
+    if is_on_platform:
         start_from_chunk = default_kvs_client.get_record(LAST_PROCESSED_CHUNK_KEY)
         if start_from_chunk:
             first_chunk = start_from_chunk['value'] + 1
@@ -341,6 +348,10 @@ def perform_mapping (
             dataset2_chunk = dataset2.iloc[chunks[current_chunk][1][0]: chunks[current_chunk][1][1]].reset_index()
 
         print('------------------------------------------------------------------------------------------\n\n')
+
+        print(dataset2_chunk.columns)
+        print(dataset2_chunk.info())
+        print(dataset2_chunk)
 
         predicted_matching_pairs, rejected_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
