@@ -25,6 +25,18 @@ def squishAttributesIntoAListAttribute(row):
 
     return result
 
+def extract_nested_values(complex_value, path):
+    steps = path.split("/")[1:]
+    nested_value = complex_value
+    for step in steps:
+        if step in nested_value:
+            nested_value = nested_value[step]
+        else:
+            nested_value = None
+            break
+
+    return nested_value
+
 def identify_id_attributes_from_input_mapping(input_mapping):
     return input_mapping["eshop1"]["id"], input_mapping["eshop2"]["id"]
 
@@ -33,6 +45,10 @@ def calculate_dataset_changes(dataset, attributes_mapping, dataset_postfix=None)
     columns = []
     renames = {}
     encountered_old_columns = {}
+    for new_column, old_column in attributes_mapping.items():
+        if "/" in old_column:
+            dataset[old_column] = dataset[old_column.split["/"][0]].apply(extract_nested_values, path=old_column)
+
     for new_column, old_column in attributes_mapping.items():
         new_column_with_postfix = f"{new_column}{dataset_postfix}" if dataset_postfix is not None else new_column
         columns.append(new_column_with_postfix)
