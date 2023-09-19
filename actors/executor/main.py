@@ -349,10 +349,6 @@ def perform_mapping (
 
         print('------------------------------------------------------------------------------------------\n\n')
 
-        print(dataset2_chunk.columns)
-        print(dataset2_chunk.info())
-        print(dataset2_chunk)
-
         predicted_matching_pairs, rejected_pairs, all_product_pairs_matching_scores, new_product_pairs_matching_scores = \
             load_model_create_dataset_and_predict_matches(
                 pair_dataset=pair_dataset_chunk,
