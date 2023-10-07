@@ -365,14 +365,18 @@ def compute_similarity_of_codes(dataset1, dataset2, product_pairs_idx):
         product1 = dataset1.loc[[product_idx]].values[0]
         for product2_idx in corresponding_indices:
             product2 = dataset2.loc[[product2_idx]].values[0]
+
             matches = 0
             for item1 in product1:
                 for item2 in product2:
                     if item1 == item2:
                         matches += 1
-            score = matches / len(product1)
-            if matches == 0 and len(product1) > 0 and len(product2) > 0:
-                score = -1
+
+            score = 0
+            if len(product1) > 0 and len(product2) > 0:
+                score = matches / len(product1)
+                if matches == 0:
+                    score = -1
 
             similarity_scores.append(score)
 
