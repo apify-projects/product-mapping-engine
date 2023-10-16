@@ -7,6 +7,8 @@
 	"input": "./input-schema.json",
 	"readme": "./README.md",
 	"dockerfile": "./Dockerfile",
+    "minMemoryMbytes": 8192,
+    "maxMemoryMbytes": 16384,
 	"storages": {
 		"dataset": {
 			"actorSpecification": 1,
