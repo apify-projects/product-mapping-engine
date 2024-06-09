@@ -105,6 +105,7 @@ def perform_input_mapping(input_mapping, pair_dataset=None, singular_dataset=Non
         all_columns = []
         for e in range(2):
             eshop_mapping = input_mapping[f"eshop{e+1}"]
+            print(pair_dataset.info())
             pair_dataset, columns, renames = calculate_dataset_changes(pair_dataset, eshop_mapping, e+1)
             pair_dataset = pair_dataset.rename(columns=renames)
             all_columns.extend(columns)
