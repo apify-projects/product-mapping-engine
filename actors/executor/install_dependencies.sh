@@ -4,7 +4,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 apt-get update
-apt install -y libgl1-mesa-glx curl
+apt install -y  apt-utils libgl1-mesa-glx curl
 
 curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 apt-get -y install nodejs
